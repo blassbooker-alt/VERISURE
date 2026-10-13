@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 190" fill="none">
+  <defs>
+    <linearGradient id="map-bg" x1="0" y1="0" x2="900" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#064a3e"/>
+      <stop offset=".57" stop-color="#08765c"/>
+      <stop offset="1" stop-color="#10a47b"/>
+    </linearGradient>
+    <linearGradient id="map-land" x1="500" y1="0" x2="900" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#74d5a4"/>
+      <stop offset="1" stop-color="#d2f0c9"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#map-bg)" d="M0 0h900v190H0z"/>
+  <path fill="url(#map-land)" fill-opacity=".54" d="m510 0 390 0v190H475l19-28-15-37 32-28-18-39 27-31z"/>
+  <path fill="#b0e6bf" fill-opacity=".42" d="m562 8 77-8 23 22-11 27-70 3-28-20zm104 7 69-9 25 20-13 32-68 4-27-23zm111-1 77-10 34 24-12 32-84 4-24-24zm-216 85 81-8 24 20-16 35-75 7-27-25zm111 2 79-8 22 22-15 33-80 4-21-23zm111-1 87-9 24 22-18 32-80 4-23-22z"/>
+  <path stroke="#e1f6e7" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="m525 0 42 42-18 38 42 26-23 42 30 42m70-190-26 50 32 31-17 43 21 31M780 0l-17 47 33 33-24 42 29 68M891 17l-46 29 22 45-35 44 11 46"/>
+  <path stroke="#c3ebd1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="m510 58 78-9 32 27 74-13 32 24 83-9 42 31 49-6M502 148l67-29 62 18 45-27 73 25 69-24 59 15"/>
+  <path stroke="#f0f9df" stroke-opacity=".7" stroke-width="3" d="m602 7-4 42m121-43-14 38m106-37-16 39M563 95l67-8m43 9 67-8m43 9 66-8m-287 49 58-14m58 10 55-14m44 15 67-14"/>
+  <g fill="#05634d" stroke="#dff7df" stroke-width="3">
+    <circle cx="576" cy="42" r="8"/>
+    <circle cx="680" cy="100" r="8"/>
+    <circle cx="772" cy="54" r="8"/>
+    <circle cx="842" cy="130" r="8"/>
+  </g>
+  <g fill="#09aa78" stroke="#f1f9e9" stroke-width="2">
+    <path d="M576 25c-11 0-19 8-19 18 0 13 19 30 19 30s19-17 19-30c0-10-8-18-19-18Zm0 24a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/>
+    <path d="M680 81c-11 0-19 8-19 18 0 13 19 30 19 30s19-17 19-30c0-10-8-18-19-18Zm0 24a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/>
+    <path d="M772 35c-11 0-19 8-19 18 0 13 19 30 19 30s19-17 19-30c0-10-8-18-19-18Zm0 24a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/>
+    <path d="M842 111c-11 0-19 8-19 18 0 13 19 30 19 30s19-17 19-30c0-10-8-18-19-18Zm0 24a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/>
+  </g>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Movimento e academia</title>
+  <desc id="desc">Ilustração de uma academia clara com pesos, banco e luz natural.</desc>
+  <defs>
+    <linearGradient id="wall" x2="1" y2="1">
+      <stop stop-color="#edf4e8"/>
+      <stop offset="1" stop-color="#cbdcc8"/>
+    </linearGradient>
+    <linearGradient id="floor" x2="0" y2="1">
+      <stop stop-color="#b7c9b5"/>
+      <stop offset="1" stop-color="#6c9077"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" rx="42" fill="url(#wall)"/>
+  <path d="M0 416 900 352v268H0z" fill="url(#floor)"/>
+  <path d="M558 0h235v351H558z" fill="#b5dbd0"/>
+  <path d="M575 0h18v348h-18zm99 0h18v340h-18zm100 0h18v330h-18z" fill="#f9fff6" opacity=".85"/>
+  <path d="M0 420 558 350m235 0 107-13M0 505l558-78m235 0 107-12M182 620l177-241m220 241L482 377m418 61L644 620M0 597l558-80m235-11 107-11" stroke="#d3e0d0" stroke-width="5" opacity=".72"/>
+  <rect x="135" y="154" width="294" height="12" rx="6" fill="#355849"/>
+  <rect x="162" y="166" width="13" height="241" rx="6" fill="#355849"/>
+  <rect x="387" y="166" width="13" height="210" rx="6" fill="#355849"/>
+  <rect x="125" y="250" width="26" height="105" rx="8" fill="#34463e"/>
+  <rect x="407" y="219" width="27" height="106" rx="8" fill="#34463e"/>
+  <rect x="182" y="235" width="208" height="18" rx="9" fill="#277259"/>
+  <rect x="200" y="253" width="15" height="139" rx="7" fill="#4c6458"/>
+  <rect x="365" y="253" width="15" height="122" rx="7" fill="#4c6458"/>
+  <path d="M604 397h194v24H604z" fill="#e7eee4"/>
+  <path d="M628 421h18v105h-18zm145 0h18v81h-18z" fill="#455d4f"/>
+  <path d="M683 361c20-39 56-49 93-32 34 15 53 49 52 88h-132l-13-56Z" fill="#258064"/>
+  <circle cx="736" cy="331" r="28" fill="#d99d75"/>
+  <path d="m690 436-29 93m144-91 40 74" stroke="#d99d75" stroke-width="24" stroke-linecap="round"/>
+  <path d="M85 535c62-67 114-69 158-9m-116-4c27-56 32-94 15-130m87 88c26-46 61-70 105-72" fill="none" stroke="#2d7752" stroke-width="13" stroke-linecap="round"/>
+  <rect x="63" y="61" width="221" height="51" rx="25" fill="#fff" opacity=".92"/>
+  <text x="94" y="93" fill="#254b39" font-family="Arial,sans-serif" font-size="19" font-weight="700">MOVIMENTO NO SEU RITMO</text>
+</svg>

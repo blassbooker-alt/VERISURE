@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "Fortalfy — Saúde, movimento e bem-estar",
+  "short_name": "Fortalfy",
+  "description": "Explore alimentação, movimento, profissionais e conteúdos para sua rotina.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f8ee",
+  "theme_color": "#09291f",
+  "icons": [
+    {
+      "src": "assets/fortalfy-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/fortalfy-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

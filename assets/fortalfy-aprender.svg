@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Aprender e criar hábitos</title>
+  <desc id="desc">Ilustração de um caderno aberto com trilha de hábitos, folha verde e lápis.</desc>
+  <rect width="900" height="620" rx="44" fill="#f2f2e6"/>
+  <circle cx="738" cy="138" r="108" fill="#dfebcb"/>
+  <circle cx="153" cy="475" r="117" fill="#e8dcb7" opacity=".55"/>
+  <path d="M160 189c97-39 190-34 279 15v270c-89-49-182-54-279-15V189Z" fill="#fff"/>
+  <path d="M439 204c88-49 181-54 278-15v270c-97-39-190-34-278 15V204Z" fill="#fff" stroke="#dfe6d6" stroke-width="4"/>
+  <path d="M439 204v270" stroke="#b2c6a8" stroke-width="8"/>
+  <path d="M198 247c64-18 125-17 184 4m-184 40c64-18 125-17 184 4m-184 40c64-18 125-17 184 4m-184 40c64-18 125-17 184 4" stroke="#cad8c3" stroke-width="9" stroke-linecap="round"/>
+  <path d="M491 247c64-18 125-17 184 4m-184 40c64-18 125-17 184 4m-184 40c64-18 125-17 184 4m-184 40c64-18 125-17 184 4" stroke="#cad8c3" stroke-width="9" stroke-linecap="round"/>
+  <path d="m531 114 176 277" stroke="#d5a957" stroke-width="27" stroke-linecap="round"/>
+  <path d="m519 93 19 29-23 17-19-29c-7-11-4-25 7-32 6-4 12-5 18-2Z" fill="#355a47"/>
+  <path d="m699 380 22 35-4 38-22-33z" fill="#d9bd7f"/>
+  <path d="M756 371c-29-46-18-91 14-116 39 35 42 76 14 116m-9 0c-10-64 5-103 43-121 25 45 13 86-24 121" fill="#69a66c"/>
+  <path d="M782 383v58" stroke="#3d7650" stroke-width="8" stroke-linecap="round"/>
+  <rect x="84" y="73" width="208" height="49" rx="24" fill="#fff"/>
+  <text x="112" y="104" fill="#28573e" font-family="Arial,sans-serif" font-size="19" font-weight="700">UM PASSO DE CADA VEZ</text>
+</svg>

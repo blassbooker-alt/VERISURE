@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="title desc">
+  <title id="title">Pessoas em movimento juntas</title>
+  <desc id="desc">Ilustracao original de um grupo diverso conversando em um espaco verde acolhedor.</desc>
+  <defs>
+    <linearGradient id="communitySky" x2="1" y2="1">
+      <stop stop-color="#eff6df"/>
+      <stop offset="1" stop-color="#d7ebdf"/>
+    </linearGradient>
+    <linearGradient id="communityGround" x2="1" y2="0">
+      <stop stop-color="#6fa77a"/>
+      <stop offset="1" stop-color="#2b6c50"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="440" rx="34" fill="url(#communitySky)"/>
+  <circle cx="747" cy="93" r="51" fill="#d8e99e"/>
+  <circle cx="110" cy="128" r="78" fill="#dcebcf"/>
+  <path d="M0 300c177-72 298-49 443 5 156 58 278 24 457-42v177H0z" fill="#c3dfbd"/>
+  <path d="M0 358c167-73 296-43 421 9 159 66 295 38 479-23v96H0z" fill="url(#communityGround)"/>
+  <path d="M68 440c29-71 78-111 147-119m470 119c-30-75-78-112-146-122" fill="none" stroke="#eff2d9" stroke-width="12" stroke-linecap="round"/>
+  <g transform="translate(234 102)">
+    <circle cx="83" cy="74" r="34" fill="#bd805e"/>
+    <path d="M49 73c2-36 22-53 49-47 24 5 31 24 27 48l-21-18-25-9-28 26Z" fill="#2d3d32"/>
+    <path d="M31 128c27-23 76-23 104 0l30 113H7z" fill="#17684e"/>
+    <path d="m31 169-24 76h35l39-56m53-20 31 73h34l-38-94" fill="none" stroke="#bd805e" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(418 88)">
+    <circle cx="83" cy="78" r="35" fill="#edbd91"/>
+    <path d="M49 77c-2-34 20-54 48-50 23 3 34 23 28 48l-23-19-26-8-26 29Z" fill="#47372d"/>
+    <path d="M29 132c28-23 80-23 108 0l32 115H-1z" fill="#d6e986"/>
+    <path d="m31 171-26 74h36l42-58m52-16 34 74h35l-42-95" fill="none" stroke="#edbd91" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(597 111)">
+    <circle cx="79" cy="68" r="33" fill="#8d5d48"/>
+    <path d="M46 69c0-34 20-50 45-47 26 3 34 22 28 47l-16-18-25-10-31 28Z" fill="#233d34"/>
+    <path d="M27 120c26-22 76-22 103 0l31 111H-2z" fill="#5d8caa"/>
+    <path d="m26 162-27 69h35l45-55m50-14 32 70h35l-43-90" fill="none" stroke="#8d5d48" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(648 41)">
+    <path d="M0 16c0-9 7-16 16-16h108c9 0 16 7 16 16v51c0 9-7 16-16 16H66L40 104V83H16C7 83 0 76 0 67Z" fill="#fff" stroke="#d6e5d2" stroke-width="4"/>
+    <path d="M30 43h79" stroke="#6b9b71" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="42" cy="61" r="4" fill="#b7d46d"/><circle cx="57" cy="61" r="4" fill="#b7d46d"/><circle cx="72" cy="61" r="4" fill="#b7d46d"/>
+  </g>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Alimentação equilibrada</title>
+  <desc id="desc">Ilustração de uma tigela colorida com vegetais, grãos e folhas sobre uma mesa clara.</desc>
+  <defs>
+    <linearGradient id="table" x2="0" y2="1">
+      <stop stop-color="#f7f1de"/>
+      <stop offset="1" stop-color="#e8d9b7"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" rx="44" fill="#eef4e7"/>
+  <circle cx="730" cy="120" r="110" fill="#d8e9c4"/>
+  <circle cx="160" cy="465" r="130" fill="#dcead0"/>
+  <path d="M0 360h900v260H0z" fill="url(#table)"/>
+  <ellipse cx="459" cy="470" rx="285" ry="89" fill="#d2c3a2"/>
+  <path d="M172 323c0 176 126 264 287 264s287-88 287-264H172Z" fill="#fffdf5" stroke="#d4d7c2" stroke-width="8"/>
+  <ellipse cx="459" cy="322" rx="287" ry="130" fill="#fff"/>
+  <ellipse cx="459" cy="324" rx="244" ry="99" fill="#d9e8b5"/>
+  <path d="M238 307c21-50 71-82 125-77 57 5 93 47 83 93-11 51-70 81-134 68-62-13-94-43-74-84Z" fill="#ecaa5a"/>
+  <path d="M478 251c55-39 128-28 152 24 24 52-3 102-61 109-52 7-111-20-118-68-3-24 6-48 27-65Z" fill="#cf6851"/>
+  <circle cx="385" cy="365" r="38" fill="#f2d765"/>
+  <circle cx="518" cy="357" r="32" fill="#f2d765"/>
+  <circle cx="578" cy="296" r="26" fill="#e6c54e"/>
+  <path d="M355 258c-9-39 7-68 42-77 37-9 61 13 59 48-3 37-28 64-58 60m145-21c-2-41 20-66 55-61 35 5 49 33 34 65-15 32-44 49-70 35m-225 117c-10-34 5-56 31-62 29-6 50 12 49 39-1 30-24 51-49 47" fill="#5b9b5d" stroke="#397849" stroke-width="5"/>
+  <path d="M400 217c-9-24-3-41 16-50m165 54c12-22 31-31 54-27m-220 141c-4-23 5-39 23-47" fill="none" stroke="#a9ca79" stroke-width="8" stroke-linecap="round"/>
+  <path d="M92 176c29-41 68-51 116-29m-116 29c40 21 59 55 57 102m-44-67c-30-8-52-28-66-60" fill="none" stroke="#69a26e" stroke-width="12" stroke-linecap="round"/>
+  <rect x="70" y="68" width="185" height="48" rx="24" fill="#fff" opacity=".93"/>
+  <text x="99" y="99" fill="#28573e" font-family="Arial,sans-serif" font-size="19" font-weight="700">COMIDA DE VERDADE</text>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Orientação profissional</title>
+  <desc id="desc">Ilustração acolhedora de conversa profissional com elementos de saúde e movimento.</desc>
+  <rect width="900" height="620" rx="44" fill="#edf4e9"/>
+  <circle cx="155" cy="138" r="92" fill="#dcebcf"/>
+  <circle cx="739" cy="469" r="124" fill="#d8e9d9"/>
+  <rect x="110" y="110" width="680" height="400" rx="32" fill="#fff" stroke="#dce6dc" stroke-width="5"/>
+  <path d="M110 199h680" stroke="#e7eee6" stroke-width="5"/>
+  <circle cx="158" cy="155" r="10" fill="#75a77a"/>
+  <circle cx="190" cy="155" r="10" fill="#cfb75b"/>
+  <circle cx="222" cy="155" r="10" fill="#d78a72"/>
+  <rect x="151" y="236" width="271" height="227" rx="24" fill="#e8f2e5"/>
+  <rect x="478" y="236" width="269" height="140" rx="24" fill="#f4f1e4"/>
+  <path d="M537 376h35l-17 24z" fill="#f4f1e4"/>
+  <path d="M218 420c4-72 35-111 89-111s85 39 89 111" fill="#3d8965"/>
+  <circle cx="307" cy="293" r="47" fill="#d99b74"/>
+  <path d="M260 282c2-49 29-76 67-71 35 4 55 30 49 70l-28-22-30-18-55 41Z" fill="#3d3930"/>
+  <path d="M265 418c18-42 41-62 70-62 30 0 51 20 66 62" fill="#f3f7ef"/>
+  <path d="M299 372h18l-9 22z" fill="#e1ba63"/>
+  <circle cx="526" cy="283" r="28" fill="#c6dfbf"/>
+  <path d="M515 283h22m-11-11v22" stroke="#377451" stroke-width="6" stroke-linecap="round"/>
+  <path d="M576 270h133m-133 31h99m-99 31h121" stroke="#a9b6a6" stroke-width="10" stroke-linecap="round"/>
+  <rect x="527" y="414" width="189" height="46" rx="23" fill="#e2f0e2"/>
+  <path d="m548 436 9 9 18-19" fill="none" stroke="#397d50" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="590" y="444" fill="#39704d" font-family="Arial,sans-serif" font-size="17" font-weight="700">ESCUTA E ORIENTAÇÃO</text>
+  <rect x="620" y="69" width="211" height="48" rx="24" fill="#fff" opacity=".94"/>
+  <text x="649" y="100" fill="#28573e" font-family="Arial,sans-serif" font-size="18" font-weight="700">CUIDADO COM RESPONSABILIDADE</text>
+</svg>

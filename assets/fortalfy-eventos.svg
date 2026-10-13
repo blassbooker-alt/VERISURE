@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" role="img" aria-labelledby="title desc">
+  <title id="title">Movimento ao ar livre</title>
+  <desc id="desc">Ilustracao original de duas pessoas caminhando em um parque verde, com trilha e sol.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#eef6df"/>
+      <stop offset="1" stop-color="#d5eadb"/>
+    </linearGradient>
+    <linearGradient id="hill" x2="1" y2="1">
+      <stop stop-color="#91bd75"/>
+      <stop offset="1" stop-color="#4c8a68"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="440" rx="34" fill="url(#sky)"/>
+  <circle cx="727" cy="92" r="46" fill="#d0e886"/>
+  <path d="M0 276c129-73 249-80 374-14 151 80 273 60 526-34v212H0z" fill="#c9dfb8"/>
+  <path d="M0 333c142-91 262-69 390-12 153 69 317 42 510-37v156H0z" fill="url(#hill)"/>
+  <path d="M0 398c194-68 330-48 454-7 130 43 276 30 446-20v69H0z" fill="#235d47"/>
+  <path d="M574 440c30-75 61-115 95-145 36-31 76-46 137-62" fill="none" stroke="#eaf0d4" stroke-width="17" stroke-linecap="round"/>
+  <g fill="#285f49">
+    <path d="M79 263c0-46 26-77 53-77s53 31 53 77zm-19 0h144v15H60z"/>
+    <path d="M120 185h25v78h-25z"/>
+  </g>
+  <g transform="translate(356 126)">
+    <circle cx="85" cy="47" r="29" fill="#bc805d"/>
+    <path d="M58 43c2-28 19-43 42-39 17 3 25 15 24 34-16-2-28-11-36-21-7 12-17 21-30 26Z" fill="#263d32"/>
+    <path d="M50 83c17-14 48-18 71-3l31 88-103 3 18-55z" fill="#17684e"/>
+    <path d="m60 165-9 93h31l22-86m16-4 25 88h31l-16-101" fill="#163d31"/>
+    <path d="m61 104-40 53 16 13 48-44m42-24 42 48-12 16-53-40" fill="none" stroke="#bc805d" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M43 250h43l-5 16H33zm100 1h37l10 15h-48z" fill="#e7f0df"/>
+  </g>
+  <g transform="translate(610 192) scale(.72)">
+    <circle cx="85" cy="47" r="29" fill="#8f6049"/>
+    <path d="M57 46c-1-28 17-43 40-40 20 2 29 18 26 39l-14-15-22-8-24 24Z" fill="#273a33"/>
+    <path d="M50 83c18-16 49-18 72-3l30 88-103 3 18-55z" fill="#d3e77b"/>
+    <path d="m60 165-9 93h31l22-86m16-4 25 88h31l-16-101" fill="#174735"/>
+    <path d="m61 104-40 53 16 13 48-44m42-24 42 48-12 16-53-40" fill="none" stroke="#8f6049" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M43 250h43l-5 16H33zm100 1h37l10 15h-48z" fill="#f3f5e9"/>
+  </g>
+  <g fill="#d9ecaa">
+    <circle cx="250" cy="117" r="7"/><circle cx="274" cy="140" r="4"/><circle cx="815" cy="196" r="6"/>
+  </g>
+</svg>

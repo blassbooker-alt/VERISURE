@@ -1,0 +1,78 @@
+.food-product-card[role="button"]{cursor:pointer}
+.food-product-card:focus-visible,.food-profile-action:focus-visible,.food-detail-quantity button:focus-visible{outline:3px solid #9ac85e;outline-offset:3px}
+.food-product-card .food-add-button{position:relative;z-index:1}
+.food-product-body h4{width:100%}
+.food-product-title{padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:850;text-align:left}
+.food-detail{display:grid;gap:18px;max-width:740px;margin:0 auto}
+.food-detail-back{justify-self:start;border:0;background:transparent;color:#126447;font-weight:800}
+.food-detail-hero{width:100%;max-height:360px;aspect-ratio:1.7;object-fit:cover;border-radius:18px;background:#edf3ec}
+.food-detail-heading{display:grid;gap:7px}
+.food-detail-heading h2{margin:0;color:#173c30;font-size:clamp(22px,5vw,30px)}
+.food-detail-description,.food-detail-disclosure{margin:0;color:#64746a;line-height:1.55}
+.food-detail-price{color:#126447;font-size:23px;font-weight:900}
+.food-detail-section{padding:16px;border:1px solid #e5ece5;border-radius:14px;background:#fff}
+.food-detail-section h3{margin:0 0 10px;color:#173c30;font-size:17px}
+.food-nutrition-table{width:100%;border-collapse:collapse;font-size:13px}
+.food-nutrition-table th,.food-nutrition-table td{padding:9px 7px;border-bottom:1px solid #e9eeea;text-align:left}
+.food-nutrition-table th{color:#64746a;font-weight:700}
+.food-nutrition-table td:last-child{text-align:right;font-weight:750}
+.food-nutrition-table tr:last-child th,.food-nutrition-table tr:last-child td{border-bottom:0}
+.food-nutrition-tools{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;color:#65756a;font-size:12px}
+.food-nutrition-tools select,.food-customization select{min-height:36px;padding:7px 10px;border:1px solid #dfe8df;border-radius:9px;background:#fff;color:#294538}
+.food-detail-list{display:grid;gap:8px;margin:0;padding-left:20px;color:#405749;font-size:14px;line-height:1.5}
+.food-detail-quantity{display:flex;align-items:center;gap:14px}
+.food-detail-quantity button{width:40px;height:40px;border:1px solid #dfe8df;border-radius:12px;background:#f5f9f2;color:#126447;font-size:22px}
+.food-detail-quantity strong{min-width:22px;text-align:center}
+.food-customization{display:grid;gap:9px}
+.food-customization label{display:flex;align-items:center;gap:8px;color:#405749;font-size:13px}
+.food-product-restaurant{display:grid;grid-template-columns:58px minmax(0,1fr) auto;align-items:center;gap:12px}
+.food-product-restaurant img{width:58px;height:58px;object-fit:cover;border-radius:13px}
+.food-product-restaurant p{margin:4px 0 0;color:#718076;font-size:12px}
+.food-product-restaurant button,.food-profile-action{border:1px solid #cbded0;border-radius:10px;background:#f2f8ef;color:#126447;padding:9px 12px;font-size:12px;font-weight:800}
+.food-cart-line{grid-template-columns:54px minmax(0,1fr);grid-template-rows:auto auto auto;align-items:center}
+.food-cart-line>img{grid-column:1;grid-row:1/4}
+.food-cart-line>div:nth-child(2){grid-column:2;grid-row:1}
+.food-cart-line .food-quantity-control{grid-column:2;grid-row:2;justify-self:start;flex-wrap:wrap}
+.food-cart-line .food-line-total{grid-column:2;grid-row:3;text-align:left}
+.food-detail-bottom{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -2px;padding:12px 2px max(8px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#ffffffdf,#fff 25%)}
+.food-detail-bottom .btn{min-width:180px}
+.food-public-profile{display:grid;gap:16px}
+.food-public-cover{height:165px;object-fit:cover;width:100%;border-radius:16px;background:#eff4ec}
+.food-public-brand{display:flex;align-items:center;gap:12px}
+.food-public-brand img{width:72px;height:72px;object-fit:cover;border-radius:18px;border:3px solid #fff;box-shadow:0 4px 16px #172b2418}
+.food-public-brand h2{margin:0;color:#173c30;font-size:22px}
+.food-public-stats{display:flex;flex-wrap:wrap;gap:12px;color:#596c60;font-size:12px}
+.food-public-stats strong{color:#173c30}
+.food-follow-button.following{background:#edf4e9;color:#126447}
+.food-profile-actions{display:flex;flex-wrap:wrap;gap:9px}
+.food-followed-list{display:grid;gap:9px}
+.food-followed-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #e7ece7;border-radius:12px;background:#fff}
+.food-followed-row img{width:42px;height:42px;object-fit:cover;border-radius:50%}
+.food-followed-row span{flex:1}
+.food-followed-row small{display:block;color:#718076}
+.food-feed-filter{display:flex;gap:8px;margin:12px 0}
+.food-feed-filter button{border:1px solid #dfe8df;border-radius:99px;background:#fff;color:#41584c;padding:8px 14px;font-weight:750}
+.food-feed-filter button.active{border-color:#126447;background:#eaf4e5;color:#126447}
+.food-post-follow{margin-top:6px;border:1px solid #d5e3d5;border-radius:8px;background:#f5f9f2;color:#126447;padding:5px 9px;font-size:11px;font-weight:800}
+.food-post-owner-actions{display:flex;gap:6px}
+.food-post-owner-actions button,.food-post-report{border:0;background:transparent;color:#718076;font-size:11px}
+.food-post-shared{margin:0 0 8px;color:#627267;font-size:12px}
+.food-post-composer{display:grid;gap:10px;padding:15px;border:1px solid #e5ebe6;border-radius:15px;background:#fff}
+.food-post-composer input,.food-post-composer textarea{width:100%;padding:11px 12px;border:1px solid #dfe8df;border-radius:10px}
+.food-post-composer textarea{min-height:84px;resize:vertical}
+.food-post-composer-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.food-partner-console{display:grid;gap:14px;margin:14px 0;padding:18px;border:1px solid #e1e9df;border-radius:16px;background:#fff}
+.food-partner-console h3{margin:0;color:#173c30}
+.food-partner-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.food-partner-products{display:grid;gap:8px}
+.food-partner-product-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #edf1ed;font-size:13px}
+@media(max-width:600px){
+ .food-detail-hero{aspect-ratio:1.25}
+ .food-detail-section{padding:13px}
+ .food-nutrition-table th,.food-nutrition-table td{padding:8px 4px;font-size:12px}
+ .food-detail-bottom .btn{min-width:0;flex:1;padding:12px 9px}
+ .food-partner-form-grid{grid-template-columns:1fr}
+ .food-product-restaurant{grid-template-columns:48px minmax(0,1fr)}
+ .food-product-restaurant img{width:48px;height:48px}
+ .food-product-restaurant button{grid-column:1/-1}
+}
