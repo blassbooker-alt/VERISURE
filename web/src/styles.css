@@ -314,7 +314,7 @@ img { display: block; max-width: 100%; }
 .post-actions button { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0; border: 0; color: #586c5c; background: transparent; font-size: 9px; font-weight: 700; }
 .post-actions button.liked { color: #df5572; }
 .post-actions .social-comment, .profile-post-actions .social-comment { display: contents; }
-.post-actions > .profile-comment-form, .profile-post-actions > .profile-comment-form { flex: 1 0 100%; }
+.post-actions > .comment-composer, .profile-post-actions > .comment-composer { flex: 1 0 100%; }
 .post-actions > .profile-comment-list, .profile-post-actions > .profile-comment-list { flex: 1 0 100%; }
 .post-actions .social-comment > button { flex: 1; justify-content: center; white-space: nowrap; }
 .profile-feed-post .post-actions > button { flex: 1; justify-content: center; white-space: nowrap; }
@@ -484,13 +484,24 @@ img { display: block; max-width: 100%; }
 .profile-post-actions { display: flex; flex-wrap: wrap; gap: 3px; padding: 9px 11px 4px; border-top: 1px solid #edf1ed; }
 .profile-post-actions button { min-height: 35px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 1; border: 0; border-radius: 8px; color: #5c6c61; background: #fff; font-size: 9px; font-weight: 700; }
 .profile-post-actions button:hover, .profile-post-actions button.liked, .profile-post-actions button.shared { color: #236440; background: #f0f7ee; }
-.profile-comment-form { display: flex; gap: 7px; padding: 8px 12px; }
-.profile-comment-form input { min-width: 0; flex: 1; height: 37px; padding: 0 10px; border: 1px solid #dfe8df; border-radius: 10px; font-size: 10px; }
-.profile-comment-form .button { min-height: 37px; }
-.profile-comment-list { padding: 1px 13px 8px; }
-.profile-comment-list p { margin: 5px 0; color: #536359; font-size: 9px; line-height: 1.45; overflow-wrap: anywhere; }
-.profile-comment-list strong { color: #2d5038; }
-.profile-comment-list small { margin-left: 5px; color: #8a958c; }
+.comment-composer { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+.comment-avatar { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; overflow: hidden; color: #31543d; background: #e4eee2; border-radius: 50%; font-size: 12px; font-weight: 800; }
+.comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-comment-form { min-width: 0; display: flex; flex: 1; align-items: center; gap: 6px; padding: 4px 6px 4px 12px; background: #f0f2f5; border: 1px solid transparent; border-radius: 22px; }
+.profile-comment-form:focus-within { border-color: #bdcfbf; }
+.profile-comment-form input { min-width: 0; flex: 1; height: 32px; padding: 0; border: 0; outline: 0; color: #26392e; background: transparent; font-size: 12px; }
+.profile-comment-form .button { width: 32px; min-width: 32px; min-height: 32px; padding: 0; border-radius: 50%; }
+.profile-comment-list { display: grid; flex: 1 0 100%; gap: 9px; padding: 4px 13px 12px; }
+.comment-item { min-width: 0; display: flex; align-items: flex-start; gap: 8px; }
+.comment-item-content { min-width: 0; display: grid; justify-items: start; }
+.comment-bubble { max-width: 100%; padding: 8px 12px; color: #26382d; background: #f0f2f5; border-radius: 18px; overflow-wrap: anywhere; }
+.comment-bubble strong { display: block; margin: 0 0 2px; color: #253a2e; font-size: 11px; font-weight: 800; }
+.comment-bubble p { margin: 0; color: #35443a; font-size: 11px; line-height: 1.4; white-space: pre-wrap; }
+.comment-meta { display: flex; align-items: center; gap: 12px; padding: 3px 10px 0; color: #77827a; font-size: 9px; }
+.comment-meta button { border: 0; padding: 0; color: #69766d; background: transparent; font-size: 9px; font-weight: 750; }
+.comment-meta button:hover, .comment-meta button.comment-liked { color: #257044; }
+.comment-meta time { font-size: 9px; }
+.comment-like-count { display: inline-flex; align-items: center; gap: 3px; color: #27754a; }
 .profile-post-disclosure { margin: 0; padding: 0 13px 10px; color: #7e8b80; font-size: 8px; line-height: 1.45; }
 .profile-photo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .profile-photo-grid button { position: relative; min-width: 0; overflow: hidden; aspect-ratio: 1; border: 0; padding: 0; background: #eaf0e9; border-radius: 10px; }
