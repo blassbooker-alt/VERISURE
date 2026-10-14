@@ -1,3 +1,5 @@
+import { fortalfyAsset } from "./assetPath.js";
+
 export const profile = {
   name: "Leblonjr",
   handle: "@Leblonjr",
@@ -7,21 +9,28 @@ export const profile = {
 
 export const gyms = [
   {
-    name: "Viva Fitness",
-    image: "./assets/pass-hero-gym.jpg",
+    name: "Espaço de demonstração",
+    image: fortalfyAsset("publicidade", "03-fortalpass-academia.jpg"),
     tags: ["Musculação", "Funcional", "Mobilidade"],
   },
   {
-    name: "Studio Viva",
-    image: "./assets/pass-demo-gym-nextfit.jpg",
+    name: "Studio demonstrativo",
+    image: fortalfyAsset("publicidade", "banner-comunidade.jpg"),
     tags: ["Treino funcional", "Pilates", "Aulas coletivas"],
   },
 ];
 
 export const restaurants = [
-  { name: "Green Fit Bowls", dish: "Bowl Proteico", kcal: 520, protein: 35, image: "./assets/food-bowl.jpg", tag: "Alto em proteína" },
-  { name: "Fit Prime", dish: "Frango grelhado", kcal: 480, protein: 42, image: "./assets/food-grilled-chicken.jpg", tag: "Perfil nutricional a confirmar" },
-  { name: "Viva Saladas", dish: "Salada Power", kcal: 350, protein: 28, image: "./assets/food-salad.jpg", tag: "Leve e nutritiva" },
+  { name: "Cardápio demonstrativo · 01", dish: "Bowl proteico de frango", category: "Proteínas", image: fortalfyAsset("food", "bowl-proteico-frango.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 02", dish: "Bowl de salmão", category: "Proteínas", image: fortalfyAsset("food", "bowl-salmao.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 03", dish: "Frango grelhado", category: "Marmitas fitness", image: fortalfyAsset("food", "frango-grelhado.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 04", dish: "Salada power", category: "Vegetarianos", image: fortalfyAsset("food", "salada-power.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 05", dish: "Marmita low carb", category: "Marmitas fitness", image: fortalfyAsset("food", "marmita-low-carb.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 06", dish: "Açaí proteico", category: "Sobremesas", image: fortalfyAsset("food", "acai-proteico.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 07", dish: "Panqueca proteica", category: "Lanches", image: fortalfyAsset("food", "pan-ca-proteica.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 08", dish: "Smoothie verde", category: "Bebidas", image: fortalfyAsset("food", "smoothie-verde.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 09", dish: "Wrap de frango", category: "Lanches", image: fortalfyAsset("food", "wrap-frango.jpg"), tag: "Prato ilustrativo" },
+  { name: "Cardápio demonstrativo · 10", dish: "Frutas e castanhas", category: "Lanches", image: fortalfyAsset("food", "snack-frutas-castanhas.jpg"), tag: "Prato ilustrativo" },
 ];
 
 export const clients = [
@@ -34,6 +43,13 @@ export const workoutExercises = [
   { name: "Supino reto", details: "4 séries × 12 repetições", load: "60 kg" },
   { name: "Crucifixo inclinado", details: "3 séries × 15 repetições", load: "14 kg" },
   { name: "Flexão", details: "3 séries até a falha", load: "Peso corporal" },
+];
+
+export const workoutCategories = [
+  { name: "Força", image: fortalfyAsset("treino", "07-treino-forca.jpg") },
+  { name: "Cardio", image: fortalfyAsset("treino", "08-treino-cardio.jpg") },
+  { name: "Yoga e mobilidade", image: fortalfyAsset("treino", "09-treino-yoga-mobilidade.jpg") },
+  { name: "Recovery", image: fortalfyAsset("treino", "10-treino-recovery.jpg") },
 ];
 
 export const courseList = [

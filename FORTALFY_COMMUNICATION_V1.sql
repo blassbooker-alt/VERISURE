@@ -129,3 +129,17 @@ create policy "members send messages as themselves" on public.direct_messages
 grant select, insert on public.dm_conversations to authenticated;
 grant update (member_one_read_at, member_two_read_at) on public.dm_conversations to authenticated;
 grant select, insert on public.direct_messages to authenticated;
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'direct_messages'
+     ) then
+    alter publication supabase_realtime add table public.direct_messages;
+  end if;
+end;
+$$;

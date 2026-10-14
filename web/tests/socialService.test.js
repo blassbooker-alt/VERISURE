@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getErrorMessage, loadComments, loadFeed, mapProfile } from "../src/socialService.js";
+import { getErrorMessage, loadComments, loadFeed, loadMutualFollowState, mapProfile, startConversation } from "../src/socialService.js";
 
 function query(result) {
   return {
@@ -108,4 +108,51 @@ test("database error messages preserve authorization details", () => {
   assert.equal(getErrorMessage({ code: "42501", message: "blocked" }), "Sua conta não tem permissão para esta ação.");
   assert.equal(getErrorMessage({ message: "E-mail indisponível" }), "E-mail indisponível");
   assert.equal(getErrorMessage(null, "Erro alternativo"), "Erro alternativo");
+});
+
+test("direct-message access requires both follow directions and reports a pending request", async () => {
+  const edges = new Set(["user-1:user-2"]);
+  const client = {
+    from(table) {
+      const filters = {};
+      return {
+        select() { return this; },
+        eq(column, value) { filters[column] = value; return this; },
+        maybeSingle: async () => table === "profile_follows"
+          ? { data: edges.has(`${filters.follower_id}:${filters.followed_id}`) ? filters : null, error: null }
+          : { data: { status: "pending" }, error: null },
+      };
+    },
+  };
+
+  const state = await loadMutualFollowState(client, "user-1", "user-2");
+  assert.deepEqual(state, {
+    followsOther: true,
+    otherFollowsUser: false,
+    canMessage: false,
+    requestPending: true,
+  });
+  edges.add("user-2:user-1");
+  assert.equal((await loadMutualFollowState(client, "user-1", "user-2")).canMessage, true);
+});
+
+test("starting a conversation is rejected before creating a conversation without mutual follows", async () => {
+  let attemptedInsert = false;
+  const client = {
+    from(table) {
+      if (table === "dm_conversations") {
+        attemptedInsert = true;
+        throw new Error("Conversation must not be created");
+      }
+      const filters = {};
+      return {
+        select() { return this; },
+        eq(column, value) { filters[column] = value; return this; },
+        maybeSingle: async () => ({ data: null, error: null }),
+      };
+    },
+  };
+
+  await assert.rejects(startConversation(client, "user-1", "user-2"), /Vocês precisam se seguir/);
+  assert.equal(attemptedInsert, false);
 });

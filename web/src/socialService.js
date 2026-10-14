@@ -68,6 +68,22 @@ export async function removeProfileImage(client, userId, path, field) {
 }
 
 export async function loadProfile(client, userId) {
+  if (userId === "demo-user-fortalfy" || (typeof userId === "string" && (userId.startsWith("demo-") || userId.startsWith("local-")))) {
+    return {
+      id: userId,
+      name: "Convidado Fortalfy",
+      username: "convidado",
+      bio: "Explorando a experiência mobile do Fortalfy v19.",
+      city: "Fortaleza, CE",
+      avatar: "",
+      cover: "",
+      kind: "cliente",
+      verified: true,
+      isPrivate: false,
+      avatarPath: "",
+      coverPath: "",
+    };
+  }
   const { data, error } = await client.from("profiles")
     .select("id,display_name,username,bio,city,avatar_path,cover_path,kind,verified_at,partner_approved_at,is_private")
     .eq("id", userId)
@@ -93,6 +109,54 @@ async function signPostMedia(client, post) {
 }
 
 export async function loadFeed(client, userId, { filter = "latest", offset = 0, limit = 15, authorId = "", mediaType = "" } = {}) {
+  if (userId === "demo-user-fortalfy" || (typeof userId === "string" && (userId.startsWith("demo-") || userId.startsWith("local-")))) {
+    return {
+      posts: [
+        {
+          id: "demo-post-1",
+          authorId: "demo-user-fortalfy",
+          body: "Primeiro treino do dia concluído com foco e consistência! Vamos juntos nessa jornada de bem-estar. 💪🏃‍♂️",
+          publishedAt: new Date(Date.now() - 3600000).toISOString(),
+          likesCount: 12,
+          commentsCount: 3,
+          sharesCount: 1,
+          liked: true,
+          saved: false,
+          media: [],
+          author: {
+            id: "demo-user-fortalfy",
+            name: "Convidado Fortalfy",
+            username: "convidado",
+            avatar: "",
+            kind: "cliente",
+            verified: true,
+          },
+        },
+        {
+          id: "demo-post-2",
+          authorId: "fortalfy-team",
+          body: "Seja muito bem-vindo ao Fortalfy! Acompanhe sua rotina de treinos, nutrição e conexões em um só lugar. 🥗✨",
+          publishedAt: new Date(Date.now() - 7200000).toISOString(),
+          likesCount: 45,
+          commentsCount: 8,
+          sharesCount: 4,
+          liked: false,
+          saved: true,
+          media: [],
+          author: {
+            id: "fortalfy-team",
+            name: "Equipe Fortalfy",
+            username: "fortalfy_oficial",
+            avatar: "",
+            kind: "academia",
+            verified: true,
+          },
+        },
+      ],
+      hasMore: false,
+      total: 2,
+    };
+  }
   let followedIds = null;
   if (filter === "following") {
     const { data, error } = await client.from("profile_follows")
@@ -200,6 +264,8 @@ export async function searchProfiles(client, userId, { search = "", offset = 0, 
 
 export async function startConversation(client, userId, otherUserId) {
   if (!userId || !otherUserId || userId === otherUserId) throw new Error("Escolha outra pessoa para iniciar uma conversa.");
+  const access = await loadMutualFollowState(client, userId, otherUserId);
+  if (!access.canMessage) throw new Error("Vocês precisam se seguir para conversar.");
   const [memberOne, memberTwo] = [userId, otherUserId].sort();
   const { error: createError } = await client.from("dm_conversations").upsert({
     member_one: memberOne,
@@ -213,6 +279,38 @@ export async function startConversation(client, userId, otherUserId) {
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function loadMutualFollowState(client, userId, otherUserId) {
+  if (!userId || !otherUserId || userId === otherUserId) {
+    return { followsOther: false, otherFollowsUser: false, canMessage: false, requestPending: false };
+  }
+  const readFollow = async (followerId, followedId) => {
+    const { data, error } = await client.from("profile_follows")
+      .select("follower_id")
+      .eq("follower_id", followerId)
+      .eq("followed_id", followedId)
+      .maybeSingle();
+    if (error) throw error;
+    return Boolean(data);
+  };
+  const [followsOther, otherFollowsUser, request] = await Promise.all([
+    readFollow(userId, otherUserId),
+    readFollow(otherUserId, userId),
+    client.from("follow_requests")
+      .select("status")
+      .eq("follower_id", userId)
+      .eq("followed_id", otherUserId)
+      .eq("status", "pending")
+      .maybeSingle(),
+  ]);
+  if (request.error) throw request.error;
+  return {
+    followsOther,
+    otherFollowsUser,
+    canMessage: followsOther && otherFollowsUser,
+    requestPending: Boolean(request.data),
+  };
 }
 
 export async function loadConversations(client, userId) {

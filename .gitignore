@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env*
+!.env.example
+inspect_gym*.js
+serve-phone-preview.js
+temp_inspect.js
+.DS_Store
+Thumbs.db

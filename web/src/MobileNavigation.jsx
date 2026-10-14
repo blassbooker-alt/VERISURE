@@ -1,13 +1,12 @@
-import { Activity, Home, ShoppingBag, Utensils, Users, Wallet } from "lucide-react";
+import { Home, ShoppingBag, Utensils, Users, UserRound } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 const primaryTabs = [
   { to: "/home", label: "Início", icon: Home },
   { to: "/feed", label: "Feed", icon: Users },
   { to: "/food", label: "Food", icon: Utensils },
-  { to: "/pass", label: "Pass", icon: Wallet },
   { to: "/shop", label: "Loja", icon: ShoppingBag },
-  { to: "/profile", label: "Perfil", icon: Activity },
+  { to: "/profile", label: "Perfil", icon: UserRound },
 ];
 
 export default function BottomNav() {
@@ -16,6 +15,8 @@ export default function BottomNav() {
     ? "/feed"
     : location.pathname.startsWith("/shop") || location.pathname === "/studio"
     ? "/shop"
+    : ["/pass", "/workout", "/nutrition", "/progress"].includes(location.pathname)
+    ? "/home"
     : primaryTabs.find(tab => location.pathname === tab.to)?.to;
   if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
   return <nav className="bottom-nav" aria-label="Navegação principal">{primaryTabs.map(({ to, label, icon: Icon }) =>
