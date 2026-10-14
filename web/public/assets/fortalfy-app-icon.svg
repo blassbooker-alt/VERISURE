@@ -1,6 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="116" fill="#09291f"/>
-  <path d="M111 347V165h114v43h-63v33h55v41h-55v65zm128 0V165h59v133h75v49z" fill="#fff"/>
-  <path d="M400 165h-39c-35 0-58 22-58 58v124h57v-78h39v-43h-39v-4c0-10 5-15 16-15h24z" fill="#c8f169"/>
-  <circle cx="394" cy="348" r="28" fill="#28c58d"/>
+  <defs>
+    <linearGradient id="background" x1="68" y1="44" x2="442" y2="466" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#124e37"/>
+      <stop offset="1" stop-color="#071f17"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="341" y1="96" x2="421" y2="176" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d8ff91"/>
+      <stop offset="1" stop-color="#83d34e"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#background)"/>
+  <path d="M150 382V130h231v65H221v47h143v63H221v77z" fill="#fff"/>
+  <path d="M343 104c25-22 56-28 91-19-2 35-15 62-40 80-24 18-52 22-84 12 3-31 14-56 33-73z" fill="url(#leaf)"/>
+  <path d="m322 184 57-56" fill="none" stroke="#bfff78" stroke-linecap="round" stroke-width="12"/>
+  <circle cx="390" cy="400" r="13" fill="#87d951"/>
 </svg>

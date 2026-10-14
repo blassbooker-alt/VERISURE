@@ -16,7 +16,7 @@ function ShopDialog({ title, children, onClose }) {
 }
 
 function CartBadge({ count }) {
-  return <span className="shop-cart-count" aria-label={`${count} itens no carrinho`}>{count}</span>;
+  return <span className="shop-cart-count" aria-label={`${count} ${count === 1 ? "item" : "itens"} no carrinho`}>{count}</span>;
 }
 
 export default function FortalShop({ cart, setCart, orders, setOrders, notify }) {
@@ -123,7 +123,7 @@ export default function FortalShop({ cart, setCart, orders, setOrders, notify })
         {!visibleProducts.length && <div className="empty-state shop-empty"><Search size={25} /><h3>Nenhum item encontrado</h3><p>Experimente outro termo ou categoria.</p><button className="button subtle" onClick={() => { setSearch(""); setCategory("Tudo"); }}>Limpar filtros</button></div>}
       </section>
       <section className="shop-studio-cta"><div className="shop-studio-icon"><Sparkles size={20} /></div><div><span className="eyebrow">FORTALFY STUDIO</span><h2>Suas ideias merecem virar arte.</h2><p>Crie imagens originais para sua rotina e compartilhe no Feed.</p></div><Link to="/studio" className="button lime-button">Abrir Studio <ArrowRight size={16} /></Link></section>
-      <p className="shop-disclaimer">Prévia de catálogo: as fotos são referências de produtos genéricos e não retratam itens oficiais da Fortalfy. Produtos, marcas, preços, estoque, prazo de entrega, retirada e condições comerciais ainda não foram confirmados. Os pedidos e descontos ficam apenas nesta sessão. Nenhum pagamento é cobrado ou processado.</p>
+      <p className="shop-disclaimer">Prévia de catálogo: as fotos são referências de produtos genéricos e não retratam itens oficiais da Fortalfy. Produtos, marcas, preços, estoque, prazo de entrega, retirada e condições comerciais ainda não foram confirmados. Os pedidos e descontos ficam apenas neste dispositivo. Nenhum pagamento é cobrado ou processado.</p>
     </main>
     <BottomNav />
 
@@ -165,12 +165,12 @@ export default function FortalShop({ cart, setCart, orders, setOrders, notify })
     </ShopDialog>}
 
     {dialog === "order-confirmed" && confirmedOrder && <ShopDialog title="Prévia confirmada" onClose={() => setDialog("")}>
-      <div className="shop-order-confirmation"><span><Check size={26} /></span><h3>Fluxo testado com sucesso</h3><p>Referência local <strong>{confirmedOrder.id}</strong> · {confirmedOrder.createdAt}</p><p>Esta prévia não foi transmitida a uma loja. Nenhum pagamento, envio ou reserva foi realizado.</p><button className="button primary wide-button" onClick={() => setDialog("orders")}>Ver pedidos nesta sessão <ArrowRight size={17} /></button></div>
+      <div className="shop-order-confirmation"><span><Check size={26} /></span><h3>Prévia local registrada</h3><p>Referência local <strong>{confirmedOrder.id}</strong> · {confirmedOrder.createdAt}</p><p>Esta prévia não foi transmitida a uma loja. Nenhum pagamento, envio ou reserva foi realizado.</p><button className="button primary wide-button" onClick={() => setDialog("orders")}>Ver pedidos locais <ArrowRight size={17} /></button></div>
     </ShopDialog>}
 
     {dialog === "orders" && <ShopDialog title="Meus pedidos" onClose={() => setDialog("")}>
-      {orders.length ? <div className="shop-orders-list">{orders.map(order => <article key={order.id}><div><span className="shop-order-badge"><Check size={13} /> PRÉVIA LOCAL</span><strong>{order.id}</strong><small>{order.createdAt} · {order.lines.reduce((count, line) => count + line.quantity, 0)} itens</small></div><strong>{money(order.total)}</strong><p>{order.lines.map(line => `${line.quantity}× ${line.name}`).join(" · ")}</p></article>)}</div> : <div className="shop-cart-empty"><span><ShoppingBag size={25} /></span><h3>Nenhum pedido por aqui.</h3><p>Os pedidos de demonstração aparecem aqui apenas durante esta sessão.</p><button className="button subtle" onClick={() => setDialog("")}>Entendi</button></div>}
-      <p className="shop-disclaimer">Histórico local de demonstração. As informações são removidas quando a sessão do app é encerrada.</p>
+      {orders.length ? <div className="shop-orders-list">{orders.map(order => <article key={order.id}><div><span className="shop-order-badge"><Check size={13} /> PRÉVIA LOCAL</span><strong>{order.id}</strong><small>{order.createdAt} · {order.lines.reduce((count, line) => count + line.quantity, 0)} itens</small></div><strong>{money(order.total)}</strong><p>{order.lines.map(line => `${line.quantity}× ${line.name}`).join(" · ")}</p></article>)}</div> : <div className="shop-cart-empty"><span><ShoppingBag size={25} /></span><h3>Nenhum pedido por aqui.</h3><p>Os pedidos locais aparecerão aqui neste dispositivo.</p><button className="button subtle" onClick={() => setDialog("")}>Entendi</button></div>}
+      <p className="shop-disclaimer">Histórico de prévias salvo neste dispositivo. Nenhum pedido real ou pagamento foi realizado.</p>
     </ShopDialog>}
   </div>;
 }

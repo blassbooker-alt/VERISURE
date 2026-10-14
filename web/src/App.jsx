@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Camera,
   Bell, Bookmark, Check, ChevronDown, ChevronRight,
   CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, MapPin, MessageCircle,
-  ImagePlus, MoreHorizontal, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
+  ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
 import BottomNav from "./MobileNavigation.jsx";
 import FortalShop from "./FortalShop.jsx";
 import FortalfyStudio from "./FortalfyStudio.jsx";
+import StoryExperience from "./Stories.jsx";
+import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { shopProducts } from "./shopData.js";
 import { courseList, gyms, profile, restaurants, workoutExercises } from "./data.js";
+import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 
 function Brand({ light = false }) {
-  return <span className={`logo-mark ${light ? "light" : ""}`}>fortal<span>fy</span></span>;
+  return <span className={`logo-mark ${light ? "light" : ""}`} aria-label="Fortalfy">fortal<span>fy</span></span>;
 }
 
 function Toast({ message, onClose }) {
@@ -39,6 +42,43 @@ function Modal({ title, children, onClose }) {
       <div className="modal-header"><div><span className="eyebrow">FORTALFY</span><h2>{title}</h2></div><button className="icon-button" aria-label="Fechar janela" onClick={onClose}><X size={20} /></button></div>
       {children}
     </section>
+  </div>;
+}
+
+function SharePublication({ isShared = false, onShare, notify }) {
+  return <button type="button" className={isShared ? "shared" : ""} aria-pressed={isShared} onClick={() => {
+    const nextShared = !isShared;
+    if (onShare(nextShared)) notify(nextShared ? "Publicação compartilhada no seu perfil." : "Publicação removida de Compartilhados no seu perfil.");
+  }}><Share2 size={17} /> {isShared ? "No seu perfil" : "Compartilhar"}</button>;
+}
+
+function CommentThread({ comments = [], userName, onAdd, open, onToggle, notify, labelId }) {
+  const [draft, setDraft] = useState("");
+  const submit = event => {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text || text.length > 500) {
+      notify(text ? "O comentário pode ter no máximo 500 caracteres." : "Escreva um comentário antes de enviar.");
+      return;
+    }
+    if (onAdd(text)) setDraft("");
+  };
+  return <div className="social-comment">
+    <button type="button" onClick={onToggle}><MessageCircle size={17} /> Comentar{comments.length ? ` · ${comments.length}` : ""}</button>
+    {open && <form className="profile-comment-form" onSubmit={submit}>
+      <label className="sr-only" htmlFor={labelId}>Escreva um comentário</label>
+      <input id={labelId} value={draft} onChange={event => setDraft(event.target.value)} maxLength={500} placeholder="Escreva um comentário..." />
+      <button className="button primary small-button" type="submit"><Send size={14} /> Enviar</button>
+    </form>}
+    {!!comments.length && <div className="profile-comment-list">{comments.map((comment, index) => <p key={`${labelId}-${index}`}><strong>{comment.author || userName}</strong> {comment.text} <small>{new Date(comment.createdAt).toLocaleDateString("pt-BR")}</small></p>)}</div>}
+  </div>;
+}
+
+function SplashScreen({ onClose }) {
+  return <div className="app-splash" role="status" aria-label="Fortalfy iniciando">
+    <video className="app-splash-video" src={splashVideo} autoPlay muted playsInline preload="auto" onEnded={onClose} onError={onClose} aria-hidden="true" />
+    <div className="app-splash-brand"><Brand light /><span>SEU BEM-ESTAR, NO SEU RITMO</span></div>
+    <button className="app-splash-skip" onClick={onClose}>Entrar no app <ArrowRight size={15} /></button>
   </div>;
 }
 
@@ -95,7 +135,7 @@ function HomeScreen({ notify, activity, onActivity }) {
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Uma semana de cada vez.</h2></div><span className={`score-mark ${scoreTone}`}>{score}<span>%</span></span></div>
         <div className="score-track" role="progressbar" aria-label="Pontuação de consistência da rotina" aria-valuemin="0" aria-valuemax="100" aria-valuenow={score}><i className={scoreTone} style={{ width: `${score}%` }} /></div>
-        <div className="performance-stats"><span><strong>{Math.round(activity.trainingPercent / 5)} de 20</strong> treinos concluídos</span><span><strong>{Math.round(activity.nutritionPercent / 100 * 30)} de 30</strong> dias alinhados</span><span className={`score-state ${scoreTone}`}><i /> {scoreMessage}</span></div>
+        <div className="performance-stats"><span><strong>{activity.workoutsLogged} de 20</strong> treinos concluídos</span><span><strong>{activity.mealsLogged} de 30</strong> refeições registradas</span><span className={`score-state ${scoreTone}`}><i /> {scoreMessage}</span></div>
         <Link to="/progress" className="performance-link">Ver minha evolução <ArrowRight size={16} /></Link>
       </section>
       <p className="reference-disclosure">O score considera os registros desta tela e não substitui avaliação profissional.</p>
@@ -110,48 +150,54 @@ function HomeScreen({ notify, activity, onActivity }) {
 
 function HeartPulseIcon() { return <Activity size={19} />; }
 
-function StoriesRow({ notify }) {
-  return <div className="stories-row" aria-label="Stories da comunidade">
-    <button className="story-item own-story" onClick={() => notify("Escolha uma foto ou vídeo para compartilhar seu momento.")}><span className="story-ring own"><span className="story-avatar">L</span><i><Plus size={13} /></i></span><span>Seu story</span></button>
-    {["Studio Viva", "Mariana", "Coach Pedro", "Camila", "Viva Fit"].map((name, index) => <button className="story-item" key={name} onClick={() => notify(`Momentos recentes de ${name}.`)}><span className={`story-ring ring-${index}`}><span className="story-avatar">{name.split(" ").map(w => w[0]).join("").slice(0, 2)}</span></span><span>{name}</span></button>)}
-  </div>;
-}
-
-function FeedScreen({ notify, feedArts, profileDetails, profilePosts }) {
+function FeedScreen({ notify, feedArts, profileDetails, profilePosts, savePosts, saveFeedComments, feedComments, shareToProfile }) {
   const [liked, setLiked] = useState(false);
-  const [following, setFollowing] = useState(false);
-  const [filter, setFilter] = useState("Para você");
-  return <Screen title="Stories" subtitle="MOMENTOS DA COMUNIDADE" className="feed-screen">
-    <p className="screen-intro">Inspiração real, um treino de cada vez.</p>
-    <StoriesRow notify={notify} />
-    <div className="feed-filters">{["Para você", "Seguindo", "Perfis que sigo"].map(item => <button key={item} onClick={() => setFilter(item)} className={filter === item ? "selected" : ""}>{item}</button>)}</div>
+  const [commentingPostId, setCommentingPostId] = useState("");
+  const addFeedComment = (postId, text) => {
+    const next = [...(feedComments[postId] || []), { author: profileDetails.name, text, createdAt: new Date().toISOString() }];
+    if (!saveFeedComments({ ...feedComments, [postId]: next })) return false;
+    notify("Comentário salvo no app neste aparelho.");
+    return true;
+  };
+  const shareDemo = (sourceId, author, text, image = "") => shared => shareToProfile({
+    sourceId,
+    author,
+    text,
+    image,
+    imageAlt: author === "Studio Viva" ? "Espaço de treino funcional" : "",
+  }, shared);
+  return <Screen title="Stories" subtitle="INSPIRAÇÃO REAL, UM TREINO DE CADA VEZ" className="feed-screen">
+    <StoryExperience user={profileDetails} notify={notify} />
     <Link className="composer-card" to="/profile?compose=1"><span className="avatar">{profileDetails.name.slice(0, 1).toUpperCase()}</span><span>No que você está pensando?</span><Plus size={19} /></Link>
     {profilePosts.map(post => <article className="feed-post profile-feed-post" key={post.id}>
-      <div className="post-head"><div className="avatar">{profileDetails.avatar ? <img src={profileDetails.avatar} alt="" /> : profileDetails.name.slice(0, 1).toUpperCase()}</div><div className="post-author"><strong>{profileDetails.name}</strong><span>Publicação neste aparelho · {new Date(post.createdAt).toLocaleDateString("pt-BR")}</span></div><span className="created-art-label">LOCAL</span></div>
+      <div className="post-head"><div className="avatar">{profileDetails.avatar ? <img src={profileDetails.avatar} alt="" /> : profileDetails.name.slice(0, 1).toUpperCase()}</div><div className="post-author"><strong>{post.sharedFrom ? `${profileDetails.name} compartilhou` : profileDetails.name}</strong><span>{post.sharedFrom ? `De ${post.sharedFrom} · ${new Date(post.createdAt).toLocaleDateString("pt-BR")}` : `Publicação neste aparelho · ${new Date(post.createdAt).toLocaleDateString("pt-BR")}`}</span></div><span className="created-art-label">{post.sharedFrom ? "COMPARTILHADO" : "LOCAL"}</span></div>
       <p className="post-copy">{post.text}</p>{post.image && <button className="profile-feed-image" onClick={() => notify("Foto da sua publicação.")}><img src={post.image} alt={post.imageAlt || "Foto adicionada à publicação"} loading="lazy" /></button>}
-      <div className="profile-feed-disclosure">Visível somente neste navegador. Não foi enviado a um servidor ou à comunidade.</div>
+      <div className="post-actions"><CommentThread comments={post.comments || []} userName={profileDetails.name} open={commentingPostId === post.id} onToggle={() => setCommentingPostId(current => current === post.id ? "" : post.id)} onAdd={text => { const next = profilePosts.map(item => item.id === post.id ? { ...item, comments: [...(item.comments || []), { author: profileDetails.name, text, createdAt: new Date().toISOString() }] } : item); if (!savePosts(next)) return false; notify("Comentário salvo no app neste aparelho."); return true; }} notify={notify} labelId={`feed-comment-${post.id}`} /><SharePublication isShared={!!post.shared} notify={notify} onShare={shared => post.sharedFrom ? savePosts(profilePosts.filter(item => item.id !== post.id)) : savePosts(profilePosts.map(item => item.id === post.id ? { ...item, shared } : item))} /></div>
+      {commentingPostId === post.id && <div className="feed-comment-disclosure">Seu comentário fica salvo junto desta publicação neste aparelho.</div>}
     </article>)}
     {feedArts.map(art => <article className="feed-post created-art-post" key={art.id}>
       <div className="post-head"><div className="avatar"><Sparkles size={17} /></div><div className="post-author"><strong>Uma criação sua</strong><span>Arte local · desta sessão</span></div><span className="created-art-label">PRÉVIA</span></div>
       <p className="post-copy">{art.title}</p><div className="created-art-image"><img src={art.dataUrl} alt={`Arte criada no Fortalfy Studio: ${art.title}`} /></div>
-      <div className="post-caption">{art.subtitle} <span>Compartilhamento simulado nesta sessão.</span></div>
+      <div className="post-caption">{art.subtitle}</div>
+      <div className="post-actions"><CommentThread comments={feedComments[`art:${art.id}`] || []} userName={profileDetails.name} open={commentingPostId === `art:${art.id}`} onToggle={() => setCommentingPostId(current => current === `art:${art.id}` ? "" : `art:${art.id}`)} onAdd={text => addFeedComment(`art:${art.id}`, text)} notify={notify} labelId={`feed-comment-art-${art.id}`} /><SharePublication isShared={profilePosts.some(post => post.sharedFromId === `art:${art.id}`)} notify={notify} onShare={shareDemo(`art:${art.id}`, "Sua criação no Fortalfy Studio", `${art.title}\n${art.subtitle}`, art.dataUrl)} /></div>
+      {commentingPostId === `art:${art.id}` && <div className="feed-comment-disclosure">Seu comentário fica salvo neste aparelho.</div>}
     </article>)}
     <article className="feed-post">
-      <div className="post-head"><div className="avatar studio">SV</div><div className="post-author"><strong>Studio Viva</strong><span>Aldeota, Fortaleza · há 32 min</span></div><button className="icon-button" aria-label="Mais opções" onClick={() => notify("Opções da publicação.")}><MoreHorizontal size={20} /></button></div>
+      <div className="post-head"><div className="avatar studio"><img src="./assets/pass-demo-gym-nextfit.jpg" alt="" /></div><div className="post-author"><strong>Studio Viva</strong><span>Publicação ilustrativa · perfil de demonstração</span></div><span className="created-art-label">EXEMPLO</span></div>
       <p className="post-copy">Sua próxima conquista começa com um treino. 💚</p>
       <div className="post-image"><PhotoCard image="./assets/pass-demo-gym-ironfit.jpg" alt="Espaço de treino funcional" /><span className="post-image-label">MOVIMENTO É PARA TODO MUNDO</span></div>
-      <div className="post-caption">Treino funcional de força + mobilidade. <button className="inline-link" onClick={() => notify("Aula experimental adicionada à sua lista.")}>Agende sua aula experimental.</button></div>
+      <div className="post-caption">Treino funcional de força + mobilidade. <Link className="inline-link" to="/pass">Conheça o Fortalfy Pass.</Link></div>
       <div className="post-tags">#Fortalfy #TreinoComPropósito #Fortaleza</div>
-      <div className="post-actions"><button onClick={() => setLiked(value => !value)} className={liked ? "liked" : ""}><Heart size={19} fill={liked ? "currentColor" : "none"} /> {liked ? 129 : 128}</button><button onClick={() => notify("Comentários da comunidade carregados.")}><MessageCircle size={19} /> 18</button><button onClick={() => notify("Link da publicação copiado.")}><Share2 size={19} /> Compartilhar</button><button aria-label="Salvar publicação" onClick={() => notify("Publicação salva nos seus favoritos.")}><Bookmark size={19} /></button></div>
+      <div className="post-actions"><button onClick={() => setLiked(value => !value)} className={liked ? "liked" : ""}><Heart size={19} fill={liked ? "currentColor" : "none"} /> {liked ? "Curtido nesta tela" : "Curtir exemplo"}</button><CommentThread comments={feedComments["demo:studio-viva"] || []} userName={profileDetails.name} open={commentingPostId === "demo:studio-viva"} onToggle={() => setCommentingPostId(current => current === "demo:studio-viva" ? "" : "demo:studio-viva")} onAdd={text => addFeedComment("demo:studio-viva", text)} notify={notify} labelId="feed-comment-studio-viva" /><SharePublication isShared={profilePosts.some(post => post.sharedFromId === "demo:studio-viva")} notify={notify} onShare={shareDemo("demo:studio-viva", "Studio Viva", "Sua próxima conquista começa com um treino. Treino funcional de força + mobilidade.", "./assets/pass-demo-gym-ironfit.jpg")} /><button aria-label="Salvar publicação" onClick={() => notify("Favoritos ainda não estão conectados a uma conta.")}><Bookmark size={19} /></button></div>
+      {commentingPostId === "demo:studio-viva" && <div className="feed-comment-disclosure">Comentário visível para você neste aparelho.</div>}
     </article>
-    <article className="feed-post second-post"><div className="post-head"><div className="avatar">MC</div><div className="post-author"><strong>Mariana Costa</strong><span>Hoje, 06:58 · Viva Fitness</span></div><button className="follow-link" onClick={() => setFollowing(value => !value)}>{following ? "Seguindo" : "Seguir"}</button></div><p className="post-copy">12 dias cuidando de mim. O melhor resultado é a energia que voltou. ✨</p><div className="streak-note"><Flame size={20} /> <strong>12 dias de constância</strong> <span>Uma rotina possível, no seu ritmo.</span></div><div className="post-actions"><button onClick={() => notify("Você curtiu a conquista da Mariana.")}><Heart size={19} /> 86</button><button onClick={() => notify("Comentários da comunidade carregados.")}><MessageCircle size={19} /> 12</button><button onClick={() => notify("Link da conquista copiado.")}><Share2 size={19} /></button><button aria-label="Salvar publicação"><Bookmark size={19} /></button></div></article>
+    <article className="feed-post second-post"><div className="post-head"><div className="avatar"><img src="./assets/stories/avatar-mariana.jpg" alt="" /></div><div className="post-author"><strong>Mariana Costa</strong><span>Publicação ilustrativa · perfil de demonstração</span></div><span className="created-art-label">EXEMPLO</span></div><p className="post-copy">12 dias cuidando de mim. O melhor resultado é a energia que voltou. ✨</p><div className="streak-note"><Flame size={20} /> <strong>12 dias de constância</strong> <span>Uma rotina possível, no seu ritmo.</span></div><div className="post-actions"><button onClick={() => notify("Curtidas em publicações de demonstração não são registradas.")}><Heart size={19} /> Curtir exemplo</button><CommentThread comments={feedComments["demo:mariana"] || []} userName={profileDetails.name} open={commentingPostId === "demo:mariana"} onToggle={() => setCommentingPostId(current => current === "demo:mariana" ? "" : "demo:mariana")} onAdd={text => addFeedComment("demo:mariana", text)} notify={notify} labelId="feed-comment-mariana" /><SharePublication isShared={profilePosts.some(post => post.sharedFromId === "demo:mariana")} notify={notify} onShare={shareDemo("demo:mariana", "Mariana Costa", "12 dias cuidando de mim. O melhor resultado é a energia que voltou.", "./assets/stories/avatar-mariana.jpg")} /><button aria-label="Salvar publicação" onClick={() => notify("Favoritos ainda não estão conectados a uma conta.")}><Bookmark size={19} /></button></div>{commentingPostId === "demo:mariana" && <div className="feed-comment-disclosure">Comentário visível para você neste aparelho.</div>}</article>
   </Screen>;
 }
 
-function FoodScreen({ notify }) {
+function FoodScreen({ notify, cart, setCart }) {
   const [category, setCategory] = useState("Tudo");
   const [search, setSearch] = useState("");
-  const [cart, setCart] = useState({});
   const [menu, setMenu] = useState(null);
   const [showCart, setShowCart] = useState(false);
   const categories = ["Tudo", "Marmitas fitness", "Refeições saudáveis", "Proteínas"];
@@ -199,11 +245,92 @@ function PassScreen() {
     <div className="gym-cards">{gyms.map((gym, index) => <GymCard gym={gym} key={gym.name} index={index} />)}</div>
     <p className="reference-disclosure">Espaços, avaliações, selos e valores só serão oficiais após confirmação dos parceiros.</p>
     <section className="professional-care"><div><span className="eyebrow">CUIDADO PROFISSIONAL</span><h2>Gente boa ao seu lado.</h2><p>Acompanhamento próximo para tornar sua rotina mais leve.</p></div>
-      <div className="pro-card-list"><Link to="/trainer" className="pro-card"><span className="pro-avatar trainer-avatar">CP</span><div><span>PERSONAL TRAINER</span><strong>Coach Pedro</strong><small>Treino e movimento · conhecer painel</small></div><ArrowRight size={18} /></Link><Link to="/nutritionist" className="pro-card"><span className="pro-avatar nutrition-avatar">DA</span><div><span>NUTRICIONISTA</span><strong>Dra. Ana</strong><small>Orientação alimentar · conhecer painel</small></div><ArrowRight size={18} /></Link></div>
+      <div className="pro-card-list"><Link to="/hire/personal" className="pro-card"><span className="pro-avatar trainer-avatar"><img src="./assets/stories/avatar-pedro.jpg" alt="" loading="lazy" /></span><div><span>PERSONAL TRAINER</span><strong>Coach Pedro</strong><small>Conhecer perfil e solicitar horário</small></div><ArrowRight size={18} /></Link><Link to="/hire/nutritionist" className="pro-card"><span className="pro-avatar nutrition-avatar"><img src="./assets/stories/avatar-camila.jpg" alt="" loading="lazy" /></span><div><span>NUTRICIONISTA</span><strong>Dra. Ana</strong><small>Conhecer perfil e solicitar horário</small></div><ArrowRight size={18} /></Link></div>
       <p className="reference-disclosure">Perfis e credenciais apresentados não representam profissionais validados pela equipe.</p>
     </section>
     <section className="pass-plan"><div><span className="eyebrow">FORTALFY PASS</span><h2>Mais espaços para<br />o seu movimento.</h2><p>Descubra novas possibilidades para cuidar de você.</p><ul><li><Check size={16} /> Espaços e aulas para descobrir</li><li><Check size={16} /> Modalidades para diferentes rotinas</li><li><Check size={16} /> Novas opções em breve</li></ul></div><div className="pass-price-card"><span>PLANOS E VALORES</span><strong>Em breve</strong><small>Consulte as condições quando os parceiros estiverem conectados.</small><button className="button lime-button wide-button" onClick={() => setShowPlan(true)}>{planConfirmed ? "Interesse anotado" : "Conhecer o Pass"} <ArrowRight size={16} /></button><small>Esta ação não cria assinatura nem realiza pagamento.</small></div></section>
     {showPlan && <Modal title="Conheça o Fortalfy Pass" onClose={() => setShowPlan(false)}><div className="plan-confirmation"><span className="quick-icon mint"><ShieldCheck size={21} /></span><h3>Descubra novos espaços e modalidades</h3><p>Planos, preços e contratações estarão disponíveis quando os parceiros estiverem confirmados. Esta ação não cria assinatura.</p></div><button className="button primary wide-button" onClick={() => { setPlanConfirmed(true); setShowPlan(false); window.dispatchEvent(new CustomEvent("fortalfy-toast", { detail: "Informações do Pass salvas nesta visualização. Nenhuma cobrança foi realizada." })); }}>Entendi <Check size={17} /></button></Modal>}
+  </Screen>;
+}
+
+const HIRING_REQUESTS_STORAGE_KEY = "fortalfy.professional.requests.local.v1";
+
+function HiringScreen({ notify }) {
+  const { role } = useParams();
+  const nutritionist = role === "nutritionist";
+  const professional = nutritionist
+    ? { name: "Dra. Ana", title: "Nutricionista", avatar: "./assets/stories/avatar-camila.jpg", services: ["Consulta inicial", "Consulta de retorno", "Orientação alimentar"] }
+    : { name: "Coach Pedro", title: "Personal trainer", avatar: "./assets/stories/avatar-pedro.jpg", services: ["Avaliação inicial", "Treino individual", "Consultoria de treino"] };
+  const [requests, setRequests] = useState(() => {
+    const saved = loadLocalValue(HIRING_REQUESTS_STORAGE_KEY, []);
+    return Array.isArray(saved) ? saved.filter(request => request && typeof request.id === "string" && typeof request.name === "string") : [];
+  });
+  const [name, setName] = useState("");
+  const [service, setService] = useState(professional.services[0]);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+  const submitRequest = event => {
+    event.preventDefault();
+    const request = {
+      id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+      role,
+      professional: professional.name,
+      name: name.trim(),
+      service,
+      date,
+      time,
+      note: note.trim(),
+      status: "Pedido local — não enviado",
+    };
+    const nextRequests = [request, ...requests];
+    try {
+      window.localStorage.setItem(HIRING_REQUESTS_STORAGE_KEY, JSON.stringify(nextRequests));
+    } catch (storageError) {
+      console.error("Não foi possível salvar a solicitação profissional neste dispositivo.", storageError);
+      setError("Não foi possível salvar no navegador. Verifique o espaço disponível e tente novamente.");
+      return;
+    }
+    setRequests(nextRequests);
+    setName("");
+    setDate("");
+    setTime("");
+    setNote("");
+    setError("");
+    notify("Pedido salvo neste dispositivo. O profissional não foi contatado e o horário não está confirmado.");
+  };
+
+  const removeRequest = id => {
+    const nextRequests = requests.filter(request => request.id !== id);
+    try {
+      window.localStorage.setItem(HIRING_REQUESTS_STORAGE_KEY, JSON.stringify(nextRequests));
+    } catch (storageError) {
+      console.error("Não foi possível atualizar as solicitações locais.", storageError);
+      setError("Não foi possível remover o pedido salvo neste navegador.");
+      return;
+    }
+    setRequests(nextRequests);
+  };
+
+  if (!["personal", "nutritionist"].includes(role)) return <Navigate to="/pass" replace />;
+
+  return <Screen title="Cuidado profissional" subtitle="PERFIL E SOLICITAÇÃO" className="hiring-screen">
+    <Link to="/pass" className="back-link"><ArrowLeft size={17} /> Voltar ao Pass</Link>
+    <section className="hiring-profile"><img src={professional.avatar} alt="" /><div><span className="eyebrow">{professional.title.toUpperCase()}</span><h2>{professional.name}</h2><p>Perfil de apresentação · credenciais ainda não verificadas pelo Fortalfy.</p></div></section>
+    <div className="hiring-disclosure"><ShieldCheck size={18} /><p><strong>Prévia de solicitação local.</strong> Este profissional é demonstrativo. O pedido fica apenas neste dispositivo; não é enviado, não reserva horário e não gera pagamento.</p></div>
+    <form className="hiring-form" onSubmit={submitRequest}>
+      <h3>Solicitar um horário</h3>
+      <label>Seu nome<input required maxLength={80} autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Como podemos chamar você?" /></label>
+      <label>Serviço<select value={service} onChange={event => setService(event.target.value)}>{professional.services.map(item => <option key={item}>{item}</option>)}</select></label>
+      <div className="hiring-form-row"><label>Data preferida<input required type="date" min={today} value={date} onChange={event => setDate(event.target.value)} /></label><label>Período<select required value={time} onChange={event => setTime(event.target.value)}><option value="">Escolha</option><option>Manhã</option><option>Tarde</option><option>Noite</option></select></label></div>
+      <label>Observação opcional<textarea maxLength={240} rows={3} value={note} onChange={event => setNote(event.target.value)} placeholder="Conte brevemente o que você procura." /></label>
+      {error && <p className="hiring-error" role="alert">{error}</p>}
+      <button className="button primary wide-button" type="submit">Salvar pedido neste dispositivo <ArrowRight size={17} /></button>
+    </form>
+    <section className="hiring-requests"><h3>Pedidos salvos neste dispositivo</h3>{requests.filter(request => request.role === role).length ? requests.filter(request => request.role === role).map(request => <article className="hiring-request" key={request.id}><div><strong>{request.service} · {request.professional}</strong><span>{request.name} · {request.date} · {request.time}</span><small>{request.status}</small></div><button type="button" className="icon-button" aria-label={`Remover pedido de ${request.service}`} onClick={() => removeRequest(request.id)}><Trash2 size={16} /></button></article>) : <p>Nenhum pedido salvo para este perfil.</p>}</section>
   </Screen>;
 }
 
@@ -213,6 +340,7 @@ function GymCard({ gym, index }) {
 
 const PROFILE_STORAGE_KEY = "fortalfy.profile.local.v1";
 const PROFILE_POSTS_STORAGE_KEY = "fortalfy.profile.posts.local.v1";
+const PROFILE_FEED_COMMENTS_STORAGE_KEY = "fortalfy.profile.feed-comments.local.v1";
 const makeDefaultProfile = () => ({
   name: profile.name,
   username: profile.handle.replace(/^@/, "").toLowerCase(),
@@ -233,6 +361,61 @@ function loadLocalValue(key, fallback) {
     console.error(`Não foi possível carregar os dados locais de ${key}.`, error);
     return fallback;
   }
+}
+
+const ACTIVITY_STORAGE_KEY = "fortalfy.activity.local.v1";
+const FOOD_CART_STORAGE_KEY = "fortalfy.food.cart.local.v1";
+const SHOP_CART_STORAGE_KEY = "fortalfy.shop.cart.local.v1";
+const SHOP_ORDERS_STORAGE_KEY = "fortalfy.shop.orders.local.v1";
+
+function normalizeActivity(value) {
+  const mealEntries = normalizeMealEntries(value?.mealEntries);
+  const workoutsLogged = Number.isInteger(value?.workoutsLogged) && value.workoutsLogged > 0 ? Math.min(20, value.workoutsLogged) : 0;
+  const waterMl = Number.isFinite(value?.waterMl) ? Math.min(2500, Math.max(0, Math.floor(value.waterMl))) : 0;
+  return {
+    trainingPercent: Math.min(100, Math.round(workoutsLogged / 20 * 100)),
+    nutritionPercent: Math.min(100, Math.round(mealEntries.length / 30 * 100)),
+    waterMl,
+    recoveryPercent: 0,
+    workoutsLogged,
+    mealsLogged: mealEntries.length,
+    mealEntries,
+  };
+}
+
+function loadShopCart() {
+  const saved = loadLocalValue(SHOP_CART_STORAGE_KEY, []);
+  if (!Array.isArray(saved)) return [];
+  return saved.filter(line => line
+    && shopProducts.some(product => product.id === line.id)
+    && typeof line.shade === "string"
+    && typeof line.size === "string"
+    && Number.isInteger(line.quantity)
+    && line.quantity > 0);
+}
+
+function loadFoodCart() {
+  const saved = loadLocalValue(FOOD_CART_STORAGE_KEY, {});
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
+  return Object.fromEntries(Object.entries(saved).filter(([name, quantity]) =>
+    restaurants.some(restaurant => restaurant.name === name)
+      && Number.isInteger(quantity)
+      && quantity > 0));
+}
+
+function loadShopOrders() {
+  const saved = loadLocalValue(SHOP_ORDERS_STORAGE_KEY, []);
+  if (!Array.isArray(saved)) return [];
+  return saved.filter(order => order
+    && typeof order.id === "string"
+    && typeof order.createdAt === "string"
+    && Number.isFinite(order.total)
+    && Array.isArray(order.lines)
+    && order.lines.every(line => line
+      && typeof line.id === "string"
+      && typeof line.name === "string"
+      && Number.isInteger(line.quantity)
+      && line.quantity > 0));
 }
 
 function compressProfileImage(file, maximumBytes = 650000) {
@@ -285,14 +468,13 @@ function ProfileAvatar({ user, className = "" }) {
   </span>;
 }
 
-function ProfileScreen({ notify, user, setUser, posts, setPosts }) {
+function ProfileScreen({ notify, user, setUser, posts, savePosts }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState(searchParams.get("tab") === "compartilhados" ? "Compartilhados" : searchParams.get("tab") === "fotos" ? "Fotos" : "Publicações");
   const [editOpen, setEditOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [lightbox, setLightbox] = useState(null);
   const [commentingPostId, setCommentingPostId] = useState("");
-  const [commentDraft, setCommentDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(user);
   const [postDraft, setPostDraft] = useState({ text: "", image: "" });
@@ -306,17 +488,6 @@ function ProfileScreen({ notify, user, setUser, posts, setPosts }) {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  const updatePosts = nextPosts => {
-    try {
-      window.localStorage.setItem(PROFILE_POSTS_STORAGE_KEY, JSON.stringify(nextPosts));
-      setPosts(nextPosts);
-      return true;
-    } catch (error) {
-      console.error("Não foi possível salvar as publicações neste aparelho.", error);
-      notify("Não foi possível salvar neste aparelho. Libere espaço e tente novamente; o conteúdo atual continua aberto.");
-      return false;
-    }
-  };
   const closeEditor = () => {
     if (JSON.stringify(draft) !== JSON.stringify(user) && !window.confirm("Descartar as alterações do perfil que ainda não foram salvas?")) return;
     setDraft(user);
@@ -375,13 +546,13 @@ function ProfileScreen({ notify, user, setUser, posts, setPosts }) {
       return;
     }
     const post = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, text, image: postDraft.image, imageAlt: postDraft.image ? "Foto adicionada à publicação" : "", createdAt: new Date().toISOString(), shared: false, liked: false, comments: [] };
-    if (updatePosts([post, ...posts])) {
+    if (savePosts([post, ...posts])) {
       setPostDraft({ text: "", image: "" });
       setComposeOpen(false);
       notify("Publicação salva neste aparelho. Ela ainda não foi enviada à comunidade.");
     }
   };
-  const updatePost = (postId, transform) => updatePosts(posts.map(post => post.id === postId ? transform(post) : post));
+  const updatePost = (postId, transform) => savePosts(posts.map(post => post.id === postId ? transform(post) : post));
   const selectedPosts = tab === "Compartilhados"
     ? posts.filter(post => post.shared)
     : tab === "Fotos"
@@ -433,12 +604,10 @@ function ProfileScreen({ notify, user, setUser, posts, setPosts }) {
         : selectedPosts.length === 0
           ? <div className="profile-empty"><span className="empty-icon">{tab === "Fotos" ? <Camera size={22} /> : tab === "Compartilhados" ? <Share2 size={22} /> : <Sparkles size={22} />}</span><h3>{postLabels.title}</h3><p>{postLabels.description}</p>{tab !== "Compartilhados" && <button className="button primary" onClick={() => setComposeOpen(true)}><Plus size={16} /> {tab === "Fotos" ? "Publicar uma foto" : "Criar publicação"}</button>}</div>
           : <div className="profile-post-list">{selectedPosts.map(post => <article className="profile-post-card" key={post.id}>
-            <div className="profile-post-head"><ProfileAvatar user={user} /><span><strong>{user.name}</strong><small>{new Date(post.createdAt).toLocaleString("pt-BR")} · Somente neste aparelho</small></span><button className="icon-button profile-delete-button" aria-label="Excluir sua publicação" onClick={() => { if (window.confirm("Excluir esta publicação salva neste aparelho?")) updatePosts(posts.filter(item => item.id !== post.id)); }}><Trash2 size={17} /></button></div>
+            <div className="profile-post-head"><ProfileAvatar user={user} /><span><strong>{post.sharedFrom ? `${user.name} compartilhou` : user.name}</strong><small>{post.sharedFrom ? `De ${post.sharedFrom} · compartilhado no seu perfil` : `${new Date(post.createdAt).toLocaleString("pt-BR")} · Somente neste aparelho`}</small></span><button className="icon-button profile-delete-button" aria-label={post.sharedFrom ? "Remover compartilhamento do perfil" : "Excluir sua publicação"} onClick={() => { if (window.confirm(post.sharedFrom ? "Remover este compartilhamento do seu perfil?" : "Excluir esta publicação salva neste aparelho?")) savePosts(posts.filter(item => item.id !== post.id)); }}><Trash2 size={17} /></button></div>
             {post.text && <p className="profile-post-text">{post.text}</p>}
             {post.image && <button className="profile-post-image" onClick={() => setLightbox(post)}><img src={post.image} alt={post.imageAlt || "Foto adicionada à publicação"} loading="lazy" /></button>}
-            <div className="profile-post-actions"><button className={post.liked ? "liked" : ""} aria-pressed={!!post.liked} onClick={() => updatePost(post.id, item => ({ ...item, liked: !item.liked }))}><Heart size={17} fill={post.liked ? "currentColor" : "none"} /> {post.liked ? "Curtido por você" : "Curtir"}</button><button onClick={() => { setCommentingPostId(commentingPostId === post.id ? "" : post.id); setCommentDraft(""); }}><MessageCircle size={17} /> Comentar{post.comments?.length ? ` · ${post.comments.length}` : ""}</button><button className={post.shared ? "shared" : ""} onClick={() => { updatePost(post.id, item => ({ ...item, shared: !item.shared })); notify(post.shared ? "Publicação removida da aba Compartilhados." : "Publicação marcada na aba Compartilhados deste aparelho."); }}><Share2 size={17} /> {post.shared ? "Compartilhado" : "Compartilhar"}</button></div>
-            {commentingPostId === post.id && <form className="profile-comment-form" onSubmit={event => { event.preventDefault(); const text = commentDraft.trim(); if (!text || text.length > 500) { notify(text ? "O comentário pode ter no máximo 500 caracteres." : "Escreva um comentário antes de enviar."); return; } if (updatePosts(posts.map(item => item.id === post.id ? { ...item, comments: [...(item.comments || []), { text, createdAt: new Date().toISOString() }] } : item))) { setCommentDraft(""); setCommentingPostId(""); notify("Comentário salvo neste aparelho."); } }}><label className="sr-only" htmlFor={`profile-comment-${post.id}`}>Escreva um comentário</label><input id={`profile-comment-${post.id}`} value={commentDraft} onChange={event => setCommentDraft(event.target.value)} maxLength={500} placeholder="Escreva um comentário..." /><button className="button primary small-button" type="submit"><Send size={14} /> Enviar</button></form>}
-            {!!post.comments?.length && <div className="profile-comment-list">{post.comments.map((comment, index) => <p key={`${post.id}-comment-${index}`}><strong>{user.name}</strong> {comment.text} <small>{new Date(comment.createdAt).toLocaleDateString("pt-BR")}</small></p>)}</div>}
+            <div className="profile-post-actions"><button className={post.liked ? "liked" : ""} aria-pressed={!!post.liked} onClick={() => updatePost(post.id, item => ({ ...item, liked: !item.liked }))}><Heart size={17} fill={post.liked ? "currentColor" : "none"} /> {post.liked ? "Curtido por você" : "Curtir"}</button><CommentThread comments={post.comments || []} userName={user.name} open={commentingPostId === post.id} onToggle={() => setCommentingPostId(current => current === post.id ? "" : post.id)} onAdd={text => { const saved = updatePost(post.id, item => ({ ...item, comments: [...(item.comments || []), { author: user.name, text, createdAt: new Date().toISOString() }] })); if (saved) notify("Comentário salvo no app neste aparelho."); return saved; }} notify={notify} labelId={`profile-comment-${post.id}`} /><SharePublication isShared={!!post.shared} notify={notify} onShare={shared => post.sharedFromId ? savePosts(posts.filter(item => item.id !== post.id)) : updatePost(post.id, item => ({ ...item, shared }))} /></div>
             <p className="profile-post-disclosure">Curtidas e comentários são registros locais e não são enviados a outras pessoas.</p>
           </article>)}</div>}
     </section>
@@ -490,25 +659,41 @@ function WorkoutScreen({ notify, onActivity }) {
     <section className="workout-progress-card"><div><span className="eyebrow">BOM TE VER EM MOVIMENTO</span><h2>Seu treino está fluindo.</h2><p>{done.length} de {workoutExercises.length} exercícios concluídos</p></div><strong>{Math.round(done.length / workoutExercises.length * 100)}<small>%</small></strong><div className="score-track"><i style={{ width: `${done.length / workoutExercises.length * 100}%` }} /></div></section>
     <SectionTitle title="Sua sequência de hoje" />
     <div className="exercise-list">{workoutExercises.map((item, index) => <article className={`exercise-card ${done.includes(item.name) ? "exercise-done" : ""}`} key={item.name}><button className="exercise-check" aria-label={`${done.includes(item.name) ? "Desmarcar" : "Concluir"} ${item.name}`} onClick={() => toggle(item.name)}>{done.includes(item.name) && <Check size={17} />}</button><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><span>EXERCÍCIO {String(index + 1).padStart(2, "0")}</span><h3>{item.name}</h3><p>{item.details} · {item.load}</p><label className="exercise-note">Anotação rápida<input placeholder="Carga ou observação" aria-label={`Anotação: ${item.name}`} /></label></div><button className="play-button" aria-label={`Ver vídeo de ${item.name}`} onClick={() => notify(`Vídeo de orientação: ${item.name}.`)}><Play size={17} /></button></article>)}</div>
-    <div className="workout-actions"><button className="button subtle wide-button" onClick={() => setRestLeft(60)}><Timer size={17} /> {restLeft > 0 ? `Descanso · ${restLeft} s` : "Iniciar descanso · 60 s"}</button><button className="button primary wide-button" onClick={() => { if (!completed) onActivity("workout"); setCompleted(true); notify("Treino registrado nesta visualização."); }}>Finalizar treino <ArrowRight size={17} /></button></div>
-    {completed && <div className="success-banner"><span><Check size={20} /></span><div><strong>Treino concluído. Você apareceu por você.</strong><small>18 min · Seu progresso foi atualizado nesta tela.</small></div><button aria-label="Fechar confirmação" onClick={() => setCompleted(false)}><X size={17} /></button></div>}
+    <div className="workout-actions"><button className="button subtle wide-button" onClick={() => setRestLeft(60)}><Timer size={17} /> {restLeft > 0 ? `Descanso · ${restLeft} s` : "Iniciar descanso · 60 s"}</button><button className="button primary wide-button" onClick={() => { if (!completed) onActivity("workout"); setCompleted(true); notify("Treino registrado neste dispositivo."); }}>Finalizar treino <ArrowRight size={17} /></button></div>
+    {completed && <div className="success-banner"><span><Check size={20} /></span><div><strong>Treino concluído. Você apareceu por você.</strong><small>18 min · Seu progresso foi atualizado neste dispositivo.</small></div><button aria-label="Fechar confirmação" onClick={() => setCompleted(false)}><X size={17} /></button></div>}
   </Screen>;
 }
 
 function NutritionScreen({ notify, onActivity, activity }) {
-  const [logged, setLogged] = useState(0);
-  const calories = 1700 + (activity.mealsLogged + logged) * 120;
+  const [addingMeal, setAddingMeal] = useState(false);
+  const [mealName, setMealName] = useState("");
+  const [mealCalories, setMealCalories] = useState("");
+  const todayKey = localDateKey();
+  const todaysMeals = mealsForDate(activity.mealEntries, todayKey);
+  const calories = sumMealCalories(todaysMeals);
   const caloriePercent = Math.min(100, Math.round(calories / 2100 * 100));
   const today = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
-  const meals = [["Café da manhã", "320 kcal", "Concluído"], ["Almoço", "780 kcal", "Concluído"], ["Lanche", "250 kcal", "Registrado"], ["Jantar", "Pendente", "Planejado"], ...Array.from({ length: logged }, (_, index) => [`Refeição registrada ${index + 1}`, "120 kcal", "Registrado"])];
+  const registerMeal = event => {
+    event.preventDefault();
+    const name = mealName.trim();
+    const parsedCalories = Number(mealCalories);
+    if (!name || mealCalories === "" || !Number.isInteger(parsedCalories) || parsedCalories < 0 || parsedCalories > 10000) return;
+    onActivity("meal", { id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, calories: parsedCalories, date: todayKey });
+    setMealName("");
+    setMealCalories("");
+    setAddingMeal(false);
+    notify("Refeição adicionada ao diário neste dispositivo.");
+  };
   return <Screen title="Nutrição Hoje" subtitle={`${today.toLocaleUpperCase()} · SUA ROTINA`} className="nutrition-screen">
-    <div className="nutrition-summary"><div className="nutrition-donut" style={{ background: `conic-gradient(#497e52 0 35%, #bada81 35% 75%, #ecd990 75% 100%)` }}><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>de 2.100 kcal</span><small>{caloriePercent}% da meta</small></div></div><div className="macro-details"><span className="eyebrow">SEU EQUILÍBRIO HOJE</span>{[["Proteína", "183 g", "35%", "protein"], ["Carboidrato", "210 g", "40%", "carb"], ["Gordura", "58 g", "25%", "fat"]].map(row => <div className="macro-row" key={row[0]}><i className={row[3]} /><span>{row[0]}</span><strong>{row[1]}</strong><small>{row[2]}</small></div>)}<Link to="/progress" className="text-link">Ver metas e evolução <ArrowRight size={15} /></Link></div></div>
-    <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Você segue construindo um ritmo que funciona para a sua vida.</small></span></div>
+    <div className="nutrition-summary"><div className="nutrition-donut" style={{ background: `conic-gradient(#497e52 0 ${caloriePercent}%, #e7eee5 ${caloriePercent}% 100%)` }}><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>de 2.100 kcal</span><small>{caloriePercent}% da meta</small></div></div><div className="macro-details"><span className="eyebrow">SEU EQUILÍBRIO HOJE</span>{[["Proteína", "183 g", "35%", "protein"], ["Carboidrato", "210 g", "40%", "carb"], ["Gordura", "58 g", "25%", "fat"]].map(row => <div className="macro-row" key={row[0]}><i className={row[3]} /><span>{row[0]}</span><strong>{row[1]}</strong><small>{row[2]}</small></div>)}<Link to="/progress" className="text-link">Ver metas e evolução <ArrowRight size={15} /></Link></div></div>
+    <p className="reference-disclosure">Calorias refletem apenas refeições registradas neste dispositivo. Os macros são exemplos e precisam de dados próprios ou integração.</p>
+    <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Seus registros ficam neste dispositivo e podem ser apagados ao limpar os dados do navegador.</small></span></div>
     <SectionTitle title="Seu diário" />
-    <div className="meal-list">{meals.map((meal, index) => <div className="meal-row" key={meal[0]}><span className={`meal-icon meal-${index}`}>{["☀", "◒", "✳", "☾"][index]}</span><div><strong>{meal[0]}</strong><small>{meal[1]} · {meal[2]}</small></div>{index < 3 && <Check size={18} className="meal-check" />}</div>)}</div>
+    <div className="meal-list">{todaysMeals.length ? todaysMeals.map((meal, index) => <div className="meal-row" key={meal.id}><span className={`meal-icon meal-${index % 4}`}>{["☀", "◒", "✳", "☾"][index % 4]}</span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · Registrado neste dispositivo</small></div><button className="meal-remove-button" aria-label={`Remover ${meal.name} do diário`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={16} /></button></div>) : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><p>Adicione o que você consumiu para acompanhar suas calorias.</p></div>}</div>
     <Link to="/curated" className="nutrition-curation"><span className="nutritionist-avatar">DA</span><span><small>FOOD CURADO</small><strong>Veja opções de referência para sua rotina.</strong><small>Planos reais exigem acompanhamento profissional.</small></span><ArrowRight size={18} /></Link>
-    <button className="button primary wide-button mt-5" onClick={() => { setLogged(count => count + 1); onActivity("meal"); notify("Refeição registrada no diário. Seus totais foram atualizados."); }}><Plus size={18} /> Registrar refeição</button>
-    {logged.length > 0 && <p className="sr-only" aria-live="polite">{logged.length} refeição registrada.</p>}
+    <button className="button primary wide-button mt-5" onClick={() => setAddingMeal(value => !value)}><Plus size={18} /> {addingMeal ? "Cancelar registro" : "Registrar refeição"}</button>
+    {addingMeal && <form className="meal-entry-form" onSubmit={registerMeal}><label>Nome da refeição<input required maxLength={60} value={mealName} onChange={event => setMealName(event.target.value)} placeholder="Ex.: almoço" /></label><label>Calorias (kcal)<input required type="number" min="0" max="10000" step="1" value={mealCalories} onChange={event => setMealCalories(event.target.value)} placeholder="Ex.: 520" /></label><button className="button primary wide-button" type="submit">Salvar refeição</button></form>}
+    <p className="sr-only" aria-live="polite">{todaysMeals.length} {todaysMeals.length === 1 ? "refeição registrada hoje" : "refeições registradas hoje"}; {calories} quilocalorias no diário.</p>
   </Screen>;
 }
 
@@ -530,7 +715,7 @@ function ProgressScreen({ notify, activity }) {
     <div className="measurement-grid"><div className="measurement-card"><span>Peito</span><strong>102 cm</strong><small>−2 cm no período</small></div><div className="measurement-card"><span>Cintura</span><strong>88 cm</strong><small>−4 cm no período</small></div></div>
     <div className="streak-card"><span className="streak-icon"><Flame size={22} /></span><div><span>SEU MELHOR RITMO</span><strong>12 dias seguidos</strong><small>Um passo de cada vez já é evolução.</small></div><span className="streak-rank">TOP 5%<small>Aldeota</small></span></div>
     <SectionTitle title="Seu cuidado em números" />
-    <div className="adherence-card"><div><span><Dumbbell size={17} /> Treinos</span><strong>{Math.round(activity.trainingPercent / 5)} / 20 <small>{activity.trainingPercent}%</small></strong><i><b style={{ width: `${activity.trainingPercent}%` }} /></i></div><div><span><Apple size={17} /> Alimentação</span><strong>{Math.round(activity.nutritionPercent / 100 * 30)} / 30 dias <small>{activity.nutritionPercent}%</small></strong><i><b style={{ width: `${activity.nutritionPercent}%` }} /></i></div></div>
+    <div className="adherence-card"><div><span><Dumbbell size={17} /> Treinos</span><strong>{activity.workoutsLogged} / 20 <small>{activity.trainingPercent}%</small></strong><i><b style={{ width: `${activity.trainingPercent}%` }} /></i></div><div><span><Apple size={17} /> Refeições</span><strong>{activity.mealsLogged} / 30 <small>{activity.nutritionPercent}%</small></strong><i><b style={{ width: `${activity.nutritionPercent}%` }} /></i></div></div>
     <button className="button primary wide-button mt-5" onClick={() => notify("Seu resumo de evolução está pronto para compartilhar.")}><Share2 size={17} /> Compartilhar evolução</button>
   </Screen>;
 }
@@ -594,9 +779,11 @@ function PartnerScreen({ notify }) {
 
 function AppContent() {
   const [toast, setToast] = useState("");
-  const [activity, setActivity] = useState({ trainingPercent: 85, nutritionPercent: 70, waterMl: 1200, recoveryPercent: 80, mealsLogged: 0 });
-  const [shopCart, setShopCart] = useState([]);
-  const [shopOrders, setShopOrders] = useState([]);
+  const [showSplash, setShowSplash] = useState(true);
+  const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
+  const [foodCart, setFoodCart] = useState(loadFoodCart);
+  const [shopCart, setShopCart] = useState(loadShopCart);
+  const [shopOrders, setShopOrders] = useState(loadShopOrders);
   const [savedArts, setSavedArts] = useState([]);
   const [studioArtwork, setStudioArtwork] = useState(null);
   const [feedArts, setFeedArts] = useState([]);
@@ -605,12 +792,58 @@ function AppContent() {
     const saved = loadLocalValue(PROFILE_POSTS_STORAGE_KEY, []);
     return Array.isArray(saved) ? saved : [];
   });
+  const [feedComments, setFeedComments] = useState(() => {
+    const saved = loadLocalValue(PROFILE_FEED_COMMENTS_STORAGE_KEY, {});
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+  });
   const location = useLocation();
   const notify = message => setToast(message);
-  const updateActivity = kind => setActivity(current => {
-    if (kind === "water") return { ...current, waterMl: Math.min(2500, current.waterMl + 250) };
-    if (kind === "workout") return { ...current, trainingPercent: Math.min(100, current.trainingPercent + 5) };
-    if (kind === "meal") return { ...current, nutritionPercent: Math.min(100, current.nutritionPercent + 5), mealsLogged: current.mealsLogged + 1 };
+  const savePosts = nextPosts => {
+    try {
+      window.localStorage.setItem(PROFILE_POSTS_STORAGE_KEY, JSON.stringify(nextPosts));
+      setProfilePosts(nextPosts);
+      return true;
+    } catch (error) {
+      console.error("Não foi possível salvar as publicações neste aparelho.", error);
+      notify("Não foi possível salvar neste aparelho. Libere espaço e tente novamente; o conteúdo atual continua aberto.");
+      return false;
+    }
+  };
+  const saveFeedComments = nextComments => {
+    try {
+      window.localStorage.setItem(PROFILE_FEED_COMMENTS_STORAGE_KEY, JSON.stringify(nextComments));
+      setFeedComments(nextComments);
+      return true;
+    } catch (error) {
+      console.error("Não foi possível salvar comentários neste aparelho.", error);
+      notify("Não foi possível salvar o comentário neste aparelho. Libere espaço e tente novamente.");
+      return false;
+    }
+  };
+  const shareToProfile = (source, shared) => {
+    const sharedFromId = source.sourceId;
+    const existing = profilePosts.find(post => post.sharedFromId === sharedFromId);
+    if (shared && existing) return true;
+    if (!shared) return savePosts(profilePosts.filter(post => post.sharedFromId !== sharedFromId));
+    const sharedPost = {
+      id: `shared:${sharedFromId}`,
+      sharedFromId,
+      sharedFrom: source.author,
+      text: source.text,
+      image: source.image || "",
+      imageAlt: source.imageAlt || "",
+      createdAt: new Date().toISOString(),
+      shared: true,
+      liked: false,
+      comments: feedComments[sharedFromId] || [],
+    };
+    return savePosts([sharedPost, ...profilePosts]);
+  };
+  const updateActivity = (kind, detail) => setActivity(current => {
+    if (kind === "water") return normalizeActivity({ ...current, waterMl: current.waterMl + 250 });
+    if (kind === "workout") return normalizeActivity({ ...current, workoutsLogged: current.workoutsLogged + 1 });
+    if (kind === "meal") return normalizeActivity({ ...current, mealEntries: [...current.mealEntries, detail] });
+    if (kind === "removeMeal") return normalizeActivity({ ...current, mealEntries: current.mealEntries.filter(meal => meal.id !== detail) });
     return current;
   });
   useEffect(() => {
@@ -618,16 +851,53 @@ function AppContent() {
     window.addEventListener("fortalfy-toast", listener);
     return () => window.removeEventListener("fortalfy-toast", listener);
   }, []);
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = window.setTimeout(() => setShowSplash(false), reducedMotion ? 900 : 6500);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ACTIVITY_STORAGE_KEY, JSON.stringify(activity));
+    } catch (error) {
+      console.error("Não foi possível persistir os registros de rotina neste dispositivo.", error);
+      setToast("O registro está visível, mas não pôde ser salvo neste navegador.");
+    }
+  }, [activity]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FOOD_CART_STORAGE_KEY, JSON.stringify(foodCart));
+    } catch (error) {
+      console.error("Não foi possível persistir a sacola do Food neste dispositivo.", error);
+      setToast("A sacola do Food está visível, mas não pôde ser salva neste navegador.");
+    }
+  }, [foodCart]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SHOP_CART_STORAGE_KEY, JSON.stringify(shopCart));
+    } catch (error) {
+      console.error("Não foi possível persistir a sacola da FortalShop neste dispositivo.", error);
+      setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
+    }
+  }, [shopCart]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SHOP_ORDERS_STORAGE_KEY, JSON.stringify(shopOrders));
+    } catch (error) {
+      console.error("Não foi possível persistir o histórico local da FortalShop.", error);
+      setToast("O histórico está visível, mas não pôde ser salvo neste navegador.");
+    }
+  }, [shopOrders]);
   const mobilePaths = ["/home", "/feed", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/academy", "/live", "/partner/gym", "/shop", "/studio"];
-  const mobile = mobilePaths.includes(location.pathname);
+  const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/");
   return <div className={mobile ? "mobile-app" : "professional-root"}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen notify={notify} activity={activity} onActivity={updateActivity} />} />
-      <Route path="/feed" element={<FeedScreen notify={notify} feedArts={feedArts} profileDetails={profileDetails} profilePosts={profilePosts} />} />
-      <Route path="/food" element={<FoodScreen notify={notify} />} />
+      <Route path="/feed" element={<FeedScreen notify={notify} feedArts={feedArts} profileDetails={profileDetails} profilePosts={profilePosts} savePosts={savePosts} saveFeedComments={saveFeedComments} feedComments={feedComments} shareToProfile={shareToProfile} />} />
+      <Route path="/food" element={<FoodScreen notify={notify} cart={foodCart} setCart={setFoodCart} />} />
       <Route path="/pass" element={<PassScreen />} />
-      <Route path="/profile" element={<ProfileScreen notify={notify} user={profileDetails} setUser={setProfileDetails} posts={profilePosts} setPosts={setProfilePosts} />} />
+      <Route path="/profile" element={<ProfileScreen notify={notify} user={profileDetails} setUser={setProfileDetails} posts={profilePosts} savePosts={savePosts} />} />
       <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
       <Route path="/curated" element={<CuratedScreen notify={notify} />} />
@@ -635,6 +905,7 @@ function AppContent() {
       <Route path="/academy" element={<AcademyScreen />} />
       <Route path="/live" element={<LiveScreen notify={notify} />} />
       <Route path="/partner/:type" element={<PartnerScreen notify={notify} />} />
+      <Route path="/hire/:role" element={<HiringScreen key={location.pathname} notify={notify} />} />
       <Route path="/shop" element={<FortalShop cart={shopCart} setCart={setShopCart} orders={shopOrders} setOrders={setShopOrders} notify={notify} />} />
       <Route path="/studio" element={<FortalfyStudio artwork={studioArtwork} setArtwork={setStudioArtwork} savedArts={savedArts} setSavedArts={setSavedArts} setFeedArts={setFeedArts} notify={notify} />} />
       <Route path="/trainer" element={<Dashboard key="trainer" role="trainer" notify={notify} />} />
@@ -642,6 +913,7 @@ function AppContent() {
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
     <Toast message={toast} onClose={() => setToast("")} />
+    {showSplash && <SplashScreen onClose={() => setShowSplash(false)} />}
   </div>;
 }
 
