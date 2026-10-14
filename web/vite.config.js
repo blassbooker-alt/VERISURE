@@ -4,6 +4,17 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   base: "./",
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   plugins: [react(), tailwindcss()],
-  build: { outDir: "dist", emptyOutDir: true },
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules[\\/]@supabase[\\/]/.test(id)) return "supabase";
+        },
+      },
+    },
+  },
 });

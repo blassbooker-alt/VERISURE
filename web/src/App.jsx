@@ -13,6 +13,9 @@ import BottomNav from "./MobileNavigation.jsx";
 import FortalShop from "./FortalShop.jsx";
 import FortalfyStudio from "./FortalfyStudio.jsx";
 import StoryExperience from "./Stories.jsx";
+import { SocialFeed, SocialMessages, SocialPeople, SocialProfile } from "./SocialScreens.jsx";
+import { getErrorMessage, loadProfile } from "./socialService.js";
+import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { shopProducts } from "./shopData.js";
 import { courseList, gyms, profile, restaurants, workoutExercises } from "./data.js";
@@ -810,6 +813,10 @@ function PartnerScreen({ notify }) {
 
 function AppContent() {
   const [toast, setToast] = useState("");
+  const [authSession, setAuthSession] = useState(null);
+  const [socialProfile, setSocialProfile] = useState(null);
+  const [socialProfileError, setSocialProfileError] = useState("");
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
   const [foodCart, setFoodCart] = useState(loadFoodCart);
@@ -829,6 +836,76 @@ function AppContent() {
   });
   const location = useLocation();
   const notify = message => setToast(message);
+  useEffect(() => {
+    if (!supabase) return undefined;
+    let active = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        console.error("Não foi possível recuperar a sessão do Supabase.", error);
+        notify(getErrorMessage(error, "Não foi possível recuperar sua sessão."));
+        return;
+      }
+      setAuthSession(data.session);
+    }).catch(error => {
+      if (!active) return;
+      console.error("Falha ao recuperar a sessão do Supabase.", error);
+      notify(getErrorMessage(error, "Não foi possível recuperar sua sessão."));
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setAuthSession(session);
+      if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
+      if (!session) setSocialProfile(null);
+    });
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+  useEffect(() => {
+    const userId = authSession?.user?.id;
+    if (!supabase || !userId) {
+      setSocialProfile(null);
+      setSocialProfileError("");
+      return undefined;
+    }
+    let active = true;
+    loadProfile(supabase, userId)
+      .then(profile => {
+        if (!active) return;
+        setSocialProfile(profile);
+        setSocialProfileError("");
+      })
+      .catch(error => {
+        if (!active) return;
+        console.error("Não foi possível carregar o perfil da conta.", error);
+        const message = getErrorMessage(error, "Não foi possível carregar o perfil da conta.");
+        setSocialProfileError(message);
+        setToast(message);
+      });
+    return () => { active = false; };
+  }, [authSession?.user?.id]);
+  const refreshSocialProfile = async () => {
+    if (!supabase || !authSession?.user?.id) return;
+    try {
+      const updated = await loadProfile(supabase, authSession.user.id);
+      setSocialProfile(updated);
+      setSocialProfileError("");
+      return updated;
+    } catch (error) {
+      console.error("Não foi possível atualizar o perfil da conta.", error);
+      const message = getErrorMessage(error, "Não foi possível carregar o perfil da conta.");
+      setSocialProfileError(message);
+      throw error;
+    }
+  };
+  const retrySocialProfile = async () => {
+    try {
+      await refreshSocialProfile();
+    } catch {
+      // refreshSocialProfile reports the failure in the visible profile state.
+    }
+  };
   const savePosts = nextPosts => {
     try {
       window.localStorage.setItem(PROFILE_POSTS_STORAGE_KEY, JSON.stringify(nextPosts));
@@ -919,16 +996,21 @@ function AppContent() {
       setToast("O histórico está visível, mas não pôde ser salvo neste navegador.");
     }
   }, [shopOrders]);
-  const mobilePaths = ["/home", "/feed", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/academy", "/live", "/partner/gym", "/shop", "/studio"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/academy", "/live", "/partner/gym", "/shop", "/studio"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/");
   return <div className={mobile ? "mobile-app" : "professional-root"}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen notify={notify} activity={activity} onActivity={updateActivity} />} />
-      <Route path="/feed" element={<FeedScreen notify={notify} feedArts={feedArts} profileDetails={profileDetails} profilePosts={profilePosts} savePosts={savePosts} saveFeedComments={saveFeedComments} feedComments={feedComments} shareToProfile={shareToProfile} />} />
+      <Route path="/feed" element={<Screen title="Comunidade" subtitle="BEM-ESTAR EM CONEXÃO" className="feed-screen"><StoryExperience user={socialProfile || profileDetails} notify={notify} /><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/reels" element={<Screen title="Reels" subtitle="VÍDEOS DA COMUNIDADE" className="feed-screen reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
+      <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
+      <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/food" element={<FoodScreen notify={notify} cart={foodCart} setCart={setFoodCart} />} />
       <Route path="/pass" element={<PassScreen />} />
-      <Route path="/profile" element={<ProfileScreen notify={notify} user={profileDetails} setUser={setProfileDetails} posts={profilePosts} savePosts={savePosts} />} />
+      <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/profile/local" element={<ProfileScreen notify={notify} user={profileDetails} setUser={setProfileDetails} posts={profilePosts} savePosts={savePosts} />} />
       <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
       <Route path="/curated" element={<CuratedScreen notify={notify} />} />

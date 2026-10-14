@@ -12,7 +12,9 @@ const primaryTabs = [
 
 export default function BottomNav() {
   const location = useLocation();
-  const active = location.pathname.startsWith("/shop") || location.pathname === "/studio"
+  const active = ["/feed", "/reels", "/people", "/messages"].includes(location.pathname)
+    ? "/feed"
+    : location.pathname.startsWith("/shop") || location.pathname === "/studio"
     ? "/shop"
     : primaryTabs.find(tab => location.pathname === tab.to)?.to;
   if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
