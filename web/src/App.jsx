@@ -8,6 +8,7 @@ import {
   ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
+import Brand from "./Brand.jsx";
 import BottomNav from "./MobileNavigation.jsx";
 import FortalShop from "./FortalShop.jsx";
 import FortalfyStudio from "./FortalfyStudio.jsx";
@@ -16,10 +17,6 @@ import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { shopProducts } from "./shopData.js";
 import { courseList, gyms, profile, restaurants, workoutExercises } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
-
-function Brand({ light = false }) {
-  return <span className={`logo-mark ${light ? "light" : ""}`} aria-label="Fortalfy">fortal<span>fy</span></span>;
-}
 
 function Toast({ message, onClose }) {
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import Brand from "./Brand.jsx";
 import {
   Activity, Apple, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, Check,
   ChevronDown, CircleHelp, ClipboardList, Dumbbell, HeartPulse, LayoutDashboard,
@@ -153,13 +154,13 @@ export default function Dashboard({ role, notify }) {
   const selectedClient = visibleClients.find(client => client.name === selectedClientId) || visibleClients[0];
 
   if (showLogin) return <main className="professional-login">
-    <section className="login-brand"><a className="logo-mark light" href="#/home">fortal<span>fy</span></a><div><span className="dash-eyebrow">FORTALFY PROFISSIONAIS</span><h1>Mais presença no cuidado. Mais clareza em cada jornada.</h1><p>Um espaço de trabalho feito para profissionais que acompanham pessoas de verdade.</p></div><small>Fortaleza · Aldeota</small></section>
-    <section className="login-form-wrap"><div className="login-form"><a className="logo-mark" href="#/home">fortal<span>fy</span></a><span className="verified-label">ESPAÇO PROFISSIONAL</span><h2>{nutrition ? "Olá, Dra. Ana" : "Olá, Coach Pedro"}</h2><p>Conheça as ferramentas para acompanhar rotinas e organizar planos.</p><button type="button" className="button primary wide-button" onClick={() => setShowLogin(false)}>Conhecer o painel <ArrowUpRight size={17} /></button><small className="login-note">Esta visualização não exige conta e não acessa dados reais de clientes.</small><button type="button" className="text-button back-app" onClick={() => window.location.hash = "#/home"}>Voltar ao Fortalfy</button></div></section>
+    <section className="login-brand"><a href="#/home" aria-label="Fortalfy, página inicial"><Brand light /></a><div><span className="dash-eyebrow">FORTALFY PROFISSIONAIS</span><h1>Mais presença no cuidado. Mais clareza em cada jornada.</h1><p>Um espaço de trabalho feito para profissionais que acompanham pessoas de verdade.</p></div><small>Fortaleza · Aldeota</small></section>
+    <section className="login-form-wrap"><div className="login-form"><a href="#/home" aria-label="Fortalfy, página inicial"><Brand /></a><span className="verified-label">ESPAÇO PROFISSIONAL</span><h2>{nutrition ? "Olá, Dra. Ana" : "Olá, Coach Pedro"}</h2><p>Conheça as ferramentas para acompanhar rotinas e organizar planos.</p><button type="button" className="button primary wide-button" onClick={() => setShowLogin(false)}>Conhecer o painel <ArrowUpRight size={17} /></button><small className="login-note">Esta visualização não exige conta e não acessa dados reais de clientes.</small><button type="button" className="text-button back-app" onClick={() => window.location.hash = "#/home"}>Voltar ao Fortalfy</button></div></section>
   </main>;
 
   return <div className="professional-app">
     <aside className="dash-sidebar">
-      <a className="logo-mark" href="#/home">fortal<span>fy</span></a><span className="sidebar-caption">ESPAÇO PROFISSIONAL</span>
+      <a href="#/home" aria-label="Fortalfy, página inicial"><Brand /></a><span className="sidebar-caption">ESPAÇO PROFISSIONAL</span>
       <div className="sidebar-profile"><span className="coach-avatar"><img src={nutrition ? "./assets/stories/avatar-camila.jpg" : "./assets/stories/avatar-pedro.jpg"} alt="" /></span><div><strong>{title}</strong><small>{nutrition ? "Nutricionista" : "Personal trainer"}</small></div><span className="verify-dot"><Check size={11} /></span></div>
       <nav aria-label="Menu profissional">{sections.map(item => <button key={item.id} className={`dash-nav-item ${section === item.id ? "current" : ""}`} onClick={() => { setSection(item.id); setShowClientProfile(false); }}><item.icon size={18} />{item.label}</button>)}<Link to="/studio" className="dash-nav-item"><Sparkles size={18} />Studio criativo</Link></nav>
       <div className="sidebar-bottom"><button className="dash-nav-item" onClick={() => notify("A central de ajuda ainda não está conectada.")}><CircleHelp size={18} />Ajuda e suporte</button><button className="dash-nav-item" onClick={() => notify("As configurações ainda não estão disponíveis.")}><Settings size={18} />Configurações</button><div className="sidebar-location">Espaço profissional <span>Fortaleza, CE</span></div><button className="dash-nav-item" onClick={() => setShowLogin(true)}><LogOut size={18} />Sair do painel</button></div>

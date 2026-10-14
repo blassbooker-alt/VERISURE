@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, Heart, Minus, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, Tag, Truck, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import Brand from "./Brand.jsx";
 import BottomNav from "./MobileNavigation.jsx";
 import { shopProducts } from "./shopData.js";
 
@@ -93,7 +94,7 @@ export default function FortalShop({ cart, setCart, orders, setOrders, notify })
 
   return <div className="app-screen shop-screen">
     <header className="mobile-header shop-header">
-      <Link to="/home" aria-label="Fortalfy, página inicial"><span className="logo-mark">fortal<span>fy</span></span></Link>
+      <Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
       <div className="shop-header-actions"><Link className="button subtle small-button shop-history-button" to="/studio">Studio</Link><button className="shop-bag-button" aria-label={`Abrir carrinho, ${itemCount} itens`} onClick={() => setDialog("cart")}><ShoppingBag size={20} /><CartBadge count={itemCount} /></button></div>
     </header>
     <main className="screen-content shop-content">

@@ -4,14 +4,14 @@
       <stop stop-color="#124e37"/>
       <stop offset="1" stop-color="#071f17"/>
     </linearGradient>
-    <linearGradient id="leaf" x1="341" y1="96" x2="421" y2="176" gradientUnits="userSpaceOnUse">
+    <linearGradient id="leaf" x1="170" y1="140" x2="340" y2="342" gradientUnits="userSpaceOnUse">
       <stop stop-color="#d8ff91"/>
       <stop offset="1" stop-color="#83d34e"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="116" fill="url(#background)"/>
-  <path d="M150 382V130h231v65H221v47h143v63H221v77z" fill="#fff"/>
-  <path d="M343 104c25-22 56-28 91-19-2 35-15 62-40 80-24 18-52 22-84 12 3-31 14-56 33-73z" fill="url(#leaf)"/>
-  <path d="m322 184 57-56" fill="none" stroke="#bfff78" stroke-linecap="round" stroke-width="12"/>
-  <circle cx="390" cy="400" r="13" fill="#87d951"/>
+  <path d="M112 348c72-4 112-45 130-117" fill="none" stroke="#d8ff91" stroke-linecap="round" stroke-width="29"/>
+  <path d="M112 260c48-4 77-32 91-83" fill="none" stroke="#8ce0a2" stroke-linecap="round" stroke-width="29"/>
+  <path d="M300 128c42-35 86-43 136-37-3 55-23 99-58 129-34 28-79 37-134 25 3-50 21-88 56-117z" fill="url(#leaf)"/>
+  <path d="m187 370 151-162" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="22"/>
 </svg>

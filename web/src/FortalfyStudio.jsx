@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Download, ImagePlus, Layers3, Plus, Save, Send, Sparkles, Upload, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import Brand from "./Brand.jsx";
 import BottomNav from "./MobileNavigation.jsx";
 
 const artworkTypes = ["Post", "Story", "Capa de treino", "Dica de nutrição", "Capa de curso", "Banner de evento", "Produto", "Capa de perfil"];
@@ -281,7 +282,7 @@ export default function FortalfyStudio({ artwork, setArtwork, savedArts, setSave
   };
 
   return <div className="app-screen studio-screen">
-    <header className="mobile-header studio-header"><Link to="/home" aria-label="Fortalfy, página inicial"><span className="logo-mark">fortal<span>fy</span></span></Link><span className="studio-header-label"><Sparkles size={15} /> STUDIO CRIATIVO</span></header>
+    <header className="mobile-header studio-header"><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link><span className="studio-header-label"><Sparkles size={15} /> STUDIO CRIATIVO</span></header>
     <main className="screen-content studio-content">
       <div className="studio-page-title"><div><span className="eyebrow">FORTALFY STUDIO · FERRAMENTAS PARA CREATORS</span><h1>Conte sua história.<br />Crie com intenção.</h1></div><span className="studio-title-mark"><Sparkles size={21} /></span></div>
       <p className="studio-intro">Monte posts, Stories e materiais de divulgação com fotos, sua identidade e formatos prontos para a comunidade.</p>
