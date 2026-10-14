@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import {
-  Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight,
+  Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Camera,
   Bell, Bookmark, Check, ChevronDown, ChevronRight,
   CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, MapPin, MessageCircle,
-  MoreHorizontal, Play, Plus, Search, Send, Share2, ShieldCheck,
-  ShoppingBag, Sparkles, Star, Timer, Users, Utensils, Wallet, X,
+  ImagePlus, MoreHorizontal, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
+  ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
 import BottomNav from "./MobileNavigation.jsx";
@@ -117,7 +117,7 @@ function StoriesRow({ notify }) {
   </div>;
 }
 
-function FeedScreen({ notify, feedArts }) {
+function FeedScreen({ notify, feedArts, profileDetails, profilePosts }) {
   const [liked, setLiked] = useState(false);
   const [following, setFollowing] = useState(false);
   const [filter, setFilter] = useState("Para você");
@@ -125,7 +125,12 @@ function FeedScreen({ notify, feedArts }) {
     <p className="screen-intro">Inspiração real, um treino de cada vez.</p>
     <StoriesRow notify={notify} />
     <div className="feed-filters">{["Para você", "Seguindo", "Perfis que sigo"].map(item => <button key={item} onClick={() => setFilter(item)} className={filter === item ? "selected" : ""}>{item}</button>)}</div>
-    <button className="composer-card" onClick={() => notify("O espaço para sua próxima conquista está pronto.")}><span className="avatar">L</span><span>No que você está pensando?</span><Plus size={19} /></button>
+    <Link className="composer-card" to="/profile?compose=1"><span className="avatar">{profileDetails.name.slice(0, 1).toUpperCase()}</span><span>No que você está pensando?</span><Plus size={19} /></Link>
+    {profilePosts.map(post => <article className="feed-post profile-feed-post" key={post.id}>
+      <div className="post-head"><div className="avatar">{profileDetails.avatar ? <img src={profileDetails.avatar} alt="" /> : profileDetails.name.slice(0, 1).toUpperCase()}</div><div className="post-author"><strong>{profileDetails.name}</strong><span>Publicação neste aparelho · {new Date(post.createdAt).toLocaleDateString("pt-BR")}</span></div><span className="created-art-label">LOCAL</span></div>
+      <p className="post-copy">{post.text}</p>{post.image && <button className="profile-feed-image" onClick={() => notify("Foto da sua publicação.")}><img src={post.image} alt={post.imageAlt || "Foto adicionada à publicação"} loading="lazy" /></button>}
+      <div className="profile-feed-disclosure">Visível somente neste navegador. Não foi enviado a um servidor ou à comunidade.</div>
+    </article>)}
     {feedArts.map(art => <article className="feed-post created-art-post" key={art.id}>
       <div className="post-head"><div className="avatar"><Sparkles size={17} /></div><div className="post-author"><strong>Uma criação sua</strong><span>Arte local · desta sessão</span></div><span className="created-art-label">PRÉVIA</span></div>
       <p className="post-copy">{art.title}</p><div className="created-art-image"><img src={art.dataUrl} alt={`Arte criada no Fortalfy Studio: ${art.title}`} /></div>
@@ -206,15 +211,265 @@ function GymCard({ gym, index }) {
   return <article className="gym-card"><Link to="/partner/gym" className="gym-card-image"><PhotoCard image={gym.image} alt={`Espaço de treino em Fortaleza`} /><span>{index === 0 ? "PERTO DE VOCÊ" : "AULAS E MOVIMENTO"}</span><button aria-label={`Abrir ${gym.name}`}><ArrowUpRight size={16} /></button></Link><div className="gym-card-body"><div className="gym-card-title"><h3>{gym.name}</h3><span className="rating"><MapPin size={14} /> Aldeota</span></div><p>Horários e disponibilidade a confirmar</p><div className="gym-tags">{gym.tags.slice(0, 2).map(tag => <span key={tag}>{tag}</span>)}</div><span className="gym-price">Valores sob consulta</span></div></article>;
 }
 
-function ProfileScreen({ notify }) {
-  const [tab, setTab] = useState("Publicações");
-  return <Screen title="Meu perfil" subtitle="SUA JORNADA, SUAS CONQUISTAS" className="profile-screen">
-    <section className="founder-banner"><div className="founder-portrait"><img src="./assets/fortalfy-pedro-founder.svg" alt="Ilustração original da Fortalfy" /></div><div><span>FORTALFY · FEITO EM FORTALEZA</span><h2>Fortalfy</h2><p>Bem-estar no seu ritmo.</p></div><span className="founder-tag">Uma rotina mais leve começa com o que é possível hoje.</span></section>
-    <section className="profile-card"><div className="profile-avatar">L</div><div className="profile-main"><div className="profile-name-row"><div><h2>Leblonjr</h2><span>@Leblonjr · Fortaleza</span></div><button className="button subtle small-button" onClick={() => notify("A edição do perfil ainda não está disponível.")}>Editar perfil</button></div><p>Fitness · Saúde · Evolução. Construindo uma rotina mais leve, um dia de cada vez. 💚</p><div className="profile-stats"><span><strong>12</strong> dias de constância</span><span><strong>17</strong> treinos no mês</span><span><strong>21</strong> dias alinhados</span></div></div></section>
-    <div className="profile-tabs">{["Publicações", "Compartilhados", "Fotos"].map(label => <button key={label} onClick={() => setTab(label)} className={tab === label ? "active" : ""}>{label}</button>)}</div>
-    <div className="profile-empty"><span className="empty-icon"><Sparkles size={24} /></span><h3>Sua próxima conquista merece ser compartilhada.</h3><p>Quando publicar, seus momentos de evolução vão aparecer por aqui.</p><Link to="/feed" className="button primary">Ir para o Feed <ArrowRight size={16} /></Link></div>
+const PROFILE_STORAGE_KEY = "fortalfy.profile.local.v1";
+const PROFILE_POSTS_STORAGE_KEY = "fortalfy.profile.posts.local.v1";
+const makeDefaultProfile = () => ({
+  name: profile.name,
+  username: profile.handle.replace(/^@/, "").toLowerCase(),
+  bio: "",
+  goal: "",
+  activity: "",
+  city: profile.city,
+  showCity: false,
+  avatar: "",
+  cover: "",
+});
+
+function loadLocalValue(key, fallback) {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    console.error(`Não foi possível carregar os dados locais de ${key}.`, error);
+    return fallback;
+  }
+}
+
+function compressProfileImage(file, maximumBytes = 650000) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Selecione um arquivo de imagem válido."));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      reject(new Error("A imagem deve ter no máximo 8 MB."));
+      return;
+    }
+    const source = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(source);
+      const scale = Math.min(1, 1400 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) {
+        reject(new Error("Este navegador não conseguiu processar a imagem."));
+        return;
+      }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      let quality = 0.82;
+      let result = canvas.toDataURL("image/jpeg", quality);
+      while (result.length * 0.75 > maximumBytes && quality > 0.4) {
+        quality -= 0.1;
+        result = canvas.toDataURL("image/jpeg", quality);
+      }
+      if (result.length * 0.75 > maximumBytes) {
+        reject(new Error("A imagem não pôde ser reduzida o suficiente. Escolha uma imagem menor."));
+        return;
+      }
+      resolve(result);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(source);
+      reject(new Error("Não foi possível abrir essa imagem."));
+    };
+    image.src = source;
+  });
+}
+
+function ProfileAvatar({ user, className = "" }) {
+  return <span className={`profile-avatar ${className}`}>
+    {user.avatar ? <img src={user.avatar} alt={`Foto de perfil de ${user.name}`} /> : user.name.trim().slice(0, 1).toUpperCase()}
+  </span>;
+}
+
+function ProfileScreen({ notify, user, setUser, posts, setPosts }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") === "compartilhados" ? "Compartilhados" : searchParams.get("tab") === "fotos" ? "Fotos" : "Publicações");
+  const [editOpen, setEditOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
+  const [commentingPostId, setCommentingPostId] = useState("");
+  const [commentDraft, setCommentDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState(user);
+  const [postDraft, setPostDraft] = useState({ text: "", image: "" });
+  const [postImageBusy, setPostImageBusy] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("compose") !== "1") return;
+    setComposeOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("compose");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const updatePosts = nextPosts => {
+    try {
+      window.localStorage.setItem(PROFILE_POSTS_STORAGE_KEY, JSON.stringify(nextPosts));
+      setPosts(nextPosts);
+      return true;
+    } catch (error) {
+      console.error("Não foi possível salvar as publicações neste aparelho.", error);
+      notify("Não foi possível salvar neste aparelho. Libere espaço e tente novamente; o conteúdo atual continua aberto.");
+      return false;
+    }
+  };
+  const closeEditor = () => {
+    if (JSON.stringify(draft) !== JSON.stringify(user) && !window.confirm("Descartar as alterações do perfil que ainda não foram salvas?")) return;
+    setDraft(user);
+    setEditOpen(false);
+  };
+  const saveProfile = event => {
+    event.preventDefault();
+    const cleaned = { ...draft, name: draft.name.trim(), username: draft.username.trim().replace(/^@/, "").toLowerCase(), bio: draft.bio.trim(), goal: draft.goal.trim(), activity: draft.activity.trim(), city: draft.city.trim() };
+    if (cleaned.name.length < 2 || cleaned.name.length > 50) {
+      notify("O nome deve ter entre 2 e 50 caracteres.");
+      return;
+    }
+    if (!/^[a-z0-9._]{3,24}$/.test(cleaned.username)) {
+      notify("O nome de usuário deve ter de 3 a 24 caracteres: letras, números, ponto ou sublinhado.");
+      return;
+    }
+    if (cleaned.bio.length > 180) {
+      notify("A biografia pode ter no máximo 180 caracteres.");
+      return;
+    }
+    setSaving(true);
+    try {
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(cleaned));
+      setUser(cleaned);
+      setDraft(cleaned);
+      setEditOpen(false);
+      notify("Perfil salvo neste aparelho.");
+    } catch (error) {
+      console.error("Não foi possível salvar o perfil neste aparelho.", error);
+      notify("Não foi possível salvar o perfil. Libere espaço no navegador e tente novamente; suas alterações continuam no formulário.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  const handleImageFile = async (event, field) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const image = await compressProfileImage(file, 650000);
+      setDraft(current => ({ ...current, [field]: image }));
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      event.target.value = "";
+    }
+  };
+  const publishPost = event => {
+    event.preventDefault();
+    const text = postDraft.text.trim();
+    if (!text && !postDraft.image) {
+      notify("Escreva uma mensagem ou adicione uma foto antes de publicar.");
+      return;
+    }
+    if (text.length > 1200) {
+      notify("A publicação pode ter no máximo 1.200 caracteres.");
+      return;
+    }
+    const post = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, text, image: postDraft.image, imageAlt: postDraft.image ? "Foto adicionada à publicação" : "", createdAt: new Date().toISOString(), shared: false, liked: false, comments: [] };
+    if (updatePosts([post, ...posts])) {
+      setPostDraft({ text: "", image: "" });
+      setComposeOpen(false);
+      notify("Publicação salva neste aparelho. Ela ainda não foi enviada à comunidade.");
+    }
+  };
+  const updatePost = (postId, transform) => updatePosts(posts.map(post => post.id === postId ? transform(post) : post));
+  const selectedPosts = tab === "Compartilhados"
+    ? posts.filter(post => post.shared)
+    : tab === "Fotos"
+      ? posts.filter(post => post.image)
+      : posts;
+  const chooseTab = label => {
+    setTab(label);
+    const value = label === "Compartilhados" ? "compartilhados" : label === "Fotos" ? "fotos" : "";
+    setSearchParams(value ? { tab: value } : {}, { replace: true });
+  };
+  const postLabels = tab === "Fotos"
+    ? { title: "Sua galeria começa com uma foto", description: "Adicione uma foto a uma publicação para encontrá-la nesta galeria." }
+    : tab === "Compartilhados"
+      ? { title: "Nada compartilhado por enquanto", description: "As publicações que você marcar para compartilhar aparecerão aqui." }
+      : { title: "Cada conquista conta.", description: "Compartilhe sua evolução com a comunidade. Suas publicações ficam somente neste aparelho até que uma integração de conta esteja disponível." };
+
+  return <Screen title="Meu perfil" subtitle="SUA JORNADA, SUAS CONQUISTAS" className="profile-screen" action={() => notify("A central de notificações ainda não está conectada a uma conta. Nenhuma notificação foi carregada.")}>
+    <section className="profile-identity-card">
+      <div className={`profile-cover ${user.cover ? "has-cover" : ""}`} style={user.cover ? { backgroundImage: `linear-gradient(90deg, #0b3024b8, #0b302433), url("${user.cover}")` } : undefined}>
+        <span className="profile-account-note"><ShieldCheck size={14} /> PERFIL NESTE APARELHO</span>
+      </div>
+      <div className="profile-identity-body">
+        <ProfileAvatar user={user} className="profile-avatar-large" />
+        <button className="button subtle small-button profile-edit-button" onClick={() => { setDraft(user); setEditOpen(true); }}><PencilLine size={15} /> Editar perfil</button>
+        <div className="profile-identity-copy"><h2>{user.name}</h2><span className="profile-handle">@{user.username}{user.showCity && user.city ? ` · ${user.city}` : ""}</span>
+          <p>{user.bio || "Bem-estar no seu ritmo. Adicione uma bio para contar um pouco sobre você."}</p>
+          <div className="profile-detail-chips">{user.goal && <span><Target size={13} /> {user.goal}</span>}{user.activity && <span><Activity size={13} /> {user.activity}</span>}</div>
+        </div>
+        <div className="profile-metrics" aria-label="Resumo do perfil">
+          <div><strong>{posts.length}</strong><span>Publicações<br /><small>neste aparelho</small></span></div>
+          <div><strong>—</strong><span>Seguidores<br /><small>conta não conectada</small></span></div>
+          <div><strong>—</strong><span>Seguindo<br /><small>conta não conectada</small></span></div>
+        </div>
+      </div>
+      <p className="profile-local-notice"><ShieldCheck size={14} /> Sem conta ou servidor conectado: alterações, fotos e publicações são armazenadas apenas neste navegador. Nenhum selo de verificação é aplicado.</p>
+    </section>
+
+    <section className="profile-evolution-entry">
+      <span className="profile-section-icon"><Activity size={18} /></span>
+      <div><span className="eyebrow">SUA JORNADA</span><h2>Minha evolução</h2><p>Consulte atividades e registros disponíveis no app. Os dados ficam neste aparelho.</p></div>
+      <Link to="/progress" className="button subtle small-button">Ver registros <ArrowRight size={15} /></Link>
+    </section>
+
+    <section className="profile-content-section">
+      <div className="profile-content-heading"><div><span className="eyebrow">SEU ESPAÇO</span><h2>Conteúdo</h2></div><button className="button primary small-button" onClick={() => setComposeOpen(true)}><Plus size={16} /> Criar publicação</button></div>
+      <div className="profile-tabs" role="tablist" aria-label="Conteúdo do perfil">{["Publicações", "Compartilhados", "Fotos"].map(label => <button role="tab" aria-selected={tab === label} key={label} onClick={() => chooseTab(label)} className={tab === label ? "active" : ""}>{label}{label === "Publicações" && <span>{posts.length}</span>}</button>)}</div>
+      {tab === "Fotos" && selectedPosts.length > 0
+        ? <div className="profile-photo-grid">{selectedPosts.map(post => <button key={post.id} aria-label={`Abrir foto publicada em ${new Date(post.createdAt).toLocaleDateString("pt-BR")}`} onClick={() => setLightbox(post)}><img src={post.image} alt={post.imageAlt || "Foto publicada"} loading="lazy" /><span>{new Date(post.createdAt).toLocaleDateString("pt-BR")}</span></button>)}</div>
+        : selectedPosts.length === 0
+          ? <div className="profile-empty"><span className="empty-icon">{tab === "Fotos" ? <Camera size={22} /> : tab === "Compartilhados" ? <Share2 size={22} /> : <Sparkles size={22} />}</span><h3>{postLabels.title}</h3><p>{postLabels.description}</p>{tab !== "Compartilhados" && <button className="button primary" onClick={() => setComposeOpen(true)}><Plus size={16} /> {tab === "Fotos" ? "Publicar uma foto" : "Criar publicação"}</button>}</div>
+          : <div className="profile-post-list">{selectedPosts.map(post => <article className="profile-post-card" key={post.id}>
+            <div className="profile-post-head"><ProfileAvatar user={user} /><span><strong>{user.name}</strong><small>{new Date(post.createdAt).toLocaleString("pt-BR")} · Somente neste aparelho</small></span><button className="icon-button profile-delete-button" aria-label="Excluir sua publicação" onClick={() => { if (window.confirm("Excluir esta publicação salva neste aparelho?")) updatePosts(posts.filter(item => item.id !== post.id)); }}><Trash2 size={17} /></button></div>
+            {post.text && <p className="profile-post-text">{post.text}</p>}
+            {post.image && <button className="profile-post-image" onClick={() => setLightbox(post)}><img src={post.image} alt={post.imageAlt || "Foto adicionada à publicação"} loading="lazy" /></button>}
+            <div className="profile-post-actions"><button className={post.liked ? "liked" : ""} aria-pressed={!!post.liked} onClick={() => updatePost(post.id, item => ({ ...item, liked: !item.liked }))}><Heart size={17} fill={post.liked ? "currentColor" : "none"} /> {post.liked ? "Curtido por você" : "Curtir"}</button><button onClick={() => { setCommentingPostId(commentingPostId === post.id ? "" : post.id); setCommentDraft(""); }}><MessageCircle size={17} /> Comentar{post.comments?.length ? ` · ${post.comments.length}` : ""}</button><button className={post.shared ? "shared" : ""} onClick={() => { updatePost(post.id, item => ({ ...item, shared: !item.shared })); notify(post.shared ? "Publicação removida da aba Compartilhados." : "Publicação marcada na aba Compartilhados deste aparelho."); }}><Share2 size={17} /> {post.shared ? "Compartilhado" : "Compartilhar"}</button></div>
+            {commentingPostId === post.id && <form className="profile-comment-form" onSubmit={event => { event.preventDefault(); const text = commentDraft.trim(); if (!text || text.length > 500) { notify(text ? "O comentário pode ter no máximo 500 caracteres." : "Escreva um comentário antes de enviar."); return; } if (updatePosts(posts.map(item => item.id === post.id ? { ...item, comments: [...(item.comments || []), { text, createdAt: new Date().toISOString() }] } : item))) { setCommentDraft(""); setCommentingPostId(""); notify("Comentário salvo neste aparelho."); } }}><label className="sr-only" htmlFor={`profile-comment-${post.id}`}>Escreva um comentário</label><input id={`profile-comment-${post.id}`} value={commentDraft} onChange={event => setCommentDraft(event.target.value)} maxLength={500} placeholder="Escreva um comentário..." /><button className="button primary small-button" type="submit"><Send size={14} /> Enviar</button></form>}
+            {!!post.comments?.length && <div className="profile-comment-list">{post.comments.map((comment, index) => <p key={`${post.id}-comment-${index}`}><strong>{user.name}</strong> {comment.text} <small>{new Date(comment.createdAt).toLocaleDateString("pt-BR")}</small></p>)}</div>}
+            <p className="profile-post-disclosure">Curtidas e comentários são registros locais e não são enviados a outras pessoas.</p>
+          </article>)}</div>}
+    </section>
+
     <div className="professional-entry"><div><span className="eyebrow">É PROFISSIONAL DE BEM-ESTAR?</span><h3>Seu trabalho merece ser visto.</h3><p>Conheça o espaço profissional Fortalfy.</p></div><div><Link to="/trainer" className="button subtle small-button">Coach Pedro</Link><Link to="/nutritionist" className="button primary small-button">Dra. Ana</Link></div></div>
     <div className="profile-creative-entry"><div><span className="eyebrow">FERRAMENTAS PARA SUA JORNADA</span><h3>Mais imagens. Mais inspiração.</h3><p>Explore a coleção ou crie artes originais para o Feed.</p></div><div><Link to="/shop" className="button subtle small-button"><ShoppingBag size={15} /> FortalShop</Link><Link to="/studio" className="button primary small-button"><Sparkles size={15} /> Abrir Studio</Link></div></div>
+
+    {editOpen && <Modal title="Editar perfil" onClose={closeEditor}><form className="profile-edit-form" onSubmit={saveProfile}>
+      <div className="profile-image-edit">
+        <label className="profile-cover-edit" style={draft.cover ? { backgroundImage: `linear-gradient(#082d2080,#082d2040),url("${draft.cover}")` } : undefined}><input type="file" accept="image/*" onChange={event => handleImageFile(event, "cover")} /><Camera size={16} /> Adicionar capa</label>
+        <label className="profile-avatar-edit"><input type="file" accept="image/*" onChange={event => handleImageFile(event, "avatar")} />{draft.avatar ? <img src={draft.avatar} alt="Prévia da foto de perfil" /> : <ProfileAvatar user={draft} />}<span><Camera size={13} /></span></label>
+      </div>
+      <label className="profile-field">Nome de exibição<input autoComplete="name" value={draft.name} maxLength={50} onChange={event => setDraft(current => ({ ...current, name: event.target.value }))} required /></label>
+      <label className="profile-field">Nome de usuário<input autoComplete="username" value={draft.username} maxLength={24} onChange={event => setDraft(current => ({ ...current, username: event.target.value.replace(/^@/, "") }))} required /><small>Disponibilidade global não pode ser verificada sem serviço de contas.</small></label>
+      <label className="profile-field">Biografia<textarea value={draft.bio} maxLength={180} rows={3} onChange={event => setDraft(current => ({ ...current, bio: event.target.value }))} placeholder="Conte um pouco sobre você." /><small>{draft.bio.length}/180 caracteres</small></label>
+      <div className="profile-form-row"><label className="profile-field">Seu objetivo<input value={draft.goal} maxLength={60} onChange={event => setDraft(current => ({ ...current, goal: event.target.value }))} placeholder="Ex.: mais disposição" /></label><label className="profile-field">Atividade preferida<input value={draft.activity} maxLength={40} onChange={event => setDraft(current => ({ ...current, activity: event.target.value }))} placeholder="Ex.: musculação" /></label></div>
+      <label className="profile-field">Cidade (opcional)<input value={draft.city} maxLength={70} onChange={event => setDraft(current => ({ ...current, city: event.target.value }))} /></label>
+      <label className="profile-privacy-toggle"><input type="checkbox" checked={draft.showCity} onChange={event => setDraft(current => ({ ...current, showCity: event.target.checked }))} /> Mostrar minha cidade neste perfil local</label>
+      <p className="profile-local-notice"><ShieldCheck size={14} /> Alterações e imagens são guardadas apenas neste navegador; não há autenticação, envio de arquivos ou banco de dados conectados.</p>
+      <div className="profile-edit-actions"><button className="button subtle" type="button" onClick={closeEditor}>Cancelar</button><button className="button primary" type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar perfil"} <Check size={16} /></button></div>
+    </form></Modal>}
+
+    {composeOpen && <Modal title="Criar publicação" onClose={() => { if ((postDraft.text.trim() || postDraft.image) && !window.confirm("Descartar sua publicação ainda não salva?")) return; setComposeOpen(false); setPostDraft({ text: "", image: "" }); }}><form className="profile-compose-form" onSubmit={publishPost}>
+      <div className="profile-compose-author"><ProfileAvatar user={user} /><span><strong>{user.name}</strong><small>Rascunho salvo somente neste aparelho</small></span></div>
+      <label className="sr-only" htmlFor="profile-post-text">Texto da publicação</label><textarea id="profile-post-text" autoFocus value={postDraft.text} maxLength={1200} rows={5} onChange={event => setPostDraft(current => ({ ...current, text: event.target.value }))} placeholder="Compartilhe uma conquista, um pensamento ou um momento da sua rotina..." />
+      {postDraft.image && <div className="profile-compose-preview"><img src={postDraft.image} alt="Prévia da foto da publicação" /><button type="button" aria-label="Remover foto" onClick={() => setPostDraft(current => ({ ...current, image: "" }))}><X size={17} /></button></div>}
+      <div className="profile-compose-tools"><label className="button subtle small-button"><ImagePlus size={16} /> {postImageBusy ? "Preparando..." : "Adicionar foto"}<input type="file" accept="image/*" disabled={postImageBusy} onChange={async event => { const file = event.target.files?.[0]; if (!file) return; setPostImageBusy(true); try { const image = await compressProfileImage(file, 900000); setPostDraft(current => ({ ...current, image })); } catch (error) { notify(error.message); } finally { setPostImageBusy(false); event.target.value = ""; } }} /></label><span>{postDraft.text.length}/1.200</span><button className="button primary small-button" type="submit" disabled={postImageBusy}><Send size={15} /> Publicar</button></div>
+      <p className="profile-post-disclosure">Esta ação salva a publicação somente neste aparelho. Ela não é enviada ao Feed público e não fica visível para outras contas.</p>
+    </form></Modal>}
+
+    {lightbox && <Modal title="Foto da publicação" onClose={() => setLightbox(null)}><img className="profile-lightbox-image" src={lightbox.image} alt={lightbox.imageAlt || "Foto publicada"} /><p className="profile-post-disclosure">{lightbox.text}</p></Modal>}
   </Screen>;
 }
 
@@ -345,6 +600,11 @@ function AppContent() {
   const [savedArts, setSavedArts] = useState([]);
   const [studioArtwork, setStudioArtwork] = useState(null);
   const [feedArts, setFeedArts] = useState([]);
+  const [profileDetails, setProfileDetails] = useState(() => ({ ...makeDefaultProfile(), ...loadLocalValue(PROFILE_STORAGE_KEY, {}) }));
+  const [profilePosts, setProfilePosts] = useState(() => {
+    const saved = loadLocalValue(PROFILE_POSTS_STORAGE_KEY, []);
+    return Array.isArray(saved) ? saved : [];
+  });
   const location = useLocation();
   const notify = message => setToast(message);
   const updateActivity = kind => setActivity(current => {
@@ -364,10 +624,10 @@ function AppContent() {
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen notify={notify} activity={activity} onActivity={updateActivity} />} />
-      <Route path="/feed" element={<FeedScreen notify={notify} feedArts={feedArts} />} />
+      <Route path="/feed" element={<FeedScreen notify={notify} feedArts={feedArts} profileDetails={profileDetails} profilePosts={profilePosts} />} />
       <Route path="/food" element={<FoodScreen notify={notify} />} />
       <Route path="/pass" element={<PassScreen />} />
-      <Route path="/profile" element={<ProfileScreen notify={notify} />} />
+      <Route path="/profile" element={<ProfileScreen notify={notify} user={profileDetails} setUser={setProfileDetails} posts={profilePosts} setPosts={setProfilePosts} />} />
       <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
       <Route path="/curated" element={<CuratedScreen notify={notify} />} />
