@@ -5,12 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/pages.yml"
-      - "index.html"
-      - "food-social.css"
-      - "food-social.js"
-      - "manifest.webmanifest"
-      - "service-worker.js"
-      - "assets/**"
+      - "web/**"
   workflow_dispatch:
 
 permissions:
@@ -28,20 +23,28 @@ jobs:
     steps:
       - name: Check out application
         uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Prepare application files
+      - name: Build Fortalfy web app
+        working-directory: web
         run: |
-          mkdir -p site
-          cp index.html food-social.css food-social.js manifest.webmanifest service-worker.js site/
-          cp -R assets site/assets
-          touch site/.nojekyll
+          npm ci
+          npm run build
+      - name: Prepare Pages artifact
+        run: |
+          touch web/dist/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: web/dist
 
   deploy:
     environment:

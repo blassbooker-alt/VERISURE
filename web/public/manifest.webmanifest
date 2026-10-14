@@ -1,0 +1,18 @@
+{
+  "name": "Fortalfy",
+  "short_name": "Fortalfy",
+  "description": "Treino, alimentação e bem-estar em um só lugar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6FBF7",
+  "theme_color": "#0A3D2E",
+  "icons": [
+    {
+      "src": "./assets/fortalfy-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

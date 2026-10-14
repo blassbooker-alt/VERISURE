@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Movimento, alimentação e bem-estar</title>
+  <desc id="desc">Ilustração editorial de uma pessoa se exercitando ao lado de uma refeição colorida e folhas.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#dff1cf"/>
+      <stop offset="1" stop-color="#f4e7c9"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#42a579"/>
+      <stop offset="1" stop-color="#165b49"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" rx="48" fill="url(#bg)"/>
+  <circle cx="730" cy="125" r="90" fill="#c6e6aa"/>
+  <circle cx="184" cy="480" r="128" fill="#e7c776" opacity=".32"/>
+  <path d="M85 506c71-93 119-106 181-86m-130 82c54-90 73-158 58-220m-54 128c-38-9-64-33-78-72m91-41c39-18 62-48 68-89" fill="none" stroke="#47835b" stroke-width="16" stroke-linecap="round"/>
+  <path d="M615 396c0 85 66 154 148 154s148-69 148-154H615Z" fill="#fffaf0"/>
+  <ellipse cx="763" cy="395" fill="#fff" rx="148" ry="69"/>
+  <ellipse cx="763" cy="397" fill="#dce9ba" rx="118" ry="49"/>
+  <path d="M680 404c20-36 51-51 86-42 25 7 35 26 29 48-9 28-50 44-115 34" fill="#f0a855"/>
+  <circle cx="815" cy="382" r="25" fill="#cf6950"/>
+  <circle cx="858" cy="411" r="16" fill="#e7c54f"/>
+  <path d="M745 369c7-25 24-38 50-38m-26 24c3-24 18-40 44-47m-78 57c-5-24-19-39-44-44" fill="none" stroke="#4c9660" stroke-width="13" stroke-linecap="round"/>
+  <path d="M352 143c24-48 75-60 123-36 31 16 54 46 63 87l-31 101-150-1-22-81c-7-26 1-51 17-70Z" fill="#e5a878"/>
+  <path d="M363 128c20-43 67-55 108-37 37 16 61 51 67 95l-71-23-41-42-63 35Z" fill="#262e2a"/>
+  <path d="M345 266c24-37 54-53 88-49l92 17c30 6 52 23 61 52l32 124-206 22-81-95c-19-22-14-48 14-71Z" fill="url(#shirt)"/>
+  <path d="m393 277-89 69-75-83c-13-15-35-16-49-2s-14 35 0 49l88 94c13 14 34 17 50 6l92-62m147-68 91 44 53-75c12-17 34-21 50-9 17 12 21 34 9 51l-72 101c-12 17-34 22-52 13l-101-48" fill="#d99569" stroke="#bc7857" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m423 405-76 82-92 50c-18 10-24 32-14 49s32 23 50 13l113-61c5-3 9-6 13-11l84-90m47-12 49 92 84 51c18 11 24 33 13 50s-33 23-50 12l-98-61c-5-3-10-8-13-13l-63-99" fill="#dc9b70" stroke="#bc7857" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m570 540 73 12 14 24-98 3-24-14 35-25Zm-293 14 60-34 20 16-21 35-95 28-18-18 54-27Z" fill="#f4f1e7"/>
+  <rect x="79" y="63" width="220" height="54" rx="27" fill="#fff" opacity=".9"/>
+  <circle cx="111" cy="90" r="11" fill="#33815b"/>
+  <text x="137" y="98" fill="#244a38" font-family="Arial,sans-serif" font-size="20" font-weight="700">BEM-ESTAR EM ROTINA</text>
+</svg>
