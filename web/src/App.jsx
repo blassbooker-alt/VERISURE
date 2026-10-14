@@ -8,15 +8,11 @@ import {
   ShoppingBag, Sparkles, Star, Timer, Users, Utensils, Wallet, X,
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
+import BottomNav from "./MobileNavigation.jsx";
+import FortalShop from "./FortalShop.jsx";
+import FortalfyStudio from "./FortalfyStudio.jsx";
+import { shopProducts } from "./shopData.js";
 import { courseList, gyms, profile, restaurants, workoutExercises } from "./data.js";
-
-const primaryTabs = [
-  { to: "/home", label: "Início", icon: Home },
-  { to: "/feed", label: "Feed", icon: Users },
-  { to: "/food", label: "Food", icon: Utensils },
-  { to: "/pass", label: "Pass", icon: Wallet },
-  { to: "/profile", label: "Perfil", icon: Activity },
-];
 
 function Brand({ light = false }) {
   return <span className={`logo-mark ${light ? "light" : ""}`}>fortal<span>fy</span></span>;
@@ -44,16 +40,6 @@ function Modal({ title, children, onClose }) {
       {children}
     </section>
   </div>;
-}
-
-function BottomNav() {
-  const location = useLocation();
-  const active = primaryTabs.find(tab => location.pathname === tab.to)?.to;
-  if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
-  return <nav className="bottom-nav" aria-label="Navegação principal">{primaryTabs.map(({ to, label, icon: Icon }) =>
-    <Link key={to} to={to} className={`bottom-nav-item ${active === to ? "active" : ""}`} aria-current={active === to ? "page" : undefined}>
-      <Icon size={21} strokeWidth={active === to ? 2.5 : 1.8} /><span>{label}</span>
-    </Link>)}</nav>;
 }
 
 function MobileHeader({ location = false, action }) {
@@ -105,6 +91,7 @@ function HomeScreen({ notify, activity, onActivity }) {
         <Link to="/progress" className="quick-tile"><span className="quick-icon yellow"><Activity size={19} /></span><strong>Seu movimento</strong><small>Conecte um dispositivo para registrar passos e sono</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
         <button className="quick-tile" onClick={() => { onActivity("water"); notify("Hidratação registrada. Mais um passo para sua meta."); }}><span className="quick-icon blue"><HeartPulseIcon /></span><strong>Um lembrete gentil</strong><small>Hidratação · {(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L de 2,5 L</small><ArrowUpRight size={16} className="quick-arrow" /></button>
       </div>
+      <Link to="/shop" className="home-shop-feature"><div><span className="eyebrow">FORTALFY SHOP · NOVA COLEÇÃO</span><h2>Feito para o seu ritmo.</h2><p>Conheça ideias para acompanhar sua rotina.</p><span className="home-shop-link">Explorar a loja <ArrowRight size={15} /></span></div><div className="home-shop-products" aria-hidden="true"><img src={shopProducts[1].image} alt="" loading="lazy" /><img src={shopProducts[0].image} alt="" loading="lazy" /></div><span className="home-shop-icon"><ShoppingBag size={17} /></span></Link>
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Uma semana de cada vez.</h2></div><span className={`score-mark ${scoreTone}`}>{score}<span>%</span></span></div>
         <div className="score-track" role="progressbar" aria-label="Pontuação de consistência da rotina" aria-valuemin="0" aria-valuemax="100" aria-valuenow={score}><i className={scoreTone} style={{ width: `${score}%` }} /></div>
@@ -130,7 +117,7 @@ function StoriesRow({ notify }) {
   </div>;
 }
 
-function FeedScreen({ notify }) {
+function FeedScreen({ notify, feedArts }) {
   const [liked, setLiked] = useState(false);
   const [following, setFollowing] = useState(false);
   const [filter, setFilter] = useState("Para você");
@@ -139,6 +126,11 @@ function FeedScreen({ notify }) {
     <StoriesRow notify={notify} />
     <div className="feed-filters">{["Para você", "Seguindo", "Perfis que sigo"].map(item => <button key={item} onClick={() => setFilter(item)} className={filter === item ? "selected" : ""}>{item}</button>)}</div>
     <button className="composer-card" onClick={() => notify("O espaço para sua próxima conquista está pronto.")}><span className="avatar">L</span><span>No que você está pensando?</span><Plus size={19} /></button>
+    {feedArts.map(art => <article className="feed-post created-art-post" key={art.id}>
+      <div className="post-head"><div className="avatar"><Sparkles size={17} /></div><div className="post-author"><strong>Uma criação sua</strong><span>Arte local · desta sessão</span></div><span className="created-art-label">PRÉVIA</span></div>
+      <p className="post-copy">{art.title}</p><div className="created-art-image"><img src={art.dataUrl} alt={`Arte criada no Fortalfy Studio: ${art.title}`} /></div>
+      <div className="post-caption">{art.subtitle} <span>Compartilhamento simulado nesta sessão.</span></div>
+    </article>)}
     <article className="feed-post">
       <div className="post-head"><div className="avatar studio">SV</div><div className="post-author"><strong>Studio Viva</strong><span>Aldeota, Fortaleza · há 32 min</span></div><button className="icon-button" aria-label="Mais opções" onClick={() => notify("Opções da publicação.")}><MoreHorizontal size={20} /></button></div>
       <p className="post-copy">Sua próxima conquista começa com um treino. 💚</p>
@@ -222,6 +214,7 @@ function ProfileScreen({ notify }) {
     <div className="profile-tabs">{["Publicações", "Compartilhados", "Fotos"].map(label => <button key={label} onClick={() => setTab(label)} className={tab === label ? "active" : ""}>{label}</button>)}</div>
     <div className="profile-empty"><span className="empty-icon"><Sparkles size={24} /></span><h3>Sua próxima conquista merece ser compartilhada.</h3><p>Quando publicar, seus momentos de evolução vão aparecer por aqui.</p><Link to="/feed" className="button primary">Ir para o Feed <ArrowRight size={16} /></Link></div>
     <div className="professional-entry"><div><span className="eyebrow">É PROFISSIONAL DE BEM-ESTAR?</span><h3>Seu trabalho merece ser visto.</h3><p>Conheça o espaço profissional Fortalfy.</p></div><div><Link to="/trainer" className="button subtle small-button">Coach Pedro</Link><Link to="/nutritionist" className="button primary small-button">Dra. Ana</Link></div></div>
+    <div className="profile-creative-entry"><div><span className="eyebrow">FERRAMENTAS PARA SUA JORNADA</span><h3>Mais imagens. Mais inspiração.</h3><p>Explore a coleção ou crie artes originais para o Feed.</p></div><div><Link to="/shop" className="button subtle small-button"><ShoppingBag size={15} /> FortalShop</Link><Link to="/studio" className="button primary small-button"><Sparkles size={15} /> Abrir Studio</Link></div></div>
   </Screen>;
 }
 
@@ -347,6 +340,11 @@ function PartnerScreen({ notify }) {
 function AppContent() {
   const [toast, setToast] = useState("");
   const [activity, setActivity] = useState({ trainingPercent: 85, nutritionPercent: 70, waterMl: 1200, recoveryPercent: 80, mealsLogged: 0 });
+  const [shopCart, setShopCart] = useState([]);
+  const [shopOrders, setShopOrders] = useState([]);
+  const [savedArts, setSavedArts] = useState([]);
+  const [studioArtwork, setStudioArtwork] = useState(null);
+  const [feedArts, setFeedArts] = useState([]);
   const location = useLocation();
   const notify = message => setToast(message);
   const updateActivity = kind => setActivity(current => {
@@ -360,13 +358,13 @@ function AppContent() {
     window.addEventListener("fortalfy-toast", listener);
     return () => window.removeEventListener("fortalfy-toast", listener);
   }, []);
-  const mobilePaths = ["/home", "/feed", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/academy", "/live", "/partner/gym"];
+  const mobilePaths = ["/home", "/feed", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/academy", "/live", "/partner/gym", "/shop", "/studio"];
   const mobile = mobilePaths.includes(location.pathname);
   return <div className={mobile ? "mobile-app" : "professional-root"}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen notify={notify} activity={activity} onActivity={updateActivity} />} />
-      <Route path="/feed" element={<FeedScreen notify={notify} />} />
+      <Route path="/feed" element={<FeedScreen notify={notify} feedArts={feedArts} />} />
       <Route path="/food" element={<FoodScreen notify={notify} />} />
       <Route path="/pass" element={<PassScreen />} />
       <Route path="/profile" element={<ProfileScreen notify={notify} />} />
@@ -377,6 +375,8 @@ function AppContent() {
       <Route path="/academy" element={<AcademyScreen />} />
       <Route path="/live" element={<LiveScreen notify={notify} />} />
       <Route path="/partner/:type" element={<PartnerScreen notify={notify} />} />
+      <Route path="/shop" element={<FortalShop cart={shopCart} setCart={setShopCart} orders={shopOrders} setOrders={setShopOrders} notify={notify} />} />
+      <Route path="/studio" element={<FortalfyStudio artwork={studioArtwork} setArtwork={setStudioArtwork} savedArts={savedArts} setSavedArts={setSavedArts} setFeedArts={setFeedArts} notify={notify} />} />
       <Route path="/trainer" element={<Dashboard key="trainer" role="trainer" notify={notify} />} />
       <Route path="/nutritionist" element={<Dashboard key="nutritionist" role="nutritionist" notify={notify} />} />
       <Route path="*" element={<Navigate to="/home" replace />} />

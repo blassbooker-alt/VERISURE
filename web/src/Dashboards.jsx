@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, Check,
   ChevronDown, CircleHelp, ClipboardList, Dumbbell, HeartPulse, LayoutDashboard,
-  LogOut, Plus, Search, Settings, Users, Utensils,
+  LogOut, Plus, Search, Settings, Sparkles, Users, Utensils,
 } from "lucide-react";
 import { clients, restaurants } from "./data.js";
 
@@ -158,7 +159,7 @@ export default function Dashboard({ role, notify }) {
     <aside className="dash-sidebar">
       <a className="logo-mark" href="#/home">fortal<span>fy</span></a><span className="sidebar-caption">ESPAÇO PROFISSIONAL</span>
       <div className="sidebar-profile"><span className="coach-avatar">AP</span><div><strong>{title}</strong><small>{nutrition ? "Nutricionista" : "Personal trainer"}</small></div><span className="verify-dot"><Check size={11} /></span></div>
-      <nav aria-label="Menu profissional">{sections.map(item => <button key={item.id} className={`dash-nav-item ${section === item.id ? "current" : ""}`} onClick={() => { setSection(item.id); setSelectedClient(null); }}><item.icon size={18} />{item.label}</button>)}</nav>
+      <nav aria-label="Menu profissional">{sections.map(item => <button key={item.id} className={`dash-nav-item ${section === item.id ? "current" : ""}`} onClick={() => { setSection(item.id); setSelectedClient(null); }}><item.icon size={18} />{item.label}</button>)}<Link to="/studio" className="dash-nav-item"><Sparkles size={18} />Studio criativo</Link></nav>
       <div className="sidebar-bottom"><button className="dash-nav-item" onClick={() => notify("A central de ajuda ainda não está conectada.")}><CircleHelp size={18} />Ajuda e suporte</button><button className="dash-nav-item" onClick={() => notify("As configurações ainda não estão disponíveis.")}><Settings size={18} />Configurações</button><div className="sidebar-location">Espaço profissional <span>Fortaleza, CE</span></div><button className="dash-nav-item" onClick={() => setShowLogin(true)}><LogOut size={18} />Sair do painel</button></div>
     </aside>
     <main className="dash-main">
