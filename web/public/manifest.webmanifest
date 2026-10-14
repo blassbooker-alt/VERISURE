@@ -9,10 +9,10 @@
   "theme_color": "#0A3D2E",
   "icons": [
     {
-      "src": "./assets/fortalfy-app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "./assets/fortalfy-official-logo.png",
+      "sizes": "768x768",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
