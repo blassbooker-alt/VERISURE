@@ -9,10 +9,22 @@
   "theme_color": "#0A3D2E",
   "icons": [
     {
-      "src": "./assets/fortalfy-official-logo.png",
-      "sizes": "768x768",
+      "src": "./assets/fortalfy-icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./assets/fortalfy-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/fortalfy-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
