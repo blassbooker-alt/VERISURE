@@ -6,6 +6,7 @@ import {
   Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
+import { fortalfyAsset } from "./assetPath.js";
 import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
@@ -27,15 +28,14 @@ const formatDate = value => {
     : date.toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 };
 
-function SocialAuth({ client, configured, notify, recovery = false, onRecovered, onDemoLogin }) {
+function SocialAuth({ client, configured, notify, recovery = false, onRecovered }) {
   const [mode, setMode] = useState(recovery ? "update" : "login");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [googleHelpOpen, setGoogleHelpOpen] = useState(false);
-  const [quickCreateOffered, setQuickCreateOffered] = useState(false);
   const [fields, setFields] = useState({
-    name: "", username: "", email: "", password: "", birthDate: "2000-01-01", city: "Fortaleza",
-    goals: ["emagrecimento", "forca"], interests: ["feed", "treinos"], acceptedTerms: true,
+    name: "", username: "", email: "", password: "", birthDate: "", city: "", kind: "cliente",
+    goals: ["emagrecimento", "forca"], interests: ["feed", "treinos"], acceptedTerms: false,
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
@@ -64,50 +64,10 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
     }
   }, [recovery]);
 
-  const handleQuickCreate = () => {
-    const rawEmail = fields.email.trim() || "usuario@fortalfy.com";
-    const emailPrefix = rawEmail.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 20) || "usuario";
-    const userName = fields.name.trim() || emailPrefix.replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    const username = (fields.username.trim() || emailPrefix).toLowerCase();
-
-    try {
-      const localUsers = JSON.parse(window.localStorage.getItem("fortalfy_registered_users") || "[]");
-      const existingIdx = localUsers.findIndex(u => u.email.toLowerCase() === rawEmail.toLowerCase());
-      const newUserData = {
-        id: `local-${username}`,
-        name: userName,
-        username,
-        email: rawEmail,
-        password: fields.password || "12345678",
-        city: fields.city.trim() || "Fortaleza",
-        createdAt: new Date().toISOString(),
-      };
-      if (existingIdx >= 0) {
-        localUsers[existingIdx] = newUserData;
-      } else {
-        localUsers.push(newUserData);
-      }
-      window.localStorage.setItem("fortalfy_registered_users", JSON.stringify(localUsers));
-    } catch {
-      // ignore
-    }
-
-    if (onDemoLogin) {
-      onDemoLogin({
-        id: `local-${username}`,
-        name: userName,
-        username,
-        email: rawEmail,
-        city: fields.city.trim() || "Fortaleza",
-      });
-    }
-  };
-
   const submit = async event => {
     event.preventDefault();
     setMessage("");
     setGoogleHelpOpen(false);
-    setQuickCreateOffered(false);
 
     if (mode === "signup") {
       const errors = validateSignup(fields);
@@ -132,57 +92,24 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
         setMessageType("success");
         onRecovered?.();
       } else if (mode === "signup") {
-        let supabaseSuccess = false;
-        if (configured && client) {
-          try {
-            const redirectTo = `${window.location.origin}${window.location.pathname}`;
-            const data = await createAccount(client, fields, redirectTo);
-            if (data?.session) {
-              supabaseSuccess = true;
-              setMessage("Conta criada com sucesso! Bem-vindo(a) ao Fortalfy.");
-              setMessageType("success");
-            }
-          } catch (supabaseError) {
-            console.warn("Supabase signup rejected, using local account fallback:", supabaseError);
-          }
-        }
-
-        // Always save account locally to guarantee login never fails
-        try {
-          const localUsers = JSON.parse(window.localStorage.getItem("fortalfy_registered_users") || "[]");
-          const existingIdx = localUsers.findIndex(u => u.email.toLowerCase() === fields.email.toLowerCase().trim());
-          const newUserData = {
-            id: `local-${fields.username.trim().toLowerCase()}`,
-            name: fields.name.trim(),
-            username: fields.username.trim().toLowerCase(),
-            email: fields.email.trim(),
-            password: fields.password,
-            city: fields.city.trim() || "Fortaleza",
-            createdAt: new Date().toISOString(),
-          };
-          if (existingIdx >= 0) {
-            localUsers[existingIdx] = newUserData;
-          } else {
-            localUsers.push(newUserData);
-          }
-          window.localStorage.setItem("fortalfy_registered_users", JSON.stringify(localUsers));
-        } catch {
-          // ignore
-        }
-
-        if (onDemoLogin) {
-          onDemoLogin({
-            id: `local-${fields.username.trim().toLowerCase()}`,
-            name: fields.name.trim(),
-            username: fields.username.trim().toLowerCase(),
-            email: fields.email.trim(),
-            city: fields.city.trim() || "Fortaleza",
-          });
+        if (!configured || !client) throw new Error("A conexão com o servidor de autenticação ainda não foi configurada.");
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const data = await createAccount(client, fields, redirectTo);
+        if (data?.session) {
+          setMessage("Conta criada com sucesso! Bem-vindo(a) ao Fortalfy.");
+          setMessageType("success");
+          notify?.("Conta criada com sucesso!");
           return;
         }
-
+        if (data?.user) {
+          setMessage("Conta criada com sucesso! Verifique a mensagem enviada ao seu e-mail para confirmar seu cadastro e acesse sua conta.");
+          setMessageType("success");
+          setMode("login");
+          return;
+        }
         setMessage("Conta criada com sucesso! Você já pode entrar.");
         setMessageType("success");
+        setMode("login");
       } else if (mode === "reset") {
         if (!configured || !client) throw new Error("Supabase não configurado.");
         const redirectTo = `${window.location.origin}${window.location.pathname}`;
@@ -192,56 +119,42 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
         setMessageType("success");
       } else {
         // mode === "login"
-        let loggedIn = false;
-        if (configured && client) {
-          try {
-            const { data, error } = await client.auth.signInWithPassword({
-              email: fields.email.trim(),
-              password: fields.password,
-            });
-            if (!error && data?.session) {
-              loggedIn = true;
-            }
-          } catch (supabaseLoginErr) {
-            console.warn("Supabase signin failed:", supabaseLoginErr);
+        if (!configured || !client) throw new Error("Supabase não configurado.");
+        const { data, error } = await client.auth.signInWithPassword({
+          email: fields.email.trim(),
+          password: fields.password,
+        });
+        if (error) {
+          const errText = (error.message || "").toLowerCase();
+          if (errText.includes("invalid login credentials") || error.code === "invalid_credentials") {
+            setMessage("E-mail ou senha incorretos. Verifique suas credenciais de acesso.");
+          } else if (errText.includes("email not confirmed")) {
+            setMessage("Seu e-mail ainda não foi confirmado. Verifique o link de confirmação enviado para sua caixa de entrada.");
+          } else {
+            setMessage(getErrorMessage(error, "Não foi possível autenticar. Verifique seus dados de acesso."));
           }
+          setMessageType("error");
+          return;
         }
-
-        if (loggedIn) return;
-
-        // Check local registered accounts
-        try {
-          const localUsers = JSON.parse(window.localStorage.getItem("fortalfy_registered_users") || "[]");
-          const found = localUsers.find(u => u.email.toLowerCase() === fields.email.toLowerCase().trim());
-          if (found) {
-            if (found.password === fields.password) {
-              if (onDemoLogin) {
-                onDemoLogin(found);
-                return;
-              }
-            } else {
-              setMessage("Senha incorreta para esta conta.");
-              setMessageType("error");
-              setBusy(false);
-              return;
-            }
-          }
-        } catch {
-          // ignore
+        if (data?.session) {
+          notify?.("Bem-vindo(a) de volta!");
         }
-
-        // Account not found yet: offer instant 1-click account creation
-        setMessage("Conta não encontrada no servidor com estas credenciais.");
-        setMessageType("error");
-        setQuickCreateOffered(true);
       }
     } catch (error) {
       console.error("Falha na autenticação.", error);
+      const errText = (error?.message || "").toLowerCase();
       const duplicateUsername = error?.code === "23505"
         || /profiles_username_lower_unique|duplicate key/i.test(error?.message || "");
-      setMessage(duplicateUsername
-        ? "Esse nome de usuário já está em uso. Escolha outro."
-        : getErrorMessage(error, "Não foi possível autenticar. Verifique seus dados de acesso."));
+      const userExists = errText.includes("user already registered") || error?.code === "user_already_exists";
+      if (duplicateUsername) {
+        setMessage("Esse nome de usuário já está em uso. Escolha outro.");
+      } else if (userExists) {
+        setMessage("Este e-mail já está cadastrado. Alterne para 'Entrar' para acessar sua conta.");
+      } else if (errText.includes("rate limit")) {
+        setMessage("Limite temporário de requisições de e-mail atingido. Se já tem conta, utilize o login.");
+      } else {
+        setMessage(getErrorMessage(error, "Não foi possível concluir a ação. Verifique seus dados."));
+      }
       setMessageType("error");
     } finally {
       setBusy(false);
@@ -323,16 +236,17 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
             </div>
           </div>
 
+          <img
+            className="showcase-banner"
+            src={fortalfyAsset("publicidade", "banner-app-papagaio-a.jpg")}
+            alt=""
+            aria-hidden="true"
+          />
+
           <div className="showcase-footer">
-            <div className="showcase-avatars-row">
-              <span className="avatar-dot a1">JR</span>
-              <span className="avatar-dot a2">MA</span>
-              <span className="avatar-dot a3">LC</span>
-              <span className="avatar-dot a4">+2k</span>
-            </div>
             <div className="showcase-proof">
-              <strong>+2.400 membros ativos</strong>
-              <small>Evoluindo juntos todos os dias</small>
+              <strong>Seu espaço para evoluir</strong>
+              <small>Treino, comunidade e bem-estar em um só lugar.</small>
             </div>
           </div>
         </aside>
@@ -477,6 +391,23 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                     required
                   />
                 </div>
+              </div>
+            )}
+
+            {mode === "signup" && (
+              <div className="auth-field">
+                <label htmlFor="auth-field-kind">Tipo de conta</label>
+                <select
+                  id="auth-field-kind"
+                  value={fields.kind}
+                  onChange={event => setFields(current => ({ ...current, kind: event.target.value }))}
+                >
+                  <option value="cliente">Pessoa</option>
+                  <option value="personal">Personal trainer</option>
+                  <option value="nutricionista">Nutricionista</option>
+                  <option value="academia">Academia</option>
+                </select>
+                <small className="auth-hint-text">Perfis de parceiros só aparecem na descoberta após aprovação da equipe.</small>
               </div>
             )}
 
@@ -643,20 +574,6 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               </div>
             )}
 
-            {quickCreateOffered && (
-              <div className="auth-quick-offer-box">
-                <p>Deseja criar e acessar sua conta imediatamente com estes dados?</p>
-                <button
-                  type="button"
-                  className="auth-quick-create-btn"
-                  onClick={handleQuickCreate}
-                >
-                  <Sparkles size={16} />
-                  <span>Criar e Entrar Agora com {fields.email || "este e-mail"}</span>
-                </button>
-              </div>
-            )}
-
             <button className="auth-submit-btn" type="submit" disabled={busy}>
               {busy ? (
                 <LoaderCircle className="spin" size={17} />
@@ -676,21 +593,6 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               )}
             </button>
           </form>
-
-          {/* Quick Demo Mode Access Button */}
-          {onDemoLogin && (
-            <div className="auth-demo-box">
-              <span className="auth-demo-label">Quer apenas testar o ecossistema agora?</span>
-              <button
-                type="button"
-                className="auth-demo-btn"
-                onClick={() => onDemoLogin?.()}
-              >
-                <Sparkles size={16} />
-                <span>Entrar no Modo Visitante (Acesso Rápido com 1 Clique)</span>
-              </button>
-            </div>
-          )}
 
           {/* Bottom Switch Links */}
           <div className="auth-bottom-switch">
@@ -719,11 +621,12 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
   );
 }
 
-export function OnboardingGate({ client, userId, configured, notify }) {
+export function OnboardingGate({ client, userId, configured, notify, onSignOut }) {
   const [preferences, setPreferences] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [dismissed, setDismissed] = useState(false);
   const [retry, setRetry] = useState(0);
   const [fields, setFields] = useState({
     birthDate: "", goals: [], interests: [], acceptedTerms: false,
@@ -744,10 +647,10 @@ export function OnboardingGate({ client, userId, configured, notify }) {
         if (!active) return;
         setPreferences(result);
         setFields({
-          birthDate: result.birth_date || "",
-          goals: result.goals || [],
-          interests: result.interests || [],
-          acceptedTerms: Boolean(result.accepted_terms_at),
+          birthDate: result?.birth_date || "",
+          goals: result?.goals || [],
+          interests: result?.interests || [],
+          acceptedTerms: Boolean(result?.accepted_terms_at),
         });
       })
       .catch(error => {
@@ -765,6 +668,7 @@ export function OnboardingGate({ client, userId, configured, notify }) {
       ? current[field].filter(item => item !== value)
       : [...current[field], value],
   }));
+
   const submit = async event => {
     event.preventDefault();
     const errors = validateOnboarding(fields);
@@ -785,11 +689,12 @@ export function OnboardingGate({ client, userId, configured, notify }) {
       setBusy(false);
     }
   };
+
   const signOut = async () => {
     setBusy(true);
     try {
-      const { error } = await client.auth.signOut();
-      if (error) throw error;
+      if (client?.auth) await client.auth.signOut();
+      onSignOut?.();
     } catch (error) {
       console.error("Não foi possível sair da conta durante o onboarding.", error);
       setMessage(getErrorMessage(error, "Não foi possível sair da conta."));
@@ -797,7 +702,8 @@ export function OnboardingGate({ client, userId, configured, notify }) {
     }
   };
 
-  if (preferences?.onboarding_completed) return null;
+  if (dismissed || preferences?.onboarding_completed) return null;
+
   return <div className="onboarding-scrim">
     <section className="onboarding-dialog" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
       <span className="social-auth-icon"><ShieldCheck size={20} /></span>
@@ -806,7 +712,14 @@ export function OnboardingGate({ client, userId, configured, notify }) {
       <p>Essas preferências ficam privadas na sua conta e podem ser alteradas depois.</p>
       {!configured && <div className="social-config-warning"><CircleAlert size={17} /> Configure o Supabase para salvar o onboarding com segurança.</div>}
       {loading ? <p role="status">Carregando suas preferências...</p> : message && !preferences
-        ? <div className="social-auth-message" role="alert">{message}<button type="button" className="text-button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>
+        ? <div className="social-auth-message" role="alert">
+            <p>{message}</p>
+            <div style={{ display: "flex", gap: "10px", marginTop: "14px", flexWrap: "wrap", justifyContent: "center" }}>
+              <button type="button" className="button subtle small-button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button>
+              <button type="button" className="button primary small-button" onClick={() => setDismissed(true)}>Continuar para o aplicativo</button>
+              <button type="button" className="text-button" onClick={signOut} disabled={busy}>Sair da conta</button>
+            </div>
+          </div>
         : <form className="social-auth-form" onSubmit={submit}>
           <label>Data de nascimento<input type="date" autoComplete="bday" max={new Date().toISOString().slice(0, 10)} value={fields.birthDate} onChange={event => setFields(current => ({ ...current, birthDate: event.target.value }))} required /></label>
           <fieldset className="social-auth-choice-group"><legend>Seus objetivos</legend><div>{goals.map(([value, label]) => <label key={value}><input type="checkbox" checked={fields.goals.includes(value)} onChange={() => toggle("goals", value)} />{label}</label>)}</div></fieldset>
@@ -814,7 +727,10 @@ export function OnboardingGate({ client, userId, configured, notify }) {
           <label className="social-auth-consent"><input type="checkbox" checked={fields.acceptedTerms} onChange={event => setFields(current => ({ ...current, acceptedTerms: event.target.checked }))} required /><span>Li e aceito os Termos de uso, a Política de privacidade e as Diretrizes da comunidade.</span></label>
           {message && <p className="social-auth-message" role="alert">{message}</p>}
           <button className="button primary wide-button" type="submit" disabled={busy || !configured}>{busy ? <LoaderCircle className="spin" size={16} /> : null}Salvar e continuar</button>
-          <button className="text-button" type="button" onClick={signOut} disabled={busy}>Sair da conta</button>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", width: "100%", marginTop: "8px" }}>
+            <button className="text-button" type="button" onClick={() => setDismissed(true)} disabled={busy}>Pular por enquanto</button>
+            <button className="text-button" type="button" onClick={signOut} disabled={busy}>Sair da conta</button>
+          </div>
         </form>}
     </section>
   </div>;
@@ -1204,7 +1120,7 @@ function CommunityNavigation({ active }) {
   </nav>;
 }
 
-export function SocialPeople({ client, session, configured, notify, onDemoLogin }) {
+export function SocialPeople({ client, session, configured, notify }) {
   const [search, setSearch] = useState("");
   const [profiles, setProfiles] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -1254,7 +1170,7 @@ export function SocialPeople({ client, session, configured, notify, onDemoLogin 
   return <div className="social-people-page">
     <CommunityNavigation active="people" />
     {!configured || !session
-      ? <SocialAuth client={client} configured={configured} notify={notify} onDemoLogin={onDemoLogin} />
+      ? <SocialAuth client={client} configured={configured} notify={notify} />
       : <section className="social-discovery-card">
         <div className="social-discovery-heading"><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2>Encontre pessoas</h2><p>Descubra perfis públicos e conheça o que a comunidade compartilha.</p></div><Compass size={25} /></div>
         <label className="social-discovery-search"><Search size={17} /><span className="sr-only">Buscar pessoas</span><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar por nome ou @usuário" type="search" autoComplete="off" /></label>
@@ -1273,7 +1189,7 @@ export function SocialPeople({ client, session, configured, notify, onDemoLogin 
   </div>;
 }
 
-export function SocialMessages({ client, session, configured, notify, onDemoLogin }) {
+export function SocialMessages({ client, session, configured, notify }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [conversation, setConversation] = useState(null);
@@ -1454,7 +1370,7 @@ export function SocialMessages({ client, session, configured, notify, onDemoLogi
   };
 
   const formatMessageTime = value => new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  if (!configured || !session) return <div className="social-messages-page"><CommunityNavigation active="messages" /><SocialAuth client={client} configured={configured} notify={notify} onDemoLogin={onDemoLogin} /></div>;
+  if (!configured || !session) return <div className="social-messages-page"><CommunityNavigation active="messages" /><SocialAuth client={client} configured={configured} notify={notify} /></div>;
 
   return <div className="social-messages-page">
     <CommunityNavigation active="messages" />
@@ -1491,7 +1407,7 @@ export function SocialMessages({ client, session, configured, notify, onDemoLogi
   </div>;
 }
 
-export function SocialFeed({ client, configured, session, profile, profileError = "", feedArts = [], notify, recovery = false, onRecovered, onRetryProfile, mediaType = "", onDemoLogin }) {
+export function SocialFeed({ client, configured, session, profile, profileError = "", feedArts = [], notify, recovery = false, onRecovered, onRetryProfile, mediaType = "" }) {
   const [filter, setFilter] = useState("latest");
   const [posts, setPosts] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -1552,8 +1468,8 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   };
 
   const reelMode = mediaType === "video";
-  if (recovery) return <SocialAuth client={client} configured={configured} notify={notify} recovery onRecovered={onRecovered} onDemoLogin={onDemoLogin} />;
-  if (!session) return <><CommunityNavigation active={reelMode ? "reels" : "feed"} /><SocialAuth client={client} configured={configured} notify={notify} onDemoLogin={onDemoLogin} /></>;
+  if (recovery) return <SocialAuth client={client} configured={configured} notify={notify} recovery onRecovered={onRecovered} />;
+  if (!session) return <><CommunityNavigation active={reelMode ? "reels" : "feed"} /><SocialAuth client={client} configured={configured} notify={notify} /></>;
   if (profileError) return <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
   if (!profile) return <div className="social-inline-status"><LoaderCircle className="spin" size={17} /> Preparando seu perfil…</div>;
   return <div className="social-feed">
@@ -1570,7 +1486,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   </div>;
 }
 
-export function SocialProfile({ client, session, profile, profileError = "", configured, notify, onProfileUpdated, recovery = false, onRecovered, onRetryProfile, onDemoLogin, onSignOut }) {
+export function SocialProfile({ client, session, profile, profileError = "", configured, notify, onProfileUpdated, recovery = false, onRecovered, onRetryProfile, onSignOut }) {
   const { profileId = "" } = useParams();
   const navigate = useNavigate();
   const userId = session?.user?.id;
@@ -1755,8 +1671,8 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     }
   };
 
-  if (recovery) return <SocialAuth client={client} configured={configured} notify={notify} recovery onRecovered={onRecovered} onDemoLogin={onDemoLogin} />;
-  if (!session) return <SocialAuth client={client} configured={configured} notify={notify} onDemoLogin={onDemoLogin} />;
+  if (recovery) return <SocialAuth client={client} configured={configured} notify={notify} recovery onRecovered={onRecovered} />;
+  if (!session) return <SocialAuth client={client} configured={configured} notify={notify} />;
   if (isOwn && profileError) return <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
   if (error) return <div className="social-feed-error" role="alert"><CircleAlert size={17} />{error}<button onClick={() => navigate("/feed")}>Voltar ao Feed</button></div>;
   if (!person) return <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando perfil…</p>;

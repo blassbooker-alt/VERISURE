@@ -22,9 +22,9 @@ function assertPublicAsset(url) {
   assert.equal(existsSync(path), true, `Missing public asset: ${url}`);
 }
 
-test("the supplied 55-image pack is present, optimized, and organized by category", () => {
+test("the supplied 82-image pack is present, optimized, and organized by category", () => {
   const files = listFiles(assetRoot);
-  assert.equal(files.length, 55);
+  assert.equal(files.length, 82);
   assert.ok(files.every(path => path.endsWith(".jpg")));
   assert.ok(files.every(path => statSync(path).size < 1024 * 1024));
   assert.ok(files.reduce((total, path) => total + statSync(path).size, 0) < 15 * 1024 * 1024);
@@ -41,8 +41,15 @@ test("catalog, food, workout, and shop-offer records point to packaged assets", 
     ...restaurants.map(item => item.image),
     ...workoutCategories.map(category => category.image),
   ];
-  assert.equal(shopProducts.length, 25);
+  assert.equal(shopProducts.length, 50);
+  assert.equal(shopProducts.filter(product => product.sku).length, 25);
+  assert.equal(new Set(shopProducts.map(product => product.id)).size, shopProducts.length);
   assert.equal(restaurants.length, 10);
   assert.equal(workoutCategories.length, 4);
   urls.forEach(assertPublicAsset);
+});
+
+test("the login and shop campaign banners are available as packaged assets", () => {
+  assertPublicAsset("/assets/fortalfy/publicidade/banner-app-papagaio-a.jpg");
+  assertPublicAsset("/assets/fortalfy/publicidade/banner-app-papagaio-b.jpg");
 });

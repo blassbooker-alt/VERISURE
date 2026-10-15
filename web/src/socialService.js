@@ -1,6 +1,15 @@
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
 
+export function isDemoUser(userId) {
+  if (!userId || typeof userId !== "string") return false;
+  return userId === "demo-user-fortalfy" || userId.startsWith("demo-") || userId.startsWith("local-");
+}
+
+function requireRealUser(userId) {
+  if (!userId || isDemoUser(userId)) throw new Error("Entre com uma conta real para acessar este recurso.");
+}
+
 export function getErrorMessage(error, fallback = "Não foi possível concluir esta ação.") {
   if (!error) return fallback;
   if (error.code === "23505") return "Esta ação já foi registrada.";
@@ -68,22 +77,8 @@ export async function removeProfileImage(client, userId, path, field) {
 }
 
 export async function loadProfile(client, userId) {
-  if (userId === "demo-user-fortalfy" || (typeof userId === "string" && (userId.startsWith("demo-") || userId.startsWith("local-")))) {
-    return {
-      id: userId,
-      name: "Convidado Fortalfy",
-      username: "convidado",
-      bio: "Explorando a experiência mobile do Fortalfy v19.",
-      city: "Fortaleza, CE",
-      avatar: "",
-      cover: "",
-      kind: "cliente",
-      verified: true,
-      isPrivate: false,
-      avatarPath: "",
-      coverPath: "",
-    };
-  }
+  requireRealUser(userId);
+  if (!client) throw new Error("A conexão com o Supabase não está configurada.");
   const { data, error } = await client.from("profiles")
     .select("id,display_name,username,bio,city,avatar_path,cover_path,kind,verified_at,partner_approved_at,is_private")
     .eq("id", userId)
@@ -109,54 +104,8 @@ async function signPostMedia(client, post) {
 }
 
 export async function loadFeed(client, userId, { filter = "latest", offset = 0, limit = 15, authorId = "", mediaType = "" } = {}) {
-  if (userId === "demo-user-fortalfy" || (typeof userId === "string" && (userId.startsWith("demo-") || userId.startsWith("local-")))) {
-    return {
-      posts: [
-        {
-          id: "demo-post-1",
-          authorId: "demo-user-fortalfy",
-          body: "Primeiro treino do dia concluído com foco e consistência! Vamos juntos nessa jornada de bem-estar. 💪🏃‍♂️",
-          publishedAt: new Date(Date.now() - 3600000).toISOString(),
-          likesCount: 12,
-          commentsCount: 3,
-          sharesCount: 1,
-          liked: true,
-          saved: false,
-          media: [],
-          author: {
-            id: "demo-user-fortalfy",
-            name: "Convidado Fortalfy",
-            username: "convidado",
-            avatar: "",
-            kind: "cliente",
-            verified: true,
-          },
-        },
-        {
-          id: "demo-post-2",
-          authorId: "fortalfy-team",
-          body: "Seja muito bem-vindo ao Fortalfy! Acompanhe sua rotina de treinos, nutrição e conexões em um só lugar. 🥗✨",
-          publishedAt: new Date(Date.now() - 7200000).toISOString(),
-          likesCount: 45,
-          commentsCount: 8,
-          sharesCount: 4,
-          liked: false,
-          saved: true,
-          media: [],
-          author: {
-            id: "fortalfy-team",
-            name: "Equipe Fortalfy",
-            username: "fortalfy_oficial",
-            avatar: "",
-            kind: "academia",
-            verified: true,
-          },
-        },
-      ],
-      hasMore: false,
-      total: 2,
-    };
-  }
+  requireRealUser(userId);
+  if (!client) throw new Error("A conexão com o Supabase não está configurada.");
   let followedIds = null;
   if (filter === "following") {
     const { data, error } = await client.from("profile_follows")
@@ -237,10 +186,12 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
 }
 
 export async function searchProfiles(client, userId, { search = "", offset = 0, limit = 24 } = {}) {
+  requireRealUser(userId);
   const term = search.trim().replace(/[,%()\\_*]/g, " ").replace(/\s+/g, " ");
   let query = client.from("profiles")
-    .select("id,display_name,username,bio,city,avatar_path,kind,verified_at,partner_approved_at,is_private", { count: "exact" })
-    .neq("id", userId)
+    .select("id,display_name,username,bio,city,avatar_path,kind,verified_at,partner_approved_at,is_private", { count: "exact" });
+  query = query.neq("id", userId);
+  query = query
     .order("display_name", { ascending: true })
     .order("id", { ascending: true })
     .range(offset, offset + limit - 1);
@@ -282,9 +233,9 @@ export async function startConversation(client, userId, otherUserId) {
 }
 
 export async function loadMutualFollowState(client, userId, otherUserId) {
-  if (!userId || !otherUserId || userId === otherUserId) {
-    return { followsOther: false, otherFollowsUser: false, canMessage: false, requestPending: false };
-  }
+  requireRealUser(userId);
+  requireRealUser(otherUserId);
+  if (userId === otherUserId) throw new Error("Escolha outra pessoa para iniciar uma conversa.");
   const readFollow = async (followerId, followedId) => {
     const { data, error } = await client.from("profile_follows")
       .select("follower_id")
@@ -314,6 +265,7 @@ export async function loadMutualFollowState(client, userId, otherUserId) {
 }
 
 export async function loadConversations(client, userId) {
+  requireRealUser(userId);
   const { data, error } = await client.from("dm_conversations")
     .select("id,member_one,member_two,member_one_read_at,member_two_read_at,last_message_at,created_at")
     .or(`member_one.eq.${userId},member_two.eq.${userId}`)
@@ -348,6 +300,7 @@ export async function loadConversations(client, userId) {
 }
 
 export async function loadDirectMessages(client, userId, conversationId, { limit = 100 } = {}) {
+  requireRealUser(userId);
   const { data, error } = await client.from("direct_messages")
     .select("id,conversation_id,sender_id,body,created_at")
     .eq("conversation_id", conversationId)
@@ -358,6 +311,7 @@ export async function loadDirectMessages(client, userId, conversationId, { limit
 }
 
 export async function sendDirectMessage(client, userId, conversationId, body) {
+  requireRealUser(userId);
   const text = body.trim();
   if (!text || text.length > 4000) throw new Error("A mensagem deve ter entre 1 e 4.000 caracteres.");
   const { data, error } = await client.from("direct_messages").insert({
@@ -370,6 +324,7 @@ export async function sendDirectMessage(client, userId, conversationId, body) {
 }
 
 export async function markConversationRead(client, userId, conversation) {
+  requireRealUser(userId);
   const readColumn = conversation.member_one === userId ? "member_one_read_at" : "member_two_read_at";
   const memberColumn = conversation.member_one === userId ? "member_one" : "member_two";
   const { error } = await client.from("dm_conversations").update({ [readColumn]: new Date().toISOString() })
@@ -379,6 +334,7 @@ export async function markConversationRead(client, userId, conversation) {
 }
 
 export async function loadComments(client, userId, postId, { offset = 0, limit = 50 } = {}) {
+  requireRealUser(userId);
   const { data, error, count } = await client.from("post_comments").select(`
     id,post_id,author_id,parent_comment_id,body,created_at,updated_at,
     author:profiles!post_comments_author_id_fkey(id,display_name,username,avatar_path),
@@ -413,6 +369,8 @@ export async function loadComments(client, userId, postId, { offset = 0, limit =
 }
 
 export async function publishPost(client, userId, { body, files = [], visibility = "public" }) {
+  requireRealUser(userId);
+  if (!client) throw new Error("A conexão com o Supabase não está configurada.");
   const uploaded = [];
   const postId = crypto.randomUUID();
   let postCreated = false;
@@ -455,6 +413,7 @@ export async function publishPost(client, userId, { body, files = [], visibility
 }
 
 export async function setPostLike(client, userId, postId, liked) {
+  requireRealUser(userId);
   const request = liked
     ? client.from("post_likes").upsert({ post_id: postId, user_id: userId }, { onConflict: "post_id,user_id", ignoreDuplicates: true })
     : client.from("post_likes").delete().eq("post_id", postId).eq("user_id", userId);
@@ -463,6 +422,7 @@ export async function setPostLike(client, userId, postId, liked) {
 }
 
 export async function setCommentLike(client, userId, commentId, liked) {
+  requireRealUser(userId);
   const request = liked
     ? client.from("post_comment_likes").upsert({ comment_id: commentId, user_id: userId }, { onConflict: "comment_id,user_id", ignoreDuplicates: true })
     : client.from("post_comment_likes").delete().eq("comment_id", commentId).eq("user_id", userId);
@@ -471,6 +431,7 @@ export async function setCommentLike(client, userId, commentId, liked) {
 }
 
 export async function addComment(client, userId, postId, body, parentCommentId = null) {
+  requireRealUser(userId);
   const { data, error } = await client.from("post_comments").insert({
     post_id: postId,
     author_id: userId,
@@ -509,6 +470,7 @@ export async function deletePost(client, postId) {
 }
 
 export async function sharePost(client, userId, postId, body = "") {
+  requireRealUser(userId);
   const { data, error } = await client.from("posts").insert({
     author_id: userId,
     body: body.trim(),
@@ -520,6 +482,8 @@ export async function sharePost(client, userId, postId, body = "") {
 }
 
 export async function setFollow(client, followerId, followedId, following, isPrivate = false) {
+  requireRealUser(followerId);
+  requireRealUser(followedId);
   if (followerId === followedId) throw new Error("Você não pode seguir seu próprio perfil.");
   if (isPrivate && following) {
     const { data: existing, error: lookupError } = await client.from("follow_requests")
@@ -552,12 +516,15 @@ export async function setFollow(client, followerId, followedId, following, isPri
 }
 
 export async function cancelFollowRequest(client, followerId, followedId) {
+  requireRealUser(followerId);
+  requireRealUser(followedId);
   const { error } = await client.from("follow_requests")
     .delete().eq("follower_id", followerId).eq("followed_id", followedId);
   if (error) throw error;
 }
 
 export async function loadFollowRequests(client, userId) {
+  requireRealUser(userId);
   const { data, error } = await client.from("follow_requests").select(`
     follower_id,followed_id,status,created_at,
     follower:profiles!follow_requests_follower_id_fkey(id,display_name,username,avatar_path)
@@ -571,6 +538,8 @@ export async function loadFollowRequests(client, userId) {
 }
 
 export async function respondFollowRequest(client, followerId, followedId, accepted) {
+  requireRealUser(followerId);
+  requireRealUser(followedId);
   const { error } = await client.from("follow_requests").update({
     status: accepted ? "accepted" : "rejected",
   }).eq("follower_id", followerId).eq("followed_id", followedId).eq("status", "pending");
@@ -578,6 +547,8 @@ export async function respondFollowRequest(client, followerId, followedId, accep
 }
 
 export async function loadFollowState(client, userId, profileId) {
+  requireRealUser(userId);
+  requireRealUser(profileId);
   const [{ count: followers, error: followersError }, { count: following, error: followingError }, { data, error }, { data: request, error: requestError }] = await Promise.all([
     client.from("profile_follows").select("follower_id", { count: "exact", head: true }).eq("followed_id", profileId),
     client.from("profile_follows").select("followed_id", { count: "exact", head: true }).eq("follower_id", profileId),
@@ -592,6 +563,7 @@ export async function loadFollowState(client, userId, profileId) {
 }
 
 export async function setBookmark(client, userId, postId, saved) {
+  requireRealUser(userId);
   const request = saved
     ? client.from("saved_posts").upsert({ user_id: userId, post_id: postId }, { onConflict: "user_id,post_id", ignoreDuplicates: true })
     : client.from("saved_posts").delete().eq("user_id", userId).eq("post_id", postId);
@@ -600,6 +572,7 @@ export async function setBookmark(client, userId, postId, saved) {
 }
 
 export async function hidePost(client, userId, postId) {
+  requireRealUser(userId);
   const { error } = await client.from("hidden_posts").upsert(
     { user_id: userId, post_id: postId },
     { onConflict: "user_id,post_id", ignoreDuplicates: true },
@@ -608,11 +581,13 @@ export async function hidePost(client, userId, postId) {
 }
 
 export async function reportPost(client, userId, postId, reason) {
+  requireRealUser(userId);
   const { error } = await client.from("content_reports").insert({ reporter_id: userId, post_id: postId, reason });
   if (error) throw error;
 }
 
 export async function reportComment(client, userId, commentId, reason) {
+  requireRealUser(userId);
   const { error } = await client.from("content_reports").insert({ reporter_id: userId, comment_id: commentId, reason });
   if (error) throw error;
 }

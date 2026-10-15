@@ -430,6 +430,9 @@ img { display: block; max-width: 100%; }
 .gym-card-image { height: 106px; position: relative; display: block; overflow: hidden; }
 .gym-card-image > span { position: absolute; top: 7px; left: 7px; padding: 5px 6px; color: #315440; background: #fffffff0; border-radius: 20px; font-size: 7px; font-weight: 850; }
 .gym-card-image > button { position: absolute; top: 7px; right: 7px; width: 27px; height: 27px; display: grid; place-items: center; border: 0; color: #fff; background: #0a2c1cbd; border-radius: 50%; }
+.gym-card-image > .gym-card-arrow { position: absolute; top: 7px; right: 7px; left: auto; width: 27px; height: 27px; padding: 0; display: grid; place-items: center; color: #fff; background: #0a2c1cbd; border-radius: 50%; font-size: initial; }
+.partner-image-placeholder { display: grid; place-items: center; color: #f6f9f2; background: linear-gradient(135deg, #285742, #91b846); font-size: 38px; font-weight: 800; }
+.partner-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .gym-card-body { padding: 9px; }
 .gym-card-title { display: flex; align-items: center; justify-content: space-between; gap: 3px; }
 .gym-card-title h3 { display: flex; align-items: center; gap: 3px; margin: 0; color: #284a35; font-size: 10px; }
@@ -2029,6 +2032,20 @@ img { display: block; max-width: 100%; }
   margin: 30px 0 24px;
 }
 
+.showcase-banner {
+  position: absolute;
+  z-index: 0;
+  right: -2%;
+  bottom: 4%;
+  width: 104%;
+  height: 43%;
+  object-fit: cover;
+  object-position: right center;
+  opacity: .7;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, transparent, #000 34%);
+}
+
 .showcase-content h2 {
   margin: 0 0 12px;
   color: #ffffff;
@@ -2629,47 +2646,6 @@ img { display: block; max-width: 100%; }
   cursor: not-allowed;
 }
 
-/* 1-Click Demo / Visitor Mode Box */
-.auth-demo-box {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px dashed #dbe5df;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: center;
-}
-
-.auth-demo-label {
-  font-size: 11px;
-  color: #72877c;
-  font-weight: 650;
-}
-
-.auth-demo-btn {
-  width: 100%;
-  min-height: 44px;
-  border-radius: 13px;
-  border: 1.5px solid #c0ec22;
-  background: linear-gradient(135deg, #f7fde9 0%, #eefac9 100%);
-  color: #123e2b;
-  font-size: 12.5px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all .16s ease;
-  box-shadow: 0 4px 12px rgba(201, 243, 29, 0.22);
-}
-
-.auth-demo-btn:hover {
-  background: #e6f7b3;
-  box-shadow: 0 6px 18px rgba(201, 243, 29, 0.38);
-  transform: translateY(-1px);
-}
-
 .auth-bottom-switch {
   margin-top: 18px;
   text-align: center;
@@ -2738,6 +2714,12 @@ img { display: block; max-width: 100%; }
   .social-auth-showcase {
     padding: 24px 20px;
     border-radius: 20px;
+  }
+
+  .showcase-banner {
+    bottom: 2%;
+    height: 34%;
+    opacity: .58;
   }
   
   .showcase-content {

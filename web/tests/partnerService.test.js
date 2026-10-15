@@ -1,0 +1,67 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  distanceKm, loadApprovedPartners, openStreetMapUrl, orderPartnersByDistance,
+  savePartnerListing,
+} from "../src/partnerService.js";
+
+test("partner distance uses supplied coordinates and sorts nearest first", () => {
+  const origin = { latitude: -3.7319, longitude: -38.5267 };
+  const nearby = { name: "Perto", latitude: -3.732, longitude: -38.527 };
+  const farther = { name: "Longe", latitude: -3.75, longitude: -38.55 };
+  assert.ok(distanceKm(origin, nearby) < distanceKm(origin, farther));
+  assert.deepEqual(orderPartnersByDistance([farther, nearby], origin).map(item => item.name), ["Perto", "Longe"]);
+  assert.equal(distanceKm(origin, { latitude: 91, longitude: -38 }), null);
+});
+
+test("OpenStreetMap links include only the partner's actual coordinates", () => {
+  assert.equal(
+    openStreetMapUrl({ latitude: -3.73, longitude: -38.52 }),
+    "https://www.openstreetmap.org/?mlat=-3.73&mlon=-38.52#map=16/-3.73/-38.52",
+  );
+  assert.equal(openStreetMapUrl({ latitude: NaN, longitude: -38.52 }), "");
+});
+
+test("approved discovery filters unapproved and non-partner profiles from backend rows", async () => {
+  const rows = [
+    {
+      id: "listing-1", profile_id: "user-1", address: "Rua A", latitude: -3.73, longitude: -38.52,
+      modalities: ["Musculação"], profile: { display_name: "Academia Real", kind: "academia", partner_approved_at: "2026-10-01" },
+    },
+    {
+      id: "listing-2", profile_id: "user-2", address: "Rua B", latitude: -3.74, longitude: -38.53,
+      modalities: [], profile: { display_name: "Pendente", kind: "personal", partner_approved_at: null },
+    },
+    {
+      id: "listing-3", profile_id: "user-3", address: "Rua C", latitude: -3.74, longitude: -38.53,
+      modalities: [], profile: { display_name: "Pessoa", kind: "cliente", partner_approved_at: "2026-10-01" },
+    },
+  ];
+  const client = {
+    from(table) {
+      assert.equal(table, "partner_listings");
+      const builder = {
+        select() { return this; },
+        order() { return this; },
+        limit() { return this; },
+        then(resolve, reject) { return Promise.resolve({ data: rows, error: null }).then(resolve, reject); },
+      };
+      return builder;
+    },
+  };
+
+  const result = await loadApprovedPartners(client);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].name, "Academia Real");
+  assert.equal(result[0].verified, true);
+});
+
+test("partner listing validation rejects invented or malformed location input before write", async () => {
+  const client = { from() { throw new Error("Invalid listing must not reach the backend"); } };
+  await assert.rejects(savePartnerListing(client, "user-1", {
+    address: "Rua Real",
+    latitude: "91",
+    longitude: "-38",
+    modalities: [],
+  }), /coordenadas válidas/);
+});

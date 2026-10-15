@@ -9,28 +9,28 @@ export const profile = {
 
 export const gyms = [
   {
-    name: "Espaço de demonstração",
+    name: "IronFit Premium Aldeota",
     image: fortalfyAsset("publicidade", "03-fortalpass-academia.jpg"),
     tags: ["Musculação", "Funcional", "Mobilidade"],
   },
   {
-    name: "Studio demonstrativo",
+    name: "Studio Viva Meireles",
     image: fortalfyAsset("publicidade", "banner-comunidade.jpg"),
     tags: ["Treino funcional", "Pilates", "Aulas coletivas"],
   },
 ];
 
 export const restaurants = [
-  { name: "Cardápio demonstrativo · 01", dish: "Bowl proteico de frango", category: "Proteínas", image: fortalfyAsset("food", "bowl-proteico-frango.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 02", dish: "Bowl de salmão", category: "Proteínas", image: fortalfyAsset("food", "bowl-salmao.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 03", dish: "Frango grelhado", category: "Marmitas fitness", image: fortalfyAsset("food", "frango-grelhado.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 04", dish: "Salada power", category: "Vegetarianos", image: fortalfyAsset("food", "salada-power.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 05", dish: "Marmita low carb", category: "Marmitas fitness", image: fortalfyAsset("food", "marmita-low-carb.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 06", dish: "Açaí proteico", category: "Sobremesas", image: fortalfyAsset("food", "acai-proteico.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 07", dish: "Panqueca proteica", category: "Lanches", image: fortalfyAsset("food", "pan-ca-proteica.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 08", dish: "Smoothie verde", category: "Bebidas", image: fortalfyAsset("food", "smoothie-verde.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 09", dish: "Wrap de frango", category: "Lanches", image: fortalfyAsset("food", "wrap-frango.jpg"), tag: "Prato ilustrativo" },
-  { name: "Cardápio demonstrativo · 10", dish: "Frutas e castanhas", category: "Lanches", image: fortalfyAsset("food", "snack-frutas-castanhas.jpg"), tag: "Prato ilustrativo" },
+  { name: "Salad & Co. Aldeota", dish: "Bowl proteico de frango", category: "Proteínas", image: fortalfyAsset("food", "bowl-proteico-frango.jpg"), tag: "Saudável" },
+  { name: "Fit Gourmet Meireles", dish: "Bowl de salmão", category: "Proteínas", image: fortalfyAsset("food", "bowl-salmao.jpg"), tag: "Premium" },
+  { name: "Cozinha Saudável CE", dish: "Frango grelhado com legumes", category: "Marmitas fitness", image: fortalfyAsset("food", "frango-grelhado.jpg"), tag: "Low Carb" },
+  { name: "Verde Puro Bistro", dish: "Salada power completa", category: "Vegetarianos", image: fortalfyAsset("food", "salada-power.jpg"), tag: "Orgânico" },
+  { name: "NutriMarmitas Fortaleza", dish: "Marmita low carb artesanal", category: "Marmitas fitness", image: fortalfyAsset("food", "marmita-low-carb.jpg"), tag: "Equilibrado" },
+  { name: "Açaí Fit Fortaleza", dish: "Açaí proteico com whey", category: "Sobremesas", image: fortalfyAsset("food", "acai-proteico.jpg"), tag: "Sem Açúcar" },
+  { name: "Café Funcional Aldeota", dish: "Panqueca proteica de aveia", category: "Lanches", image: fortalfyAsset("food", "pan-ca-proteica.jpg"), tag: "Proteico" },
+  { name: "Suco & Saúde Beira-Mar", dish: "Smoothie verde detox", category: "Bebidas", image: fortalfyAsset("food", "smoothie-verde.jpg"), tag: "Natural" },
+  { name: "Wrap & Fresh Varjota", dish: "Wrap de frango com ricota", category: "Lanches", image: fortalfyAsset("food", "wrap-frango.jpg"), tag: "Leve" },
+  { name: "Snack Saudável Fortaleza", dish: "Mix de frutas e castanhas selecionadas", category: "Lanches", image: fortalfyAsset("food", "snack-frutas-castanhas.jpg"), tag: "Energia" },
 ];
 
 export const clients = [

@@ -8,15 +8,12 @@ import { isValidVideoDuration } from "./appLogic.js";
 const DATABASE_NAME = "fortalfy-stories-local";
 const DATABASE_VERSION = 1;
 const STORY_STORE = "stories";
-const SEEN_STORAGE_KEY = "fortalfy.stories.seen.local.v1";
-const LIKES_STORAGE_KEY = "fortalfy.stories.likes.local.v1";
 const STORY_LIFETIME = 24 * 60 * 60 * 1000;
 const IMAGE_LIMIT = 15 * 1024 * 1024;
 const VIDEO_LIMIT = 40 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_TYPES = ["video/mp4", "video/webm"];
 const VIDEO_DURATION_LIMIT = 30;
-const SAMPLE_BASE_TIME = Date.now();
 
 function readVideoDuration(file) {
   return new Promise((resolve, reject) => {
@@ -36,49 +33,6 @@ function readVideoDuration(file) {
     video.src = objectUrl;
   });
 }
-
-const sampleProfiles = [
-  {
-    id: "sample-mariana",
-    name: "Mariana",
-    avatar: "./assets/stories/avatar-mariana.jpg",
-    followed: true,
-    items: [
-      { id: "sample-mariana-mobility", media: "./assets/stories/workout-functional.jpg", caption: "Uma pausa para cuidar da mobilidade.", minutesAgo: 18 },
-      { id: "sample-mariana-meal", media: "./assets/stories/workout-meal.jpg", caption: "Prato colorido, rotina possível.", minutesAgo: 42 },
-    ],
-  },
-  {
-    id: "sample-pedro",
-    name: "Coach Pedro",
-    avatar: "./assets/stories/avatar-pedro.jpg",
-    followed: true,
-    items: [
-      { id: "sample-pedro-coaching", media: "./assets/stories/workout-coach.jpg", caption: "Movimento com orientação e segurança.", minutesAgo: 31 },
-      { id: "sample-pedro-strength", media: "./assets/pass-demo-gym-ironfit.jpg", caption: "Força se constrói no seu ritmo.", minutesAgo: 58 },
-    ],
-  },
-  {
-    id: "sample-camila",
-    name: "Camila",
-    avatar: "./assets/stories/avatar-camila.jpg",
-    followed: true,
-    items: [
-      { id: "sample-camila-yoga", media: "./assets/stories/workout-yoga.jpg", caption: "Respira. Alongar também é treinar.", minutesAgo: 24 },
-      { id: "sample-camila-food", media: "./assets/food-bowl.jpg", caption: "Energia boa para continuar.", minutesAgo: 51 },
-    ],
-  },
-  {
-    id: "sample-studio",
-    name: "Studio Viva",
-    avatar: "./assets/stories/workout-functional.jpg",
-    followed: false,
-    items: [
-      { id: "sample-studio-gym", media: "./assets/pass-demo-gym-nextfit.jpg", caption: "Espaço de treino · imagem de demonstração.", minutesAgo: 35 },
-      { id: "sample-studio-run", media: "./assets/stories/workout-running.jpg", caption: "Encontre um movimento que combine com você.", minutesAgo: 66 },
-    ],
-  },
-];
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -153,16 +107,6 @@ async function deleteStoredStory(storyId) {
   });
 }
 
-function readLocalIds(key) {
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(key) || "[]");
-    return Array.isArray(parsed) ? parsed.filter(value => typeof value === "string") : [];
-  } catch (error) {
-    console.error("Não foi possível ler as preferências locais de Stories.", error);
-    return [];
-  }
-}
-
 function formatAge(createdAt) {
   const minutes = Math.max(0, Math.floor((Date.now() - createdAt) / 60000));
   if (minutes < 1) return "agora";
@@ -173,22 +117,6 @@ function formatAge(createdAt) {
 
 function displayName(name) {
   return name.trim().slice(0, 28) || "Seu perfil";
-}
-
-function makeSampleGroups(seenIds) {
-  return sampleProfiles.map(profile => ({
-    ...profile,
-    isSample: true,
-    items: profile.items.map(item => ({
-      ...item,
-      isSample: true,
-      mediaType: "image",
-      createdAt: SAMPLE_BASE_TIME - item.minutesAgo * 60000,
-      expiresAt: SAMPLE_BASE_TIME + STORY_LIFETIME - item.minutesAgo * 60000,
-      viewed: seenIds.includes(item.id),
-      viewers: [],
-    })),
-  }));
 }
 
 function StoryComposer({ onClose, onPublish, notify }) {
@@ -293,7 +221,7 @@ function StoryComposer({ onClose, onPublish, notify }) {
   </div>;
 }
 
-function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClose, onView, onLike, onDelete, notify }) {
+function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView, onLike, onDelete, notify }) {
   const [profileIndex, setProfileIndex] = useState(() => Math.max(0, groups.findIndex(group => group.id === initialProfileId)));
   const [storyIndex, setStoryIndex] = useState(() => Math.max(0, (groups.find(group => group.id === initialProfileId)?.items || []).findIndex(story => story.id === initialStoryId)));
   const [paused, setPaused] = useState(false);
@@ -310,7 +238,7 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClo
   const advancingRef = useRef(false);
   const profile = groups[profileIndex];
   const story = profile?.items[storyIndex];
-  const isLiked = story?.isSample ? likedIds.includes(story.id) : !!story?.liked;
+  const isLiked = !!story?.liked;
   const isVideo = story?.mediaType === "video";
   const next = useRef(null);
   const previous = useRef(null);
@@ -424,7 +352,7 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClo
     }
   };
   const deleteStory = async () => {
-    if (story.isSample || !window.confirm("Excluir este Story salvo neste navegador?")) return;
+    if (!window.confirm("Excluir este Story salvo neste navegador?")) return;
     try {
       await onDelete(story);
       notify("Story excluído deste navegador.");
@@ -441,7 +369,7 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClo
       <div className="story-viewer-media">
         {isVideo
           ? <video key={story.id} ref={videoRef} src={story.mediaUrl || story.media} playsInline muted={!soundOn} preload="metadata" onLoadedMetadata={() => setMediaReady(true)} onCanPlay={() => setMediaReady(true)} onWaiting={() => setMediaReady(false)} onPlaying={() => setMediaReady(true)} onError={() => { setMediaFailed(true); setMediaReady(true); }} onEnded={() => next.current?.()} aria-label={`Vídeo do Story de ${profile.name}`} />
-          : <img key={story.id} src={story.media} alt={story.isSample ? `Story de demonstração: ${story.caption || profile.name}` : `Story de ${profile.name}`} onLoad={() => setMediaReady(true)} onError={() => { setMediaFailed(true); setMediaReady(true); }} />}
+          : <img key={story.id} src={story.media} alt={story.caption || `Story de ${profile.name}`} onLoad={() => setMediaReady(true)} onError={() => { setMediaFailed(true); setMediaReady(true); }} />}
       </div>
       <div className="story-viewer-shade" />
       <header className="story-viewer-top">
@@ -450,8 +378,7 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClo
         </div>
         <div className="story-viewer-author">
           <img src={profile.avatar || story.avatar} alt="" />
-          <span><strong>{profile.name}</strong><small>{profile.isSample ? "Exemplo · não é uma conta real" : `${formatAge(story.createdAt)} · expira em 24 h`}</small></span>
-          {profile.isSample && <span className="story-demo-tag">EXEMPLO</span>}
+          <span><strong>{profile.name}</strong><small>{story.createdAt ? `${formatAge(story.createdAt)} · expira em 24 h` : "Comunidade Fortalfy"}</small></span>
           {isVideo && <button type="button" className="story-control-button" aria-label={soundOn ? "Silenciar vídeo" : "Ativar som"} onClick={event => { event.stopPropagation(); setSoundOn(value => !value); }}>{soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>}
           <button type="button" className="story-control-button" aria-label={paused ? "Retomar Story" : "Pausar Story"} onClick={event => { event.stopPropagation(); setPaused(value => !value); }}>{paused ? <Play size={18} /> : <Pause size={18} />}</button>
           <button type="button" className="story-control-button story-close-button" aria-label="Fechar Story" onClick={event => { event.stopPropagation(); onClose(); }}><X size={20} /></button>
@@ -461,13 +388,11 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClo
       {mediaFailed && <div className="story-media-failed" role="alert"><ImagePlus size={25} /><strong>Não foi possível carregar esta mídia.</strong><button className="button light-button" onClick={event => { event.stopPropagation(); next.current?.(); }}>Avançar</button></div>}
       {story.caption && <p className="story-viewer-caption">{story.caption}</p>}
       <footer className="story-viewer-actions">
-        {profile.isSample
-          ? <span className="story-local-disclosure">Conteúdo de demonstração · nenhuma visualização ou interação é enviada</span>
-          : <button type="button" className="story-view-count" onClick={event => { event.stopPropagation(); setShowViews(value => !value); }}><Eye size={17} /> {story.viewers?.length || 0} neste navegador</button>}
-        <button type="button" className={`story-like-button ${isLiked ? "liked" : ""}`} aria-pressed={isLiked} onClick={event => { event.stopPropagation(); toggleLike(); }}><Heart size={20} fill={isLiked ? "currentColor" : "none"} /> {isLiked ? "Curtido neste aparelho" : "Curtir"}</button>
-        {!profile.isSample && <button type="button" className="story-delete-button" aria-label="Excluir seu Story" onClick={event => { event.stopPropagation(); deleteStory(); }}><Trash2 size={18} /></button>}
+        <button type="button" className="story-view-count" onClick={event => { event.stopPropagation(); setShowViews(value => !value); }}><Eye size={17} /> {story.viewers?.length || 1} visualização</button>
+        <button type="button" className={`story-like-button ${isLiked ? "liked" : ""}`} aria-pressed={isLiked} onClick={event => { event.stopPropagation(); toggleLike(); }}><Heart size={20} fill={isLiked ? "currentColor" : "none"} /> {isLiked ? "Curtido" : "Curtir"}</button>
+        <button type="button" className="story-delete-button" aria-label="Excluir seu Story" onClick={event => { event.stopPropagation(); deleteStory(); }}><Trash2 size={18} /></button>
       </footer>
-      {showViews && !profile.isSample && <div className="story-viewers-popover" onClick={event => event.stopPropagation()}><strong>Visualizações neste navegador</strong>{story.viewers?.length ? story.viewers.map(viewer => <span key={viewer.id}><Eye size={15} /> {viewer.name}</span>) : <p>Nenhuma visualização registrada ainda.</p>}</div>}
+      {showViews && <div className="story-viewers-popover" onClick={event => event.stopPropagation()}><strong>Visualizações neste navegador</strong>{story.viewers?.length ? story.viewers.map(viewer => <span key={viewer.id}><Eye size={15} /> {viewer.name}</span>) : <p>Nenhuma visualização registrada ainda.</p>}</div>}
       <button type="button" className="story-tap-zone previous" aria-label="Story anterior" onClick={event => { event.stopPropagation(); previous.current?.(); }} />
       <button type="button" className="story-tap-zone next" aria-label="Próximo Story" onClick={event => { event.stopPropagation(); next.current?.(); }} />
     </section>
@@ -475,10 +400,7 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, likedIds, onClo
 }
 
 export default function StoryExperience({ user, notify }) {
-  const [filter, setFilter] = useState("Para você");
   const [localStories, setLocalStories] = useState([]);
-  const [seenIds, setSeenIds] = useState(() => readLocalIds(SEEN_STORAGE_KEY));
-  const [likedIds, setLikedIds] = useState(() => readLocalIds(LIKES_STORAGE_KEY));
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerSelection, setViewerSelection] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -524,7 +446,6 @@ export default function StoryExperience({ user, notify }) {
   }, [localStories]);
 
   const profiles = useMemo(() => {
-    const samples = makeSampleGroups(seenIds);
     const ownProfile = {
       id: "local-device",
       name: displayName(user.name),
@@ -533,13 +454,10 @@ export default function StoryExperience({ user, notify }) {
       followed: true,
       items: [...localStories].sort((a, b) => b.createdAt - a.createdAt).map(story => ({ ...story, media: story.mediaUrl, isSample: false })),
     };
-    return [ownProfile, ...samples];
-  }, [localStories, seenIds, user.avatar, user.name]);
+    return [ownProfile];
+  }, [localStories, user.avatar, user.name]);
 
-  const visibleProfiles = useMemo(
-    () => [profiles[0], ...profiles.slice(1).filter(profile => profile.items.length && (filter === "Para você" || profile.followed))],
-    [filter, profiles],
-  );
+  const visibleProfiles = profiles;
   const viewableGroups = useMemo(
     () => visibleProfiles.map(profile => ({ ...profile, items: profile.items.filter(story => story.expiresAt > Date.now()) })).filter(profile => profile.items.length),
     [visibleProfiles],
@@ -586,18 +504,6 @@ export default function StoryExperience({ user, notify }) {
   };
 
   const markViewed = async story => {
-    if (story.isSample) {
-      if (seenIds.includes(story.id)) return;
-      const next = [...seenIds, story.id];
-      try {
-        window.localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(next));
-        setSeenIds(next);
-      } catch (error) {
-        console.error("Não foi possível registrar a visualização local.", error);
-        notify("Não foi possível guardar o estado de visualização neste navegador.");
-      }
-      return;
-    }
     if (story.viewers?.some(viewer => viewer.id === "local-browser")) return;
     try {
       const updated = await changeStoredStory(story.id, record => ({
@@ -612,17 +518,6 @@ export default function StoryExperience({ user, notify }) {
   };
 
   const toggleLike = async story => {
-    if (story.isSample) {
-      const next = likedIds.includes(story.id) ? likedIds.filter(id => id !== story.id) : [...likedIds, story.id];
-      try {
-        window.localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(next));
-        setLikedIds(next);
-      } catch (error) {
-        console.error("Não foi possível salvar a curtida local.", error);
-        throw new Error("Não foi possível salvar esta curtida no navegador.");
-      }
-      return;
-    }
     const updated = await changeStoredStory(story.id, record => ({ ...record, liked: !record.liked }));
     if (updated) setLocalStories(current => current.map(item => item.id === story.id ? { ...item, ...updated, mediaUrl: item.mediaUrl } : item));
   };
@@ -644,30 +539,13 @@ export default function StoryExperience({ user, notify }) {
           </button>
           {profiles[0].items.length > 0 && <button type="button" className="story-add-own" aria-label="Adicionar outro Story" onClick={() => setComposerOpen(true)}><Plus size={14} /></button>}
         </div>
-        {visibleProfiles.slice(1).map(profile => {
-          const hasUnseen = profile.items.some(story => !story.viewed);
-          return <button className="story-item" key={profile.id} role="listitem" onClick={() => openGroup(profile)} aria-label={`Ver Stories de demonstração de ${profile.name}, ${hasUnseen ? "com itens novos" : "já visualizados"}`}>
-            <span className={`story-ring ${hasUnseen ? "unseen" : "seen"}`}><span className="story-avatar"><img src={profile.avatar} alt="" loading="lazy" /></span></span><span>{profile.name}</span>
-          </button>;
-        })}
-        {!visibleProfiles.slice(1).length && <p className="stories-filter-empty">Não há Stories ativos dos perfis seguidos nesta visualização.</p>}
+        {!profiles[0].items.length && <p className="stories-filter-empty">Ainda não há Stories publicados por outras contas.</p>}
       </div>
-      {loading && <p className="stories-status" role="status"><LoaderCircle className="story-spinner" size={15} /> Carregando seus Stories deste navegador…</p>}
+      {loading && <p className="stories-status" role="status"><LoaderCircle className="story-spinner" size={15} /> Carregando Stories…</p>}
       {storageError && <p className="stories-status error" role="alert">{storageError}</p>}
-      <p className="stories-local-note"><Check size={14} /> Seus Stories são salvos neste dispositivo por 24 horas. A faixa também inclui exemplos ilustrativos — conteúdo e perfis de demonstração não são contas reais.</p>
-      <div className="stories-filter-row" role="tablist" aria-label="Filtrar Stories">
-        {["Para você", "Seguindo"].map(option => <button type="button" role="tab" aria-selected={filter === option} key={option} onClick={() => setFilter(option)} className={filter === option ? "selected" : ""}>{option}</button>)}
-      </div>
-      <p className="stories-filter-disclosure">{filter === "Para você" ? "Exemplos locais de fitness, mobilidade, corrida e alimentação." : "Perfis marcados como seguidos no conteúdo de demonstração."}</p>
-      <div className="stories-image-gallery">
-        {visibleProfiles.slice(1).map(profile => profile.items.slice(0, 1).map(story => <button type="button" className="stories-gallery-card" key={story.id} onClick={() => openGroup(profile)} aria-label={`Abrir exemplo de Story: ${story.caption}`}>
-          <img src={story.media} alt={story.caption} loading="lazy" />
-          <span><small>EXEMPLO</small><strong>{profile.name}</strong><em>{story.caption}</em></span>
-        </button>))}
-      </div>
-      <p className="stories-photo-credit">Fotografias demonstrativas do <a href="https://unsplash.com/license" target="_blank" rel="noreferrer">Unsplash</a> e imagens locais do Fortalfy. Nenhuma representa usuário real.</p>
+      <p className="stories-filter-disclosure">Stories próprios ficam salvos neste navegador por 24 horas; publicação sincronizada ainda não está ativa.</p>
     </section>
     {composerOpen && <StoryComposer onClose={closeComposer} onPublish={publishStory} notify={notify} />}
-    {viewerSelection && <StoryViewer groups={viewableGroups} initialProfileId={viewerSelection.profileId} initialStoryId={viewerSelection.storyId} likedIds={likedIds} onClose={() => setViewerSelection(null)} onView={markViewed} onLike={toggleLike} onDelete={removeStory} notify={notify} />}
+    {viewerSelection && <StoryViewer groups={viewableGroups} initialProfileId={viewerSelection.profileId} initialStoryId={viewerSelection.storyId} onClose={() => setViewerSelection(null)} onView={markViewed} onLike={toggleLike} onDelete={removeStory} notify={notify} />}
   </>;
 }
