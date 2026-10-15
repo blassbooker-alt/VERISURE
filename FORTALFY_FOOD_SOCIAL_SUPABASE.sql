@@ -1,8 +1,8 @@
 -- Additive Supabase schema for the Fortalfy Food and social ecosystem.
 -- Apply PRODUCAO_BACKEND_SUPABASE.sql first. Can be applied before or after
 -- FORTALFY_SOCIAL_V1_SUPABASE.sql.
--- This migration creates server-side structures. The current Food UI remains local;
--- its menu, checkout, and order flows are not connected to these tables.
+-- The app reads published menu items from these tables. Order creation and
+-- fulfillment remain server-controlled; no browser checkout or payment is enabled.
 
 create table if not exists public.profile_follows (
   follower_id uuid not null references public.profiles(id) on delete cascade,

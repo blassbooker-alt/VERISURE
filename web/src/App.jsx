@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Camera,
   Bell, Bookmark, Check, ChevronDown, ChevronRight,
-  CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, MapPin, MessageCircle,
+  CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
 } from "lucide-react";
@@ -23,8 +23,9 @@ import { fortalfyAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { shopOffers, shopProducts } from "./shopData.js";
-import { courseList, gyms, profile, restaurants, workoutCategories, workoutExercises } from "./data.js";
+import { courseList, gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
+import { loadAvailableFoodMenu } from "./foodService.js";
 
 function Toast({ message, onClose }) {
   useEffect(() => {
@@ -138,48 +139,39 @@ function PhotoCard({ image, alt, className = "" }) {
   return <img className={`photo-card ${className}`} src={image} alt={alt} loading="lazy" />;
 }
 
-function HomeScreen({ notify, activity, onActivity }) {
-  const hydrationPercent = Math.min(100, Math.round(activity.waterMl / 2500 * 100));
-  const score = Math.round((activity.trainingPercent + activity.nutritionPercent + hydrationPercent + activity.recoveryPercent) / 4);
-  const scoreTone = score >= 80 ? "good" : score >= 60 ? "attention" : "review";
-  const scoreMessage = score >= 80 ? "Tudo alinhado com a sua rotina" : score >= 60 ? "Atenção à hidratação e constância" : "Vale rever sua rotina com sua equipe";
+function HomeScreen({ activity, onActivity, session, profile: accountProfile }) {
+  const metadata = session?.user?.user_metadata || {};
+  const displayName = accountProfile?.display_name || metadata.display_name || metadata.full_name || metadata.name || "";
+  const firstName = displayName.trim().split(/\s+/)[0];
   return <Screen className="home-screen">
     <section className="home-hero">
       <img className="home-hero-image" src={fortalfyAsset("publicidade", "05-inicio-bem-estar.jpg")} alt="" aria-hidden="true" />
-      <div className="home-hero-top"><span className="location-label"><MapPin size={14} /> Aldeota · Fortaleza</span><span className="status-live"><i /> EM MOVIMENTO</span></div>
-      <div className="home-hello"><p>Bom dia, {profile.name} <span>☀️</span></p><h1>Seu bem-estar<br />começa com você.</h1><span className="hero-copy">Uma pequena escolha de cada vez.</span></div>
+      <div className="home-hero-top"><span className="location-label">FORTALFY · BEM-ESTAR</span><span className="status-live">NO SEU RITMO</span></div>
+      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Acesse sua comunidade, seus registros e parceiros.</span></div>
       <div className="hero-activity">
         <div className="activity-icon"><Dumbbell size={20} /></div>
-        <div className="activity-text"><span>PARA A SUA ROTINA</span><strong>Treino de peito</strong><small>{activity.trainingPercent}% de constância registrada</small></div>
-        <Link to="/workout" className="circle-arrow" aria-label="Abrir treino"><ArrowRight size={19} /></Link>
-        <div className="activity-progress"><i style={{ width: `${activity.trainingPercent}%` }} /></div>
+        <div className="activity-text"><span>SEUS REGISTROS NESTE APARELHO</span><strong>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</strong><small>Os registros de rotina não são sincronizados com uma conta.</small></div>
+        <Link to="/workout" className="circle-arrow" aria-label="Abrir registros de treino"><ArrowRight size={19} /></Link>
       </div>
     </section>
     <div className="screen-inner home-inner">
+      <SectionTitle title="Acesso rápido" />
       <div className="quick-grid">
-        <Link to="/workout" className="quick-tile"><span className="quick-icon mint"><Dumbbell size={19} /></span><strong>Treino do dia</strong><small>Peito · adapte ao seu ritmo</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <button className="quick-tile" onClick={() => notify("Convites para família ainda não estão disponíveis.")}><span className="quick-icon pink"><Users size={19} /></span><strong>Rede de apoio</strong><small>Convide pessoas quando o recurso estiver disponível</small><ArrowUpRight size={16} className="quick-arrow" /></button>
-        <Link to="/progress" className="quick-tile"><span className="quick-icon yellow"><Activity size={19} /></span><strong>Seu movimento</strong><small>Conecte um dispositivo para registrar passos e sono</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <button className="quick-tile" onClick={() => { onActivity("water"); notify("Hidratação registrada. Mais um passo para sua meta."); }}><span className="quick-icon blue"><HeartPulseIcon /></span><strong>Um lembrete gentil</strong><small>Hidratação · {(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L de 2,5 L</small><ArrowUpRight size={16} className="quick-arrow" /></button>
+        <Link to="/feed" className="quick-tile"><span className="quick-icon mint"><Users size={19} /></span><strong>Comunidade</strong><small>Publicações e perfis reais</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/pass" className="quick-tile"><span className="quick-icon pink"><MapPin size={19} /></span><strong>Parceiros</strong><small>Locais e profissionais aprovados</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/food" className="quick-tile"><span className="quick-icon yellow"><Utensils size={19} /></span><strong>FortalFood</strong><small>Cardápios publicados por restaurantes</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/shop" className="quick-tile"><span className="quick-icon blue"><ShoppingBag size={19} /></span><strong>Loja</strong><small>Conheça os produtos Fortalfy</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
       </div>
-      <Link to="/shop" className="home-shop-feature"><div><span className="eyebrow">FORTALFY SHOP · NOVA COLEÇÃO</span><h2>Feito para o seu ritmo.</h2><p>Conheça ideias para acompanhar sua rotina.</p><span className="home-shop-link">Explorar a loja <ArrowRight size={15} /></span></div><div className="home-shop-products" aria-hidden="true"><img src={shopProducts[1].image} alt="" loading="lazy" /><img src={shopProducts[0].image} alt="" loading="lazy" /></div><span className="home-shop-icon"><ShoppingBag size={17} /></span></Link>
       <section className="performance-card">
-        <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Uma semana de cada vez.</h2></div><span className={`score-mark ${scoreTone}`}>{score}<span>%</span></span></div>
-        <div className="score-track" role="progressbar" aria-label="Pontuação de consistência da rotina" aria-valuemin="0" aria-valuemax="100" aria-valuenow={score}><i className={scoreTone} style={{ width: `${score}%` }} /></div>
-        <div className="performance-stats"><span><strong>{activity.workoutsLogged} de 20</strong> treinos concluídos</span><span><strong>{activity.mealsLogged} de 30</strong> refeições registradas</span><span className={`score-state ${scoreTone}`}><i /> {scoreMessage}</span></div>
-        <Link to="/progress" className="performance-link">Ver minha evolução <ArrowRight size={16} /></Link>
+        <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
+        <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span></div>
+        <div className="home-local-actions"><Link to="/workout" className="performance-link">Abrir treinos <ArrowRight size={16} /></Link><Link to="/nutrition" className="performance-link">Abrir diário alimentar <ArrowRight size={16} /></Link></div>
       </section>
-      <p className="reference-disclosure">O score considera os registros desta tela e não substitui avaliação profissional.</p>
-      <section className="gym-highlight">
-        <div className="gym-highlight-img"><PhotoCard image={gyms[0].image} alt="Rede Credenciada FortalPass" /><span className="demo-pill">CREDENCIADA</span></div>
-        <div className="gym-highlight-copy"><span className="eyebrow">SUA COMUNIDADE TREINA PERTO</span><h2>{gyms[0].name}</h2><p>Treine com liberdade nas melhores academias de Fortaleza através do FortalPass.</p><Link className="button light-button" to="/partner/gym">Explorar FortalPass <ArrowRight size={16} /></Link></div>
-      </section>
-      <section className="quick-actions"><SectionTitle title="Seu próximo passo" /><div className="action-row"><button onClick={() => notify("Hidratação registrada: +250 ml. Bom trabalho.")}><span className="quick-icon blue"><Plus size={18} /></span>Registrar água</button><Link to="/workout"><span className="quick-icon mint"><Play size={18} /></span>Iniciar treino</Link><Link to="/nutrition"><span className="quick-icon yellow"><Apple size={18} /></span>Registrar refeição</Link></div></section>
+      <p className="reference-disclosure">Treinos e refeições são armazenados somente neste aparelho; ainda não há sincronização desses registros com sua conta.</p>
+      <div className="home-water-action"><button className="button subtle" onClick={() => onActivity("water")}><HeartPulse size={18} /> Registrar 250 ml de água</button><span>{(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L registrados neste aparelho</span></div>
     </div>
   </Screen>;
 }
-
-function HeartPulseIcon() { return <Activity size={19} />; }
 
 function FeedScreen({ notify, feedArts, profileDetails, profilePosts, savePosts, saveFeedComments, feedComments, shareToProfile }) {
   const [liked, setLiked] = useState(false);
@@ -234,42 +226,57 @@ function FeedScreen({ notify, feedArts, profileDetails, profilePosts, savePosts,
   </Screen>;
 }
 
-function FoodScreen({ notify, cart, setCart }) {
-  const [category, setCategory] = useState("Tudo");
+function FoodScreen({ client, configured, session }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [search, setSearch] = useState("");
   const [menu, setMenu] = useState(null);
-  const [showCart, setShowCart] = useState(false);
-  const categories = ["Tudo", "Marmitas fitness", "Proteínas", "Vegetarianos", "Bebidas", "Lanches", "Sobremesas"];
-  const visible = useMemo(() => restaurants.filter(restaurant => {
-    const matchesSearch = `${restaurant.name} ${restaurant.dish}`.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = category === "Tudo" || restaurant.category === category;
-    return matchesSearch && matchesCategory;
-  }), [category, search]);
-  const totalCount = Object.values(cart).reduce((sum, count) => sum + count, 0);
-  const addItem = name => setCart(current => ({ ...current, [name]: (current[name] || 0) + 1 }));
-  return <Screen title="Food" subtitle="COMER BEM, DO SEU JEITO" location action={() => notify("Escolha um endereço para entrega.")} className="food-screen">
-    <button className="delivery-card" onClick={() => notify("Endereço de entrega: Aldeota, Fortaleza.")}><span className="quick-icon blue"><MapPin size={18} /></span><span><small>ENTREGAR EM</small><strong>Aldeota, Fortaleza <ChevronDown size={14} /></strong></span><ChevronRight size={18} /></button>
-    <label className="search-field"><Search size={19} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar restaurantes, pratos e refeições" aria-label="Buscar restaurantes, pratos e refeições" /><button aria-label="Limpar busca" onClick={() => setSearch("")}>{search && <X size={17} />}</button></label>
-    <div className="chip-row">{categories.map(item => <button key={item} onClick={() => setCategory(item)} className={`filter-chip ${item === category ? "active" : ""}`}>{item}</button>)}</div>
-    <section className="food-promo"><img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">BEM-ESTAR QUE CABE NO DIA</span><h2>Mais cor no seu prato.</h2><p>Inspiração para uma rotina alimentar no seu ritmo.</p></div></section>
-    <section className="food-offer-card"><img src={fortalfyAsset("publicidade", "02-fortalfood-combo-saudavel.jpg")} alt="" loading="lazy" /><div><span className="eyebrow">COMBO SAUDÁVEL</span><h2>Inspiração para sua próxima refeição.</h2><p>Combinações balanceadas para potencializar sua energia e treino.</p></div></section>
-    <img className="food-offer-campaign" src={fortalfyAsset("ofertas", "oferta-food.jpg")} alt="Campanha promocional FortalFood" loading="lazy" />
-    <img className="food-brand-campaign" src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="Campanha institucional FortalFood" loading="lazy" />
-    <SectionTitle title="Pratos em Destaque" />
-    <div className="food-card-list">{visible.map((restaurant, index) => <article className="food-card" key={restaurant.name}>
-      <div className="food-card-image"><PhotoCard image={restaurant.image} alt={restaurant.dish} /><span>{restaurant.tag.toUpperCase()}</span></div>
-      <div className="food-card-body"><div className="food-card-heading"><div><h3>{restaurant.dish}</h3><span>{restaurant.name}</span></div></div>
-        <p><Clock3 size={14} /> Entrega em 30-45 min · Aldeota</p>
-        <div className="nutrition-tags"><span>{restaurant.tag}</span><span>Pronta entrega</span></div>
-        <button className="button primary wide-button" onClick={() => setMenu(restaurant)}>Ver cardápio <ArrowRight size={17} /></button>
+  useEffect(() => {
+    let active = true;
+    setError("");
+    setNeedsLogin(false);
+    if (!session?.user?.id) {
+      setItems([]);
+      setNeedsLogin(true);
+      setLoading(false);
+      return () => { active = false; };
+    }
+    if (!configured || !client) {
+      setItems([]);
+      setError("O FortalFood precisa da conexão configurada com o Supabase.");
+      setLoading(false);
+      return () => { active = false; };
+    }
+    setLoading(true);
+    loadAvailableFoodMenu(client)
+      .then(result => { if (active) setItems(result); })
+      .catch(reason => { if (active) setError(getErrorMessage(reason, "Não foi possível carregar os cardápios.")); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [client, configured, session?.user?.id]);
+  const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
+  const visible = items.filter(item => `${item.name} ${item.description} ${item.restaurant.name}`.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
+  const formatPrice = price => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
+  return <Screen title="FortalFood" subtitle="CARDÁPIOS DOS RESTAURANTES" className="food-screen">
+    <section className="food-promo"><img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">FORTALFOOD</span><h2>Cardápios publicados por restaurantes.</h2><p>Consulte os itens e valores cadastrados pelos parceiros.</p></div></section>
+    <label className="search-field"><Search size={19} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar restaurantes e itens" aria-label="Buscar restaurantes e itens" /><button aria-label="Limpar busca" onClick={() => setSearch("")}>{search && <X size={17} />}</button></label>
+    <SectionTitle title="Itens disponíveis" />
+    {loading && <p className="food-status" role="status">Carregando cardápios…</p>}
+    {needsLogin && <div className="empty-state"><Lock size={24} /><h3>Entre para acessar os cardápios</h3><p>Os cardápios são carregados da plataforma e exigem uma conta autenticada.</p><Link className="button primary" to="/feed">Entrar ou criar conta <ArrowRight size={16} /></Link></div>}
+    {error && <div className="social-inline-error" role="alert">{error}</div>}
+    {!loading && !error && !needsLogin && <div className="food-card-list">{visible.map(item => <article className="food-card" key={item.id}>
+      <div className="food-card-image">{item.image ? <img className="food-item-image" src={item.image} alt={item.name} loading="lazy" /> : <div className="food-item-placeholder" aria-label="Sem imagem cadastrada"><Utensils size={28} /></div>}<span>DISPONÍVEL</span></div>
+      <div className="food-card-body"><div className="food-card-heading"><div><h3>{item.name}</h3><span>{item.restaurant.name}{item.restaurant.city ? ` · ${item.restaurant.city}` : ""}</span></div></div>
+        <p className="food-item-description">{item.description}</p>
+        {item.portionLabel && <p>Porção: <strong>{item.portionLabel}</strong></p>}
+        <div className="food-card-footer"><strong>{formatPrice(item.price)}</strong><div><button className="button subtle small-button" onClick={() => setMenu(item)}>Detalhes</button><Link className="button primary small-button" to={`/profile/${item.restaurant.id}`}>Restaurante <ArrowRight size={15} /></Link></div></div>
       </div>
     </article>)}
-    {!visible.length && <div className="empty-state"><Search size={24} /><h3>Não encontramos esse prato</h3><p>Tente buscar por outro restaurante ou refeição.</p><button className="button subtle" onClick={() => setSearch("")}>Limpar busca</button></div>}
-    </div>
-    <section className="food-daily"><div><span className="eyebrow">PARA A SUA ROTINA</span><h2>Seu diário alimentar acompanha você.</h2><p>Veja como suas escolhas se conectam às metas definidas com sua profissional.</p></div><Link to="/nutrition" className="button light-button">Abrir meu diário <ArrowRight size={16} /></Link></section>
-    {totalCount > 0 && <div className="cart-toast"><ShoppingBag size={18} /><span>{totalCount} {totalCount === 1 ? "item" : "itens"} na sacola</span><button onClick={() => setShowCart(true)}>Ver sacola <ArrowRight size={16} /></button></div>}
-    {menu && <Modal title={`Cardápio · ${menu.dish}`} onClose={() => setMenu(null)}><div className="menu-item-modal"><PhotoCard image={menu.image} alt={menu.dish} /><div><span className="eyebrow">OPÇÃO SELECIONADA</span><h3>{menu.dish}</h3><p>Refeição fresca preparada por parceiros gastronômicos de Fortaleza.</p><strong>Entrega rápida · Fortaleza</strong></div></div><button className="button primary wide-button" onClick={() => { addItem(menu.name); notify(`${menu.dish} adicionado à sacola.`); setMenu(null); }}>Adicionar à sacola <Plus size={17} /></button></Modal>}
-    {showCart && <Modal title="Minha Sacola" onClose={() => setShowCart(false)}><div className="cart-modal-lines">{Object.entries(cart).map(([name, count]) => { const restaurant = restaurants.find(item => item.name === name); return restaurant && <div className="cart-modal-line" key={name}><span>{count} × {restaurant.dish}<small>{restaurant.name}</small></span><strong>Pronto para entrega</strong></div>; })}</div><div className="cart-modal-total"><span>Entrega</span><strong>Aldeota, Fortaleza</strong></div><button className="button primary wide-button" onClick={() => { notify("Pedido recebido pelo restaurante!"); setCart({}); setShowCart(false); }}>Finalizar Pedido <ArrowRight size={17} /></button></Modal>}
+    {!visible.length && <div className="empty-state"><Search size={24} /><h3>{items.length ? "Nenhum item encontrado" : "Nenhum cardápio disponível"}</h3><p>{items.length ? "Tente buscar por outro restaurante ou item." : "Os restaurantes aprovados ainda não publicaram itens disponíveis."}</p>{search && <button className="button subtle" onClick={() => setSearch("")}>Limpar busca</button>}</div>}
+    </div>}
+    {menu && <Modal title={menu.name} onClose={() => setMenu(null)}><p>{menu.description}</p><p><strong>{formatPrice(menu.price)}</strong> · {menu.restaurant.name}</p>{menu.portionLabel && <p>Porção: {menu.portionLabel}</p>}{menu.allergens.length > 0 && <p>Alergênicos informados pelo restaurante: {menu.allergens.join(", ")}</p>}<p className="food-order-disclosure">A solicitação e o pagamento de pedidos ainda não estão disponíveis no aplicativo.</p><Link className="button primary wide-button" to={`/profile/${menu.restaurant.id}`} onClick={() => setMenu(null)}>Ver perfil do restaurante <ArrowRight size={16} /></Link></Modal>}
   </Screen>;
 }
 
@@ -399,19 +406,25 @@ function loadLocalValue(key, fallback) {
 }
 
 const ACTIVITY_STORAGE_KEY = "fortalfy.activity.local.v1";
-const FOOD_CART_STORAGE_KEY = "fortalfy.food.cart.local.v1";
 const SHOP_CART_STORAGE_KEY = "fortalfy.shop.cart.local.v1";
 
 function normalizeActivity(value) {
   const mealEntries = normalizeMealEntries(value?.mealEntries);
-  const workoutsLogged = Number.isInteger(value?.workoutsLogged) && value.workoutsLogged > 0 ? Math.min(20, value.workoutsLogged) : 0;
-  const waterMl = Number.isFinite(value?.waterMl) ? Math.min(2500, Math.max(0, Math.floor(value.waterMl))) : 0;
+  const workoutsLogged = Number.isInteger(value?.workoutsLogged) && value.workoutsLogged > 0 ? Math.min(1000000, value.workoutsLogged) : 0;
+  const waterMl = Number.isFinite(value?.waterMl) ? Math.min(10000000, Math.max(0, Math.floor(value.waterMl))) : 0;
+  const workoutEntries = (Array.isArray(value?.workoutEntries) ? value.workoutEntries : [])
+    .filter(entry => entry && typeof entry.id === "string" && typeof entry.name === "string"
+      && entry.name.trim().length > 0 && entry.name.length <= 60
+      && Number.isInteger(entry.minutes) && entry.minutes > 0 && entry.minutes <= 600
+      && typeof entry.date === "string")
+    .slice(-100);
   return {
     trainingPercent: Math.min(100, Math.round(workoutsLogged / 20 * 100)),
     nutritionPercent: Math.min(100, Math.round(mealEntries.length / 30 * 100)),
     waterMl,
     recoveryPercent: 0,
     workoutsLogged,
+    workoutEntries,
     mealsLogged: mealEntries.length,
     mealEntries,
   };
@@ -427,22 +440,6 @@ function loadShopCart() {
       || (typeof line.shade === "string" && typeof line.size === "string"))
     && Number.isInteger(line.quantity)
     && line.quantity > 0);
-}
-
-function loadFoodCart() {
-  const saved = loadLocalValue(FOOD_CART_STORAGE_KEY, {});
-  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
-  const legacyItems = new Map([
-    ["Green Fit Bowls", restaurants[0].name],
-    ["Fit Prime", restaurants[2].name],
-    ["Viva Saladas", restaurants[3].name],
-  ]);
-  return Object.fromEntries(Object.entries(saved).map(([name, quantity]) => [
-    legacyItems.get(name) || name,
-    quantity,
-  ]).filter(([name, quantity]) => restaurants.some(restaurant => restaurant.name === name)
-      && Number.isInteger(quantity)
-      && quantity > 0));
 }
 
 function compressProfileImage(file, maximumBytes = 650000) {
@@ -669,27 +666,36 @@ function ProfileScreen({ notify, user, setUser, posts, savePosts }) {
   </Screen>;
 }
 
-function WorkoutScreen({ notify, onActivity }) {
-  const [done, setDone] = useState([]);
-  const [restLeft, setRestLeft] = useState(0);
-  const [completed, setCompleted] = useState(false);
-  const toggle = name => setDone(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
-  useEffect(() => {
-    if (restLeft <= 0) return undefined;
-    const timer = window.setTimeout(() => setRestLeft(value => value - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [restLeft]);
-  return <Screen title="Treino do Dia" subtitle="PEITO COM COACH PEDRO" className="workout-screen">
+function WorkoutScreen({ notify, onActivity, activity }) {
+  const [name, setName] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const [error, setError] = useState("");
+  const saveWorkout = event => {
+    event.preventDefault();
+    const workoutName = name.trim();
+    const duration = Number(minutes);
+    if (!workoutName || workoutName.length > 60 || !Number.isInteger(duration) || duration < 1 || duration > 600) {
+      setError("Informe o tipo de treino e uma duração entre 1 e 600 minutos.");
+      return;
+    }
+    onActivity("workout", {
+      id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+      name: workoutName,
+      minutes: duration,
+      date: localDateKey(),
+    });
+    setName("");
+    setMinutes("");
+    setError("");
+    notify("Treino registrado neste aparelho.");
+  };
+  return <Screen title="Treinos" subtitle="SEUS REGISTROS" className="workout-screen">
     <Link to="/home" className="back-link"><ArrowLeft size={17} /> Voltar</Link>
-    <div className="workout-stats"><div><HeartPulse size={18} /><span><strong>—</strong> bpm</span></div><div><Activity size={18} /><span><strong>—</strong> passos</span></div><div><Timer size={18} /><span><strong>18</strong> min planejados</span></div></div>
-    <p className="reference-disclosure">Frequência cardíaca e passos só aparecem após conectar uma fonte de dados compatível.</p>
-    <section className="workout-progress-card"><div><span className="eyebrow">BOM TE VER EM MOVIMENTO</span><h2>Seu treino está fluindo.</h2><p>{done.length} de {workoutExercises.length} exercícios concluídos</p></div><strong>{Math.round(done.length / workoutExercises.length * 100)}<small>%</small></strong><div className="score-track"><i style={{ width: `${done.length / workoutExercises.length * 100}%` }} /></div></section>
-    <SectionTitle title="Modalidades para explorar" />
-    <div className="workout-category-grid">{workoutCategories.map(category => <article className="workout-category-card" key={category.name}><img src={category.image} alt="" loading="lazy" /><strong>{category.name}</strong><small>Instrutores certificados Fortalfy</small></article>)}</div>
-    <SectionTitle title="Sua sequência de hoje" />
-    <div className="exercise-list">{workoutExercises.map((item, index) => <article className={`exercise-card ${done.includes(item.name) ? "exercise-done" : ""}`} key={item.name}><button className="exercise-check" aria-label={`${done.includes(item.name) ? "Desmarcar" : "Concluir"} ${item.name}`} onClick={() => toggle(item.name)}>{done.includes(item.name) && <Check size={17} />}</button><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><span>EXERCÍCIO {String(index + 1).padStart(2, "0")}</span><h3>{item.name}</h3><p>{item.details} · {item.load}</p><label className="exercise-note">Anotação rápida<input placeholder="Carga ou observação" aria-label={`Anotação: ${item.name}`} /></label></div><button className="play-button" aria-label={`Ver vídeo de ${item.name}`} onClick={() => notify(`Vídeo de orientação: ${item.name}.`)}><Play size={17} /></button></article>)}</div>
-    <div className="workout-actions"><button className="button subtle wide-button" onClick={() => setRestLeft(60)}><Timer size={17} /> {restLeft > 0 ? `Descanso · ${restLeft} s` : "Iniciar descanso · 60 s"}</button><button className="button primary wide-button" onClick={() => { if (!completed) onActivity("workout"); setCompleted(true); notify("Treino registrado neste dispositivo."); }}>Finalizar treino <ArrowRight size={17} /></button></div>
-    {completed && <div className="success-banner"><span><Check size={20} /></span><div><strong>Treino concluído. Você apareceu por você.</strong><small>18 min · Seu progresso foi atualizado neste dispositivo.</small></div><button aria-label="Fechar confirmação" onClick={() => setCompleted(false)}><X size={17} /></button></div>}
+    <section className="workout-progress-card"><div><span className="eyebrow">REGISTROS NESTE APARELHO</span><h2>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</h2><p>O Fortalfy não prescreve treinos nem lê sensores nesta tela.</p></div></section>
+    <p className="reference-disclosure">Seus registros ficam neste navegador e não são sincronizados com sua conta ou com dispositivos.</p>
+    <form className="meal-entry-form" onSubmit={saveWorkout}><h2>Registrar treino realizado</h2><label>Tipo ou nome do treino<input required maxLength={60} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: musculação, caminhada" /></label><label>Duração em minutos<input required type="number" min="1" max="600" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} placeholder="Ex.: 45" /></label>{error && <p className="social-inline-error" role="alert">{error}</p>}<button className="button primary wide-button" type="submit">Salvar registro</button></form>
+    <SectionTitle title="Histórico registrado" />
+    {activity.workoutEntries.length ? <div className="exercise-list">{[...activity.workoutEntries].reverse().map(entry => <article className="exercise-card" key={entry.id}><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><h3>{entry.name}</h3><p>{entry.minutes} min · {entry.date}</p></div></article>)}</div> : <div className="empty-state"><Dumbbell size={24} /><h3>Nenhum treino registrado</h3><p>Seus treinos aparecerão aqui depois que você os registrar.</p></div>}
   </Screen>;
 }
 
@@ -718,31 +724,26 @@ function NutritionScreen({ notify, onActivity, activity }) {
     <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Seus registros ficam neste dispositivo e podem ser apagados ao limpar os dados do navegador.</small></span></div>
     <SectionTitle title="Seu diário" />
     <div className="meal-list">{todaysMeals.length ? todaysMeals.map((meal, index) => <div className="meal-row" key={meal.id}><span className={`meal-icon meal-${index % 4}`}>{["☀", "◒", "✳", "☾"][index % 4]}</span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · Registrado neste dispositivo</small></div><button className="meal-remove-button" aria-label={`Remover ${meal.name} do diário`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={16} /></button></div>) : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><p>Adicione o que você consumiu para acompanhar suas calorias.</p></div>}</div>
-    <Link to="/curated" className="nutrition-curation"><span className="nutritionist-avatar">DA</span><span><small>FOOD CURADO</small><strong>Veja opções de referência para sua rotina.</strong><small>Planos reais exigem acompanhamento profissional.</small></span><ArrowRight size={18} /></Link>
+    <Link to="/food" className="nutrition-curation"><span className="quick-icon mint"><Utensils size={18} /></span><span><small>FORTALFOOD</small><strong>Consulte cardápios publicados por restaurantes aprovados.</strong><small>Informações e disponibilidade são cadastradas pelos parceiros.</small></span><ArrowRight size={18} /></Link>
     <button className="button primary wide-button mt-5" onClick={() => setAddingMeal(value => !value)}><Plus size={18} /> {addingMeal ? "Cancelar registro" : "Registrar refeição"}</button>
     {addingMeal && <form className="meal-entry-form" onSubmit={registerMeal}><label>Nome da refeição<input required maxLength={60} value={mealName} onChange={event => setMealName(event.target.value)} placeholder="Ex.: almoço" /></label><label>Calorias (kcal)<input required type="number" min="0" max="10000" step="1" value={mealCalories} onChange={event => setMealCalories(event.target.value)} placeholder="Ex.: 520" /></label><button className="button primary wide-button" type="submit">Salvar refeição</button></form>}
     <p className="sr-only" aria-live="polite">{todaysMeals.length} {todaysMeals.length === 1 ? "refeição registrada hoje" : "refeições registradas hoje"}; {calories} quilocalorias no diário.</p>
   </Screen>;
 }
 
-function CuratedScreen({ notify }) {
-  const [ordered, setOrdered] = useState([]);
-  return <Screen title="Food curado pela sua Nutri" subtitle="SUAS OPÇÕES, COM INTENÇÃO" className="curated-screen">
-    <div className="curator-card"><span className="nutritionist-avatar">DA</span><div><strong>Dra. Ana</strong><small>Nutricionista Esportiva · CRN-6</small></div><span className="protein-badge">35% proteína</span></div>
-    <p className="screen-intro">Cardápio funcional sugerido pela sua nutricionista para otimizar seus resultados diários.</p>
-    <div className="curated-list">{restaurants.map(restaurant => <article className="curated-card" key={restaurant.name}><PhotoCard image={restaurant.image} alt={restaurant.dish} /><div className="curated-card-body"><span className="approved-pill"><ShieldCheck size={14} /> Aprovado por Nutri</span><h3>{restaurant.dish}</h3><p>{restaurant.name}</p><div className="macro-chip-row"><span>Opção Balanceada</span><span>{restaurant.tag}</span></div><div className="curated-price"><strong>Pronta entrega</strong><button className="button lime-button small-button" onClick={() => { setOrdered(current => [...current, restaurant.name]); notify("Refeição adicionada ao seu plano alimentar."); }}>{ordered.includes(restaurant.name) ? <><Check size={15} /> Salvo</> : <>Adicionar ao plano <ArrowRight size={15} /></>}</button></div></div></article>)}</div>
-  </Screen>;
-}
-
-function ProgressScreen({ notify, activity }) {
-  return <Screen title="Minha Evolução" subtitle="PEQUENOS PASSOS, GRANDES MUDANÇAS" className="progress-screen">
-    <div className="progress-filter"><span>Seu acompanhamento</span><button onClick={() => notify("Período selecionado: últimos 30 dias.")}>Últimos 30 dias <ChevronDown size={15} /></button></div>
-    <section className="weight-card"><div><span className="eyebrow">PESO ACOMPANHADO</span><div className="weight-values"><strong>80<small> kg</small></strong><span className="weight-change"><ArrowDownRight size={17} /> 4 kg em 30 dias</span></div><p>Uma trajetória consistente, construída dia após dia.</p></div><svg className="weight-chart" viewBox="0 0 320 120" role="img" aria-label="Gráfico de evolução de 84 para 80 quilos"><defs><linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#BFFF00" stopOpacity=".3" /><stop offset="100%" stopColor="#BFFF00" stopOpacity="0" /></linearGradient></defs><path d="M0 20 C34 26 45 35 72 40 S113 44 143 57 S180 63 205 77 S250 80 276 94 S304 97 320 105 V120 H0 Z" fill="url(#chartFill)" /><path d="M0 20 C34 26 45 35 72 40 S113 44 143 57 S180 63 205 77 S250 80 276 94 S304 97 320 105" fill="none" stroke="#BFFF00" strokeWidth="4" strokeLinecap="round" /></svg><div className="chart-labels"><span>30 dias atrás · 84 kg</span><span>Hoje · 80 kg</span></div></section>
-    <div className="measurement-grid"><div className="measurement-card"><span>Peito</span><strong>102 cm</strong><small>−2 cm no período</small></div><div className="measurement-card"><span>Cintura</span><strong>88 cm</strong><small>−4 cm no período</small></div></div>
-    <div className="streak-card"><span className="streak-icon"><Flame size={22} /></span><div><span>SEU MELHOR RITMO</span><strong>12 dias seguidos</strong><small>Um passo de cada vez já é evolução.</small></div><span className="streak-rank">TOP 5%<small>Aldeota</small></span></div>
-    <SectionTitle title="Seu cuidado em números" />
-    <div className="adherence-card"><div><span><Dumbbell size={17} /> Treinos</span><strong>{activity.workoutsLogged} / 20 <small>{activity.trainingPercent}%</small></strong><i><b style={{ width: `${activity.trainingPercent}%` }} /></i></div><div><span><Apple size={17} /> Refeições</span><strong>{activity.mealsLogged} / 30 <small>{activity.nutritionPercent}%</small></strong><i><b style={{ width: `${activity.nutritionPercent}%` }} /></i></div></div>
-    <button className="button primary wide-button mt-5" onClick={() => notify("Seu resumo de evolução está pronto para compartilhar.")}><Share2 size={17} /> Compartilhar evolução</button>
+function ProgressScreen({ activity }) {
+  const meals = [...activity.mealEntries].sort((left, right) => right.date.localeCompare(left.date)).slice(0, 5);
+  const workouts = [...activity.workoutEntries].reverse().slice(0, 5);
+  return <Screen title="Meus registros" subtitle="DADOS INFORMADOS POR VOCÊ" className="progress-screen">
+    <section className="performance-card progress-summary">
+      <div className="section-title-row"><div><span className="eyebrow">NESTE APARELHO</span><h2>Resumo da rotina</h2></div></div>
+      <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span><span><strong>{activity.waterMl.toLocaleString("pt-BR")} ml</strong> de água registrados</span></div>
+    </section>
+    <p className="reference-disclosure">Esses dados ficam neste navegador e não são sincronizados com sua conta. Peso, medidas, sono e atividade de sensores não estão conectados.</p>
+    <SectionTitle title="Treinos recentes" action="Registrar treino" to="/workout" />
+    {workouts.length ? <div className="exercise-list">{workouts.map(entry => <article className="exercise-card" key={entry.id}><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><h3>{entry.name}</h3><p>{entry.minutes} min · {entry.date}</p></div></article>)}</div> : <div className="empty-state"><Dumbbell size={24} /><h3>Nenhum treino registrado</h3><Link className="button subtle" to="/workout">Registrar treino</Link></div>}
+    <SectionTitle title="Refeições recentes" action="Abrir diário" to="/nutrition" />
+    {meals.length ? <div className="meal-list">{meals.map(meal => <div className="meal-row" key={meal.id}><span className="meal-icon"><Utensils size={17} /></span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · {meal.date}</small></div></div>)}</div> : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><Link className="button subtle" to="/nutrition">Abrir diário</Link></div>}
   </Screen>;
 }
 
@@ -1079,7 +1080,6 @@ function AppContent() {
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
-  const [foodCart, setFoodCart] = useState(loadFoodCart);
   const [shopCart, setShopCart] = useState(loadShopCart);
   const [savedArts, setSavedArts] = useState([]);
   const [studioArtwork, setStudioArtwork] = useState(null);
@@ -1236,7 +1236,11 @@ function AppContent() {
   };
   const updateActivity = (kind, detail) => setActivity(current => {
     if (kind === "water") return normalizeActivity({ ...current, waterMl: current.waterMl + 250 });
-    if (kind === "workout") return normalizeActivity({ ...current, workoutsLogged: current.workoutsLogged + 1 });
+    if (kind === "workout") return normalizeActivity({
+      ...current,
+      workoutsLogged: current.workoutsLogged + 1,
+      workoutEntries: [...current.workoutEntries, detail],
+    });
     if (kind === "meal") return normalizeActivity({ ...current, mealEntries: [...current.mealEntries, detail] });
     if (kind === "removeMeal") return normalizeActivity({ ...current, mealEntries: current.mealEntries.filter(meal => meal.id !== detail) });
     return current;
@@ -1261,14 +1265,6 @@ function AppContent() {
   }, [activity]);
   useEffect(() => {
     try {
-      window.localStorage.setItem(FOOD_CART_STORAGE_KEY, JSON.stringify(foodCart));
-    } catch (error) {
-      console.error("Não foi possível persistir a sacola do Food neste dispositivo.", error);
-      setToast("A sacola do Food está visível, mas não pôde ser salva neste navegador.");
-    }
-  }, [foodCart]);
-  useEffect(() => {
-    try {
       window.localStorage.setItem(SHOP_CART_STORAGE_KEY, JSON.stringify(shopCart));
     } catch (error) {
       console.error("Não foi possível persistir a sacola da FortalShop neste dispositivo.", error);
@@ -1279,21 +1275,21 @@ function AppContent() {
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/");
   return <div className={mobile ? "mobile-app" : "professional-root"}>
     <Routes>
-      <Route path="/" element={<Navigate to="/feed" replace />} />
-      <Route path="/home" element={<Navigate to="/feed" replace />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} />} />
       <Route path="/feed" element={<Screen title="Comunidade" subtitle="BEM-ESTAR EM CONEXÃO" className="feed-screen"><section className="community-promo"><img src={fortalfyAsset("publicidade", "04-feed-comunidade.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2>Seu bem-estar também se constrói junto.</h2><p>Conteúdo real aparece quando publicado por pessoas da comunidade.</p></div></section>{authSession?.user?.id && socialProfile && <StoryExperience user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="Reels" subtitle="VÍDEOS DA COMUNIDADE" className="feed-screen reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
-      <Route path="/food" element={<FoodScreen notify={notify} cart={foodCart} setCart={setFoodCart} />} />
+      <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
       <Route path="/pass" element={<LivePassScreen client={supabase} />} />
       <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/local" element={<Navigate to="/profile" replace />} />
-      <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} />} />
+      <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
-      <Route path="/curated" element={<CuratedScreen notify={notify} />} />
-      <Route path="/progress" element={<ProgressScreen notify={notify} activity={activity} />} />
+      <Route path="/curated" element={<Navigate to="/food" replace />} />
+      <Route path="/progress" element={<ProgressScreen activity={activity} />} />
       <Route path="/academy" element={<AcademyScreen />} />
       <Route path="/live" element={<LiveScreen notify={notify} />} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
