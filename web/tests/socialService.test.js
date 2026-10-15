@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getErrorMessage, loadComments, loadFeed, loadMutualFollowState, mapProfile, startConversation } from "../src/socialService.js";
 
-function query(result) {
+function query(result, onSelect = () => {}) {
   return {
-    select() { return this; },
+    select(fields) { onSelect(fields); return this; },
     order() { return this; },
     range() { return this; },
     eq() { return this; },
@@ -43,10 +43,13 @@ test("profile mapping exposes only public social fields and normalizes defaults"
 });
 
 test("feed loads mapped counts, the current user's like state, and pagination", async () => {
+  let postsQueries = 0;
+  const postSelections = [];
   const post = {
     id: "post-1",
     author_id: "author-1",
     body: "Uma publicação",
+    shared_post_id: null,
     published_at: "2026-10-13T20:00:00Z",
     author: { id: "author-1", display_name: "Ana", avatar_path: null },
     post_media: [],
@@ -57,7 +60,13 @@ test("feed loads mapped counts, the current user's like state, and pagination", 
   };
   const client = {
     from(table) {
-      if (table === "posts") return query({ data: [post], error: null, count: 16 });
+      if (table === "posts") {
+        postsQueries += 1;
+        const result = postsQueries === 1
+          ? { data: [post], error: null, count: 16 }
+          : { data: [{ shared_post_id: "post-1" }], error: null };
+        return query(result, fields => postSelections.push(fields));
+      }
       if (table === "post_likes") return query({ data: [{ post_id: "post-1" }], error: null });
       if (table === "saved_posts") return query({ data: [], error: null });
       throw new Error(`Unexpected table: ${table}`);
@@ -73,6 +82,48 @@ test("feed loads mapped counts, the current user's like state, and pagination", 
   assert.equal(result.posts[0].likedByMe, true);
   assert.equal(result.posts[0].savedByMe, false);
   assert.equal(result.hasMore, false);
+  assert.equal(postSelections.some(fields => fields.includes("posts!")), false);
+});
+
+test("feed loads shared posts and share counts without recursive PostgREST relationships", async () => {
+  let postsQueries = 0;
+  const sharedPost = {
+    id: "share-1",
+    author_id: "author-1",
+    body: "",
+    shared_post_id: "original-1",
+    published_at: "2026-10-13T21:00:00Z",
+    author: { id: "author-1", display_name: "Ana", avatar_path: null },
+    post_media: [],
+    likes: [{ count: 0 }],
+    comments: [{ count: 0 }],
+  };
+  const original = {
+    id: "original-1",
+    author_id: "author-2",
+    body: "Publicação original",
+    published_at: "2026-10-13T20:00:00Z",
+    author: { id: "author-2", display_name: "Bruna", avatar_path: null },
+    post_media: [],
+  };
+  const client = {
+    from(table) {
+      if (table === "posts") {
+        postsQueries += 1;
+        if (postsQueries === 1) return query({ data: [sharedPost], error: null, count: 1 });
+        if (postsQueries === 2) return query({ data: [{ shared_post_id: "original-1" }], error: null });
+        return query({ data: [original], error: null });
+      }
+      if (table === "post_likes" || table === "saved_posts") return query({ data: [], error: null });
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const result = await loadFeed(client, "viewer-1");
+  assert.equal(result.posts[0].original.id, "original-1");
+  assert.equal(result.posts[0].original.author.name, "Bruna");
+  assert.equal(result.posts[0].shareCount, 0);
+  assert.equal(postsQueries, 3);
 });
 
 test("comments map individual likes and preserve parent relationships", async () => {

@@ -122,13 +122,7 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
     author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
     ${mediaRelation}(id,storage_path,media_type,sort_order),
     likes:post_likes(count),
-    comments:post_comments(count),
-    shares:posts!posts_shared_post_id_fkey(count),
-    original:posts!posts_shared_post_id_fkey(
-      id,author_id,body,published_at,media_path,
-      author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
-      post_media(id,storage_path,media_type,sort_order)
-    )
+    comments:post_comments(count)
   `, { count: "exact" })
     .order("published_at", { ascending: false })
     .order("id", { ascending: false })
@@ -140,30 +134,49 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
   const { data, error, count } = await query;
   if (error) throw error;
   const rows = data || [];
+  const sharedPostIds = [...new Set(rows.map(post => post.shared_post_id).filter(Boolean))];
   const likedIds = new Set();
   const savedIds = new Set();
+  const shareCounts = new Map();
+  const originals = new Map();
   if (rows.length) {
-    const [{ data: likes, error: likesError }, { data: saved, error: savedError }] = await Promise.all([
+    const originalFields = `
+      id,author_id,body,published_at,media_path,
+      author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
+      post_media(id,storage_path,media_type,sort_order)
+    `;
+    const [{ data: likes, error: likesError }, { data: saved, error: savedError }, sharesResult, originalsResult] = await Promise.all([
       client.from("post_likes").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("saved_posts").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
+      client.from("posts").select("shared_post_id").in("shared_post_id", rows.map(post => post.id)),
+      sharedPostIds.length
+        ? client.from("posts").select(originalFields).in("id", sharedPostIds)
+        : Promise.resolve({ data: [], error: null }),
     ]);
     if (likesError) throw likesError;
     if (savedError) throw savedError;
+    if (sharesResult.error) throw sharesResult.error;
+    if (originalsResult.error) throw originalsResult.error;
     (likes || []).forEach(like => likedIds.add(like.post_id));
     (saved || []).forEach(item => savedIds.add(item.post_id));
+    (sharesResult.data || []).forEach(share => {
+      if (share.shared_post_id) shareCounts.set(share.shared_post_id, (shareCounts.get(share.shared_post_id) || 0) + 1);
+    });
+    (originalsResult.data || []).forEach(original => originals.set(original.id, original));
   }
   const posts = await Promise.all(rows.map(async post => {
     const author = mapProfile(post.author);
     if (author) author.avatar = await signMedia(client, author.avatar);
     const media = await signPostMedia(client, post);
     let original = null;
-    if (post.original) {
-      const originalAuthor = mapProfile(post.original.author);
+    const originalPost = originals.get(post.shared_post_id);
+    if (originalPost) {
+      const originalAuthor = mapProfile(originalPost.author);
       if (originalAuthor) originalAuthor.avatar = await signMedia(client, originalAuthor.avatar);
       original = {
-        ...post.original,
+        ...originalPost,
         author: originalAuthor,
-        media: await signPostMedia(client, post.original),
+        media: await signPostMedia(client, originalPost),
       };
     }
     return {
@@ -175,7 +188,7 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
       savedByMe: savedIds.has(post.id),
       likeCount: post.likes?.[0]?.count || 0,
       commentCount: post.comments?.[0]?.count || 0,
-      shareCount: post.shares?.[0]?.count || 0,
+      shareCount: shareCounts.get(post.id) || 0,
     };
   }));
   return {

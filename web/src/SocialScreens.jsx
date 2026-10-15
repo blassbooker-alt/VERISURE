@@ -1501,35 +1501,80 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   const [requests, setRequests] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [postsError, setPostsError] = useState("");
+  const [detailsError, setDetailsError] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState({ name: "", username: "", bio: "", city: "", isPrivate: false });
 
   useEffect(() => {
-    if (!isOwn) setPerson(null);
+    setPerson(isOwn ? profile : null);
+    setPosts([]);
+    setPostCount(0);
+    setPostsHasMore(false);
+    setPostsError("");
+    setDetailsError("");
+    setError("");
     if (!client || !userId || !targetId) return undefined;
     let active = true;
-    Promise.all([
-      isOwn ? Promise.resolve(profile) : loadProfile(client, targetId),
-      loadFeed(client, userId, { filter: "latest", offset: 0, limit: 20, authorId: targetId }),
-      loadFollowState(client, userId, targetId),
-      isOwn ? loadFollowRequests(client, userId) : Promise.resolve([]),
-    ]).then(([nextPerson, feed, nextFollow, nextRequests]) => {
+    const loadProfileData = async () => {
+      let nextPerson;
+      try {
+        nextPerson = isOwn ? profile : await loadProfile(client, targetId);
+        if (!nextPerson) throw new Error("Perfil não encontrado ou não disponível para sua conta.");
+        if (active) setPerson(nextPerson);
+      } catch (failure) {
+        if (!active) return;
+        console.error("Falha ao carregar os dados principais do perfil social.", failure);
+        setError(getErrorMessage(failure, "Não foi possível carregar este perfil."));
+        return;
+      }
       if (!active) return;
-      if (!nextPerson) throw new Error("Perfil não encontrado ou não disponível para sua conta.");
-      setPerson(nextPerson);
-      setPosts(feed.posts);
-      setPostCount(feed.total);
-      setPostsHasMore(feed.hasMore);
-      setFollow(nextFollow);
-      setRequests(nextRequests);
-      setError("");
-    }).catch(failure => {
-      if (!active) return;
-      console.error("Falha ao carregar o perfil social.", failure);
-      setError(getErrorMessage(failure, "Não foi possível carregar este perfil."));
-    });
+      loadFeed(client, userId, { filter: "latest", offset: 0, limit: 20, authorId: targetId })
+        .then(feed => {
+          if (!active) return;
+          setPosts(feed.posts);
+          setPostCount(feed.total);
+          setPostsHasMore(feed.hasMore);
+          setPostsError("");
+        })
+        .catch(failure => {
+          if (!active) return;
+          console.error("Falha ao carregar as publicações do perfil.", failure);
+          setPostsError(getErrorMessage(failure, "Não foi possível carregar as publicações."));
+        });
+      Promise.all([
+        loadFollowState(client, userId, targetId),
+        isOwn ? loadFollowRequests(client, userId) : Promise.resolve([]),
+      ]).then(([nextFollow, nextRequests]) => {
+        if (!active) return;
+        setFollow(nextFollow);
+        setRequests(nextRequests);
+        setDetailsError("");
+      }).catch(failure => {
+        if (!active) return;
+        console.error("Falha ao carregar os detalhes sociais do perfil.", failure);
+        setDetailsError(getErrorMessage(failure, "Não foi possível carregar os dados de seguimento."));
+      });
+    };
+    loadProfileData();
     return () => { active = false; };
   }, [client, userId, targetId, isOwn, profile]);
+
+  const retryProfilePosts = async () => {
+    setPostsLoading(true);
+    try {
+      const result = await loadFeed(client, userId, { filter: "latest", offset: 0, limit: 20, authorId: targetId });
+      setPosts(result.posts);
+      setPostCount(result.total);
+      setPostsHasMore(result.hasMore);
+      setPostsError("");
+    } catch (failure) {
+      console.error("Falha ao tentar novamente carregar as publicações do perfil.", failure);
+      setPostsError(getErrorMessage(failure, "Não foi possível carregar as publicações."));
+    } finally {
+      setPostsLoading(false);
+    }
+  };
 
   const saveProfile = async event => {
     event.preventDefault();
@@ -1623,7 +1668,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       setPostsHasMore(result.hasMore);
     } catch (failure) {
       console.error("Falha ao carregar mais publicações do perfil.", failure);
-      notify(getErrorMessage(failure, "Não foi possível carregar mais publicações."));
+      setPostsError(getErrorMessage(failure, "Não foi possível carregar mais publicações."));
     } finally {
       setPostsLoading(false);
     }
@@ -1699,9 +1744,12 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         if (signOutError) notify(getErrorMessage(signOutError));
       }}>Sair da conta</button>}
     </section>
+    {detailsError && <p className="social-inline-error" role="alert">{detailsError}</p>}
     {isOwn && requests.length > 0 && <section className="social-follow-requests"><h3>Solicitações para seguir <span>{requests.length}</span></h3>{requests.map(request => <div className="social-follow-request" key={request.follower_id}><AuthorLink author={request.follower} ownId={userId} /><Link to={`/profile/${request.follower_id}`}><strong>{request.follower?.name || "Pessoa Fortalfy"}</strong><small>{formatDate(request.created_at)}</small></Link><button className="button primary small-button" disabled={busy} onClick={() => handleFollowRequest(request, true)}>Aceitar</button><button className="button subtle small-button" disabled={busy} onClick={() => handleFollowRequest(request, false)}>Recusar</button></div>)}</section>}
     <h3 className="social-profile-posts-title">Publicações</h3>
+    {postsError && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{postsError}</span><button onClick={retryProfilePosts} disabled={postsLoading}>{postsLoading ? "Tentando…" : "Tentar novamente"}</button></div>}
     {person.isPrivate && !isOwn && !follow.isFollowing ? <div className="social-empty-feed"><ShieldCheck size={23} /><h3>Este perfil é privado</h3><p>Envie uma solicitação para ver suas publicações.</p></div>
+      : postsError ? null
       : posts.length ? posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={async () => {
         const result = await loadFeed(client, userId, { authorId: targetId, limit: 20 });
         setPosts(result.posts);
