@@ -118,7 +118,7 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
 
   const mediaRelation = mediaType ? "post_media!inner" : "post_media";
   let query = client.from("posts").select(`
-    id,author_id,body,visibility,shared_post_id,published_at,updated_at,
+    id,author_id,body,visibility,shared_post_id,published_at,
     author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
     ${mediaRelation}(id,storage_path,media_type,sort_order),
     likes:post_likes(count),

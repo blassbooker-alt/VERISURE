@@ -83,6 +83,7 @@ test("feed loads mapped counts, the current user's like state, and pagination", 
   assert.equal(result.posts[0].savedByMe, false);
   assert.equal(result.hasMore, false);
   assert.equal(postSelections.some(fields => fields.includes("posts!")), false);
+  assert.equal(postSelections.some(fields => fields.includes("updated_at")), false);
 });
 
 test("feed loads shared posts and share counts without recursive PostgREST relationships", async () => {
