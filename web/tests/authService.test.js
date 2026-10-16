@@ -20,7 +20,7 @@ const validFields = {
 
 test("signup validates username, birth date, goals, interests, and consent", () => {
   assert.deepEqual(validateSignup(validFields, new Date("2026-10-14T12:00:00")), {});
-  assert.equal(validateSignup({ ...validFields, username: "Ana!" }).username, "Use de 3 a 24 caracteres: letras, números ou _.");
+  assert.equal(validateSignup({ ...validFields, username: "Ana!" }).username, "Use de 3 a 30 caracteres: letras, números, ponto ou _.");
   assert.ok(validateSignup({ ...validFields, kind: "admin" }).kind);
   assert.equal(validateSignup({ ...validFields, birthDate: "1995-02-31" }).birthDate, "Informe uma data de nascimento válida.");
   assert.equal(validateSignup({ ...validFields, birthDate: "2999-01-01" }).birthDate, "A data de nascimento não pode estar no futuro.");

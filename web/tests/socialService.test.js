@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getErrorMessage, loadComments, loadFeed, loadMutualFollowState, mapProfile, startConversation } from "../src/socialService.js";
+import {
+  getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState,
+  loadMutualFollowState, loadProfileConnections, mapProfile, recordReelView,
+  prepareProfileImage, respondFollowRequest, startConversation,
+} from "../src/socialService.js";
 
 function query(result, onSelect = () => {}) {
   return {
@@ -13,7 +17,7 @@ function query(result, onSelect = () => {}) {
   };
 }
 
-test("profile mapping exposes only public social fields and normalizes defaults", () => {
+test("profile mapping enables the global verification badge without changing approval status", () => {
   assert.deepEqual(mapProfile({
     id: "user-1",
     display_name: "Ana",
@@ -36,10 +40,114 @@ test("profile mapping exposes only public social fields and normalizes defaults"
     avatar: "",
     cover: "",
     kind: "cliente",
-    verified: false,
+    verified: true,
+    partnerApproved: false,
     isPrivate: true,
   });
+
   assert.equal(mapProfile(null), null);
+});
+
+test("username availability normalizes valid input and skips malformed usernames", async () => {
+  const calls = [];
+  const client = {
+    rpc: async (name, params) => {
+      calls.push({ name, params });
+      return { data: true, error: null };
+    },
+  };
+  assert.equal(await isUsernameAvailable(client, " @Ana.Fit_30 "), true);
+  assert.deepEqual(calls, [{
+    name: "is_fortalfy_username_available",
+    params: { p_username: "ana.fit_30", p_profile_id: null },
+  }]);
+  assert.equal(await isUsernameAvailable(client, "an"), false);
+  assert.equal(calls.length, 1);
+});
+
+test("follow state uses the privacy-aware aggregate RPC and normalizes counts", async () => {
+  const calls = [];
+  const client = {
+    rpc: async (name, params) => {
+      calls.push({ name, params });
+      return {
+        data: [{ followers_count: "12", following_count: 4, is_following: true, request_status: null }],
+        error: null,
+      };
+    },
+  };
+  assert.deepEqual(await loadFollowState(client, "viewer-1", "profile-1"), {
+    followers: 12,
+    following: 4,
+    isFollowing: true,
+    requestStatus: "",
+  });
+  assert.deepEqual(calls, [{
+    name: "get_fortalfy_profile_social_stats",
+    params: { p_profile_id: "profile-1" },
+  }]);
+});
+
+test("profile connection lists use the access-controlled paginated RPC", async () => {
+  const client = {
+    rpc: async (name, params) => {
+      assert.equal(name, "get_fortalfy_profile_connections");
+      assert.deepEqual(params, {
+        p_profile_id: "profile-1",
+        p_direction: "followers",
+        p_offset: 0,
+        p_limit: 3,
+      });
+      return {
+        data: [
+          { connection_id: "person-1", display_name: "Ana", username: "ana", avatar_path: "person-1/avatar.jpg" },
+          { connection_id: "person-2", display_name: "Bia", username: "bia", avatar_path: null },
+          { connection_id: "person-3", display_name: "Caio", username: "caio", avatar_path: null },
+        ],
+        error: null,
+      };
+    },
+    storage: {
+      from: () => ({ createSignedUrl: async path => ({ data: { signedUrl: `signed:${path}` }, error: null }) }),
+    },
+  };
+  const result = await loadProfileConnections(client, "viewer-1", "profile-1", "followers", { limit: 2 });
+  assert.deepEqual(result.profiles.map(profile => profile.id), ["person-1", "person-2"]);
+  assert.equal(result.profiles[0].avatar, "signed:person-1/avatar.jpg");
+  assert.equal(result.hasMore, true);
+});
+
+test("Reel view and follow-request responses use server-validated RPCs", async () => {
+  const calls = [];
+  let inserted = true;
+  const client = {
+    rpc: async (name, params) => {
+      calls.push({ name, params });
+      if (name === "record_fortalfy_reel_view") {
+        const data = inserted;
+        inserted = false;
+        return { data, error: null };
+      }
+      return { data: "accepted", error: null };
+    },
+  };
+  assert.equal(await recordReelView(client, "viewer-1", "reel-1"), true);
+  assert.equal(await recordReelView(client, "viewer-1", "reel-1"), false);
+  await respondFollowRequest(client, "follower-1", "profile-owner-1", true);
+  assert.deepEqual(calls, [
+    { name: "record_fortalfy_reel_view", params: { p_post_id: "reel-1" } },
+    { name: "record_fortalfy_reel_view", params: { p_post_id: "reel-1" } },
+    { name: "respond_fortalfy_follow_request", params: { p_follower_id: "follower-1", p_accept: true } },
+  ]);
+});
+
+test("profile images preserve valid animated GIFs and reject excessive source sizes", async () => {
+  const gif = { type: "image/gif", size: 1024, name: "avatar.gif" };
+  assert.equal(await prepareProfileImage(gif, "avatar_path"), gif);
+  await assert.rejects(
+    prepareProfileImage({ type: "image/jpeg", size: 16 * 1024 * 1024 }, "cover_path"),
+    /15 MB/,
+  );
 });
 
 test("feed loads mapped counts, the current user's like state, and pagination", async () => {
@@ -158,6 +266,7 @@ test("comments map individual likes and preserve parent relationships", async ()
 
 test("database error messages preserve authorization details", () => {
   assert.equal(getErrorMessage({ code: "42501", message: "blocked" }), "Sua conta não tem permissão para esta ação.");
+  assert.equal(getErrorMessage({ code: "PGRST205", message: "table missing" }), "Esta área ainda não está habilitada no banco. A equipe precisa aplicar as migrações do Fortalfy no Supabase.");
   assert.equal(getErrorMessage({ message: "E-mail indisponível" }), "E-mail indisponível");
   assert.equal(getErrorMessage(null, "Erro alternativo"), "Erro alternativo");
 });

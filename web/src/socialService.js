@@ -1,5 +1,6 @@
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
+const GLOBAL_PROFILE_VERIFICATION_BADGE_ENABLED = true;
 
 export function isDemoUser(userId) {
   if (!userId || typeof userId !== "string") return false;
@@ -14,6 +15,7 @@ export function getErrorMessage(error, fallback = "Não foi possível concluir e
   if (!error) return fallback;
   if (error.code === "23505") return "Esta ação já foi registrada.";
   if (error.code === "42501") return "Sua conta não tem permissão para esta ação.";
+  if (error.code === "PGRST205") return "Esta área ainda não está habilitada no banco. A equipe precisa aplicar as migrações do Fortalfy no Supabase.";
   return error.message || fallback;
 }
 
@@ -28,7 +30,8 @@ export function mapProfile(row) {
     avatar: row.avatar_path || "",
     cover: row.cover_path || "",
     kind: row.kind || "cliente",
-    verified: Boolean(row.verified_at || row.partner_approved_at),
+    verified: GLOBAL_PROFILE_VERIFICATION_BADGE_ENABLED || Boolean(row.verified_at || row.partner_approved_at),
+    partnerApproved: Boolean(row.partner_approved_at),
     isPrivate: Boolean(row.is_private),
   };
 }
@@ -63,6 +66,49 @@ export async function uploadProfileImage(client, userId, file, field) {
   return path;
 }
 
+export async function prepareProfileImage(file, field, zoom = 1) {
+  if (!PROFILE_FIELDS.has(field)) throw new Error("Tipo de imagem de perfil inválido.");
+  if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file?.type)) {
+    throw new Error("Use uma imagem JPG, PNG, WebP ou GIF.");
+  }
+  if (file.size > 15 * 1024 * 1024) throw new Error("A imagem original pode ter até 15 MB.");
+  if (file.type === "image/gif") {
+    if (file.size > 5 * 1024 * 1024) throw new Error("GIFs animados podem ter até 5 MB para preservar a animação.");
+    return file;
+  }
+  if (typeof globalThis.createImageBitmap !== "function") {
+    throw new Error("Este navegador não permite ajustar a imagem com segurança.");
+  }
+
+  const bitmap = await globalThis.createImageBitmap(file);
+  try {
+    const ratio = field === "avatar_path" ? 1 : 3;
+    const sourceWidth = Math.min(bitmap.width, bitmap.height * ratio);
+    const sourceHeight = sourceWidth / ratio;
+    const scale = Math.min(2, Math.max(1, Number(zoom) || 1));
+    const cropWidth = sourceWidth / scale;
+    const cropHeight = sourceHeight / scale;
+    const sourceX = (bitmap.width - cropWidth) / 2;
+    const sourceY = (bitmap.height - cropHeight) / 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = field === "avatar_path" ? 900 : 1500;
+    canvas.height = field === "avatar_path" ? 900 : 500;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Não foi possível preparar o corte da imagem.");
+    context.drawImage(bitmap, sourceX, sourceY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve, reject) => canvas.toBlob(
+      result => result ? resolve(result) : reject(new Error("Não foi possível comprimir a imagem.")),
+      "image/webp",
+      0.86,
+    ));
+    if (blob.size > 5 * 1024 * 1024) throw new Error("A imagem ajustada ainda excede o limite de 5 MB.");
+    const extension = blob.type === "image/webp" ? "webp" : blob.type === "image/png" ? "png" : "jpg";
+    return new File([blob], `${field === "avatar_path" ? "foto-perfil" : "capa"}.${extension}`, { type: blob.type });
+  } finally {
+    bitmap.close?.();
+  }
+}
+
 export async function removeProfileImage(client, userId, path, field) {
   if (!PROFILE_FIELDS.has(field)) throw new Error("Tipo de imagem de perfil inválido.");
   const { error: profileError } = await client.from("profiles").update({ [field]: null }).eq("id", userId);
@@ -90,6 +136,18 @@ export async function loadProfile(client, userId) {
     signMedia(client, profile.cover),
   ]);
   return { ...profile, avatar, cover, avatarPath: data.avatar_path || "", coverPath: data.cover_path || "" };
+}
+
+export async function isUsernameAvailable(client, username, profileId = null) {
+  if (!client) throw new Error("A conexão com o Supabase não está configurada.");
+  const normalized = String(username || "").trim().replace(/^@/, "").toLowerCase();
+  if (!/^[a-z0-9._]{3,30}$/.test(normalized)) return false;
+  const { data, error } = await client.rpc("is_fortalfy_username_available", {
+    p_username: normalized,
+    p_profile_id: profileId,
+  });
+  if (error) throw error;
+  return Boolean(data);
 }
 
 async function signPostMedia(client, post) {
@@ -139,29 +197,35 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
   const savedIds = new Set();
   const shareCounts = new Map();
   const originals = new Map();
+  const reelViewCounts = new Map();
   if (rows.length) {
     const originalFields = `
       id,author_id,body,published_at,media_path,
       author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
       post_media(id,storage_path,media_type,sort_order)
     `;
-    const [{ data: likes, error: likesError }, { data: saved, error: savedError }, sharesResult, originalsResult] = await Promise.all([
+    const [{ data: likes, error: likesError }, { data: saved, error: savedError }, sharesResult, originalsResult, reelViewsResult] = await Promise.all([
       client.from("post_likes").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("saved_posts").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("posts").select("shared_post_id").in("shared_post_id", rows.map(post => post.id)),
       sharedPostIds.length
         ? client.from("posts").select(originalFields).in("id", sharedPostIds)
         : Promise.resolve({ data: [], error: null }),
+      mediaType === "video"
+        ? client.rpc("get_fortalfy_reel_view_counts", { p_post_ids: rows.map(post => post.id) })
+        : Promise.resolve({ data: [], error: null }),
     ]);
     if (likesError) throw likesError;
     if (savedError) throw savedError;
     if (sharesResult.error) throw sharesResult.error;
     if (originalsResult.error) throw originalsResult.error;
+    if (reelViewsResult.error) throw reelViewsResult.error;
     (likes || []).forEach(like => likedIds.add(like.post_id));
     (saved || []).forEach(item => savedIds.add(item.post_id));
     (sharesResult.data || []).forEach(share => {
       if (share.shared_post_id) shareCounts.set(share.shared_post_id, (shareCounts.get(share.shared_post_id) || 0) + 1);
     });
+    (reelViewsResult.data || []).forEach(view => reelViewCounts.set(view.post_id, Number(view.view_count) || 0));
     (originalsResult.data || []).forEach(original => originals.set(original.id, original));
   }
   const posts = await Promise.all(rows.map(async post => {
@@ -189,6 +253,7 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
       likeCount: post.likes?.[0]?.count || 0,
       commentCount: post.comments?.[0]?.count || 0,
       shareCount: shareCounts.get(post.id) || 0,
+      reelViewCount: reelViewCounts.get(post.id) || 0,
     };
   }));
   return {
@@ -517,6 +582,9 @@ export async function setFollow(client, followerId, followedId, following, isPri
     return "requested";
   }
   if (isPrivate && !following) {
+    const { error: unfollowError } = await client.from("profile_follows")
+      .delete().eq("follower_id", followerId).eq("followed_id", followedId);
+    if (unfollowError) throw unfollowError;
     await cancelFollowRequest(client, followerId, followedId);
     return "not-following";
   }
@@ -553,26 +621,59 @@ export async function loadFollowRequests(client, userId) {
 export async function respondFollowRequest(client, followerId, followedId, accepted) {
   requireRealUser(followerId);
   requireRealUser(followedId);
-  const { error } = await client.from("follow_requests").update({
-    status: accepted ? "accepted" : "rejected",
-  }).eq("follower_id", followerId).eq("followed_id", followedId).eq("status", "pending");
+  const { error } = await client.rpc("respond_fortalfy_follow_request", {
+    p_follower_id: followerId,
+    p_accept: accepted,
+  });
   if (error) throw error;
 }
 
 export async function loadFollowState(client, userId, profileId) {
   requireRealUser(userId);
   requireRealUser(profileId);
-  const [{ count: followers, error: followersError }, { count: following, error: followingError }, { data, error }, { data: request, error: requestError }] = await Promise.all([
-    client.from("profile_follows").select("follower_id", { count: "exact", head: true }).eq("followed_id", profileId),
-    client.from("profile_follows").select("followed_id", { count: "exact", head: true }).eq("follower_id", profileId),
-    client.from("profile_follows").select("followed_id").eq("follower_id", userId).eq("followed_id", profileId).maybeSingle(),
-    client.from("follow_requests").select("status").eq("follower_id", userId).eq("followed_id", profileId).maybeSingle(),
-  ]);
-  if (followersError) throw followersError;
-  if (followingError) throw followingError;
+  const { data, error } = await client.rpc("get_fortalfy_profile_social_stats", { p_profile_id: profileId });
   if (error) throw error;
-  if (requestError) throw requestError;
-  return { followers: followers || 0, following: following || 0, isFollowing: Boolean(data), requestStatus: request?.status || "" };
+  const stats = Array.isArray(data) ? data[0] : data;
+  if (!stats) throw new Error("Este perfil não está disponível para sua conta.");
+  return {
+    followers: Number(stats.followers_count) || 0,
+    following: Number(stats.following_count) || 0,
+    isFollowing: Boolean(stats.is_following),
+    requestStatus: stats.request_status || "",
+  };
+}
+
+export async function loadProfileConnections(client, userId, profileId, direction, { offset = 0, limit = 50 } = {}) {
+  requireRealUser(userId);
+  requireRealUser(profileId);
+  if (!["followers", "following"].includes(direction)) throw new Error("Tipo de lista de conexões inválido.");
+  const { data, error } = await client.rpc("get_fortalfy_profile_connections", {
+    p_profile_id: profileId,
+    p_direction: direction,
+    p_offset: offset,
+    p_limit: limit + 1,
+  });
+  if (error) throw error;
+  const rows = data || [];
+  const page = rows.slice(0, limit);
+  const profiles = await Promise.all(page.map(async row => {
+    const profile = mapProfile({
+      id: row.connection_id,
+      display_name: row.display_name,
+      username: row.username,
+      avatar_path: row.avatar_path,
+    });
+    profile.avatar = await signMedia(client, profile.avatar);
+    return profile;
+  }));
+  return { profiles, hasMore: rows.length > limit };
+}
+
+export async function recordReelView(client, userId, postId) {
+  requireRealUser(userId);
+  const { data, error } = await client.rpc("record_fortalfy_reel_view", { p_post_id: postId });
+  if (error) throw error;
+  return Boolean(data);
 }
 
 export async function setBookmark(client, userId, postId, saved) {

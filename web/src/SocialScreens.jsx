@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Bookmark, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
@@ -10,7 +10,8 @@ import { fortalfyAsset } from "./assetPath.js";
 import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
-  loadConversations, loadDirectMessages, loadMutualFollowState, mapProfile, markConversationRead, publishPost,
+  isUsernameAvailable, loadConversations, loadDirectMessages, loadMutualFollowState, loadProfileConnections, mapProfile, markConversationRead, publishPost,
+  prepareProfileImage, recordReelView,
   reportComment, reportPost, respondFollowRequest, searchProfiles, sendDirectMessage,
   setBookmark, removeProfileImage, setCommentLike, setFollow, setPostLike, sharePost, startConversation,
   updateComment, updatePost, uploadProfileImage,
@@ -39,6 +40,8 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
+  const signupUsername = fields.username.trim().replace(/^@/, "").toLowerCase();
+  const [usernameCheck, setUsernameCheck] = useState({ username: "", checking: false, available: null, error: "" });
 
   const signupGoals = [
     ["emagrecimento", "🔥 Emagrecimento"],
@@ -63,6 +66,29 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
       setMessage("");
     }
   }, [recovery]);
+
+  useEffect(() => {
+    if (mode !== "signup" || !/^[a-z0-9._]{3,30}$/.test(signupUsername) || !client) {
+      setUsernameCheck({ username: signupUsername, checking: false, available: null, error: "" });
+      return undefined;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setUsernameCheck({ username: signupUsername, checking: true, available: null, error: "" });
+      isUsernameAvailable(client, signupUsername)
+        .then(available => {
+          if (active) setUsernameCheck({ username: signupUsername, checking: false, available, error: "" });
+        })
+        .catch(error => {
+          console.error("Falha ao verificar a disponibilidade do nome de usuario.", error);
+          if (active) setUsernameCheck({ username: signupUsername, checking: false, available: null, error: getErrorMessage(error) });
+        });
+    }, 350);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [client, mode, signupUsername]);
 
   const submit = async event => {
     event.preventDefault();
@@ -93,6 +119,11 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         onRecovered?.();
       } else if (mode === "signup") {
         if (!configured || !client) throw new Error("A conexão com o servidor de autenticação ainda não foi configurada.");
+        if (!await isUsernameAvailable(client, signupUsername)) {
+          const unavailable = new Error("Esse nome de usuario ja esta em uso ou reservado.");
+          unavailable.code = "fortalfy_username_unavailable";
+          throw unavailable;
+        }
         const redirectTo = `${window.location.origin}${window.location.pathname}`;
         const data = await createAccount(client, fields, redirectTo);
         if (data?.session) {
@@ -146,7 +177,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
       const duplicateUsername = error?.code === "23505"
         || /profiles_username_lower_unique|duplicate key/i.test(error?.message || "");
       const userExists = errText.includes("user already registered") || error?.code === "user_already_exists";
-      if (duplicateUsername) {
+      if (duplicateUsername || error?.code === "fortalfy_username_unavailable") {
         setMessage("Esse nome de usuário já está em uso. Escolha outro.");
       } else if (userExists) {
         setMessage("Este e-mail já está cadastrado. Alterne para 'Entrar' para acessar sua conta.");
@@ -422,13 +453,24 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                     placeholder="lucas_mendes"
                     value={fields.username}
                     minLength={3}
-                    maxLength={24}
-                    pattern="[A-Za-z0-9_]{3,24}"
+                    maxLength={30}
+                    pattern="[A-Za-z0-9._]{3,30}"
                     onChange={event => setFields(current => ({ ...current, username: event.target.value.toLowerCase() }))}
                     required
                   />
                 </div>
-                <small className="auth-hint-text">De 3 a 24 caracteres: letras, números e sublinhados (_).</small>
+                <small className="auth-hint-text">De 3 a 30 caracteres: letras, números, ponto e sublinhado (_).</small>
+                {signupUsername.length >= 3 && /^[a-z0-9._]{3,30}$/.test(signupUsername) && (
+                  <small className={`auth-username-availability ${usernameCheck.error ? "is-error" : usernameCheck.available ? "is-available" : usernameCheck.available === false ? "is-unavailable" : ""}`}>
+                    {usernameCheck.username !== signupUsername || usernameCheck.checking
+                      ? "Verificando disponibilidade…"
+                      : usernameCheck.error
+                        ? "Não foi possível verificar agora; a disponibilidade será validada ao criar a conta."
+                        : usernameCheck.available
+                          ? "Nome de usuário disponível."
+                          : "Nome de usuário em uso ou reservado."}
+                  </small>
+                )}
               </div>
             )}
 
@@ -780,12 +822,21 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
   </article>;
 }
 
-function PostMedia({ media, onOpen, reelMode = false }) {
+function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
+  const watchedMedia = useRef(new Set());
   if (!media?.length) return null;
   return <div className={`social-media-grid count-${Math.min(media.length, 4)}`}>
     {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className="social-media-item">
       {item.media_type === "video"
-        ? <video src={item.url} controls playsInline preload="metadata" loop={reelMode} muted={reelMode} />
+        ? <video src={item.url} controls playsInline preload="metadata" loop={reelMode} muted={reelMode} onTimeUpdate={event => {
+          if (!reelMode || !onReelWatch || watchedMedia.current.has(item.id || item.storage_path)) return;
+          const video = event.currentTarget;
+          const threshold = video.duration > 0 ? Math.min(3, video.duration / 2) : Infinity;
+          if (video.currentTime < threshold) return;
+          const mediaKey = item.id || item.storage_path;
+          watchedMedia.current.add(mediaKey);
+          void onReelWatch();
+        }} />
         : <button type="button" onClick={() => onOpen(media, index)} aria-label={`Ampliar mídia ${index + 1}`}><img src={item.url} alt={`Mídia da publicação ${index + 1}`} loading="lazy" />{index === 3 && media.length > 4 && <span>+{media.length - 4}</span>}</button>}
     </div>)}
   </div>;
@@ -879,6 +930,8 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const [saved, setSaved] = useState(Boolean(post.savedByMe));
   const [liked, setLiked] = useState(Boolean(post.likedByMe));
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [reelViewCount, setReelViewCount] = useState(Number(post.reelViewCount) || 0);
+  const reportedReelViews = useRef(new Set());
   const own = post.author_id === userId;
   const longBody = post.body.length > 500;
   const displayBody = expanded || !longBody ? post.body : `${post.body.slice(0, 500)}…`;
@@ -893,6 +946,9 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     setLiked(Boolean(post.likedByMe));
     setLikeCount(post.likeCount || 0);
   }, [post.id, post.likedByMe, post.likeCount]);
+  useEffect(() => {
+    setReelViewCount(Number(post.reelViewCount) || 0);
+  }, [post.id, post.reelViewCount]);
   useEffect(() => {
     if (own) return undefined;
     let active = true;
@@ -918,6 +974,17 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       return false;
     } finally {
       setBusy(false);
+    }
+  };
+  const registerReelView = async () => {
+    if (reportedReelViews.current.has(post.id)) return;
+    reportedReelViews.current.add(post.id);
+    try {
+      const recorded = await recordReelView(client, userId, post.id);
+      if (recorded) setReelViewCount(count => count + 1);
+    } catch (error) {
+      console.error("Falha ao registrar a visualização do Reel.", error);
+      notify(getErrorMessage(error, "Não foi possível registrar a visualização do Reel."));
     }
   };
   const toggleLike = async () => {
@@ -1076,9 +1143,9 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       </div>
     </header>
     {!!post.body && <div className="social-post-text"><LinkifiedText text={displayBody} />{longBody && <button className="social-text-toggle" onClick={() => setExpanded(value => !value)}>{expanded ? "Ver menos" : "Ver mais"}</button>}</div>}
-    {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
-    {post.original && <div className="social-original-post"><div className="social-original-author"><AuthorLink author={post.original.author} ownId={userId} /><span><strong>{post.original.author?.name}</strong><small>{formatDate(post.original.published_at)}</small></span></div><LinkifiedText text={post.original.body} /><PostMedia media={post.original.media} reelMode={reelMode} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} /></div>}
-    <div className="social-post-stats"><span>{likeCount > 0 && <><Heart size={14} fill="currentColor" /> {likeCount} curtida{likeCount === 1 ? "" : "s"}</>}</span><span>{post.commentCount} comentário{post.commentCount === 1 ? "" : "s"} · {post.shareCount} compartilhamento{post.shareCount === 1 ? "" : "s"}</span></div>
+    {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
+    {post.original && <div className="social-original-post"><div className="social-original-author"><AuthorLink author={post.original.author} ownId={userId} /><span><strong>{post.original.author?.name}</strong><small>{formatDate(post.original.published_at)}</small></span></div><LinkifiedText text={post.original.body} /><PostMedia media={post.original.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} /></div>}
+    <div className="social-post-stats"><span>{likeCount > 0 && <><Heart size={14} fill="currentColor" /> {likeCount} curtida{likeCount === 1 ? "" : "s"}</>}</span><span>{reelMode && <><Eye size={14} /> {reelViewCount} visualizaç{reelViewCount === 1 ? "ão" : "ões"} · </>}{post.commentCount} comentário{post.commentCount === 1 ? "" : "s"} · {post.shareCount} compartilhamento{post.shareCount === 1 ? "" : "s"}</span></div>
     <div className="social-post-actions">
       <button className={liked ? "is-liked" : ""} aria-pressed={liked} onClick={toggleLike} disabled={busy}><Heart size={18} fill={liked ? "currentColor" : "none"} /> Curtir</button>
       <button onClick={openComments}><MessageCircle size={18} /> Comentar</button>
@@ -1505,6 +1572,42 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   const [detailsError, setDetailsError] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState({ name: "", username: "", bio: "", city: "", isPrivate: false });
+  const [connectionsDialog, setConnectionsDialog] = useState(null);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [connectionsError, setConnectionsError] = useState("");
+  const [connectionsHasMore, setConnectionsHasMore] = useState(false);
+  const [imageDraft, setImageDraft] = useState(null);
+  const profileUsername = draft.username.trim().replace(/^@/, "").toLowerCase();
+  const [profileUsernameCheck, setProfileUsernameCheck] = useState({ username: "", checking: false, available: null, error: "" });
+
+  useEffect(() => {
+    if (!editOpen || !client || !/^[a-z0-9._]{3,30}$/.test(profileUsername)) {
+      setProfileUsernameCheck({ username: profileUsername, checking: false, available: null, error: "" });
+      return undefined;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setProfileUsernameCheck({ username: profileUsername, checking: true, available: null, error: "" });
+      isUsernameAvailable(client, profileUsername, userId)
+        .then(available => {
+          if (active) setProfileUsernameCheck({ username: profileUsername, checking: false, available, error: "" });
+        })
+        .catch(failure => {
+          console.error("Falha ao verificar a disponibilidade do nome de usuário do perfil.", failure);
+          if (active) setProfileUsernameCheck({ username: profileUsername, checking: false, available: null, error: getErrorMessage(failure) });
+        });
+    }, 350);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [client, editOpen, profileUsername, userId]);
+
+  useEffect(() => {
+    if (!imageDraft?.previewUrl) return undefined;
+    const previewUrl = imageDraft.previewUrl;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [imageDraft?.previewUrl]);
 
   useEffect(() => {
     setPerson(isOwn ? profile : null);
@@ -1576,18 +1679,58 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     }
   };
 
+  const openConnections = async direction => {
+    setConnectionsDialog({ direction, profiles: [] });
+    setConnectionsLoading(true);
+    setConnectionsError("");
+    try {
+      const result = await loadProfileConnections(client, userId, targetId, direction);
+      setConnectionsDialog(current => current?.direction === direction ? { direction, profiles: result.profiles } : current);
+      setConnectionsHasMore(result.hasMore);
+    } catch (failure) {
+      console.error("Falha ao carregar as conexões do perfil.", failure);
+      setConnectionsError(getErrorMessage(failure, "Não foi possível carregar esta lista."));
+    } finally {
+      setConnectionsLoading(false);
+    }
+  };
+
+  const loadMoreConnections = async () => {
+    if (!connectionsDialog || connectionsLoading) return;
+    setConnectionsLoading(true);
+    try {
+      const result = await loadProfileConnections(client, userId, targetId, connectionsDialog.direction, {
+        offset: connectionsDialog.profiles.length,
+      });
+      setConnectionsDialog(current => current?.direction === connectionsDialog.direction
+        ? { ...current, profiles: [...current.profiles, ...result.profiles] }
+        : current);
+      setConnectionsHasMore(result.hasMore);
+      setConnectionsError("");
+    } catch (failure) {
+      console.error("Falha ao carregar mais conexões do perfil.", failure);
+      setConnectionsError(getErrorMessage(failure, "Não foi possível carregar mais perfis."));
+    } finally {
+      setConnectionsLoading(false);
+    }
+  };
+
   const saveProfile = async event => {
     event.preventDefault();
     const name = draft.name.trim();
     const username = draft.username.trim().replace(/^@/, "").toLowerCase();
     const bio = draft.bio.trim();
     const city = draft.city.trim();
-    if (name.length < 2 || name.length > 120 || bio.length > 2000 || (username && !/^[a-z0-9._]{3,24}$/.test(username))) {
+    if (name.length < 2 || name.length > 120 || bio.length > 2000 || (username && !/^[a-z0-9._]{3,30}$/.test(username))) {
       notify("Confira o nome, a biografia (até 2.000 caracteres) e o nome de usuário.");
       return;
     }
     setBusy(true);
     try {
+      if (username && !await isUsernameAvailable(client, username, userId)) {
+        notify("Esse nome de usuário já está em uso ou reservado.");
+        return;
+      }
       const { error: saveError } = await client.from("profiles").update({
         display_name: name,
         username: username || null,
@@ -1601,7 +1744,11 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       notify("Perfil atualizado.");
     } catch (failure) {
       console.error("Falha ao atualizar o perfil.", failure);
-      notify(getErrorMessage(failure, "Não foi possível atualizar seu perfil."));
+      const duplicateUsername = failure?.code === "23505"
+        || /profiles_username_lower_unique|duplicate key|username.*reserved/i.test(failure?.message || "");
+      notify(duplicateUsername
+        ? "Esse nome de usuário já está em uso ou reservado."
+        : getErrorMessage(failure, "Não foi possível atualizar seu perfil."));
     } finally {
       setBusy(false);
     }
@@ -1673,31 +1820,42 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       setPostsLoading(false);
     }
   };
-  const updateProfileImage = async (event, field) => {
+  const updateProfileImage = (event, field) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      notify("Use uma imagem JPG, PNG, WebP ou GIF.");
+    } else if (file.size > 15 * 1024 * 1024) {
+      notify("A imagem original pode ter até 15 MB.");
+    } else {
+      setImageDraft({ field, file, previewUrl: URL.createObjectURL(file), zoom: 1 });
+    }
+    event.target.value = "";
+  };
+  const saveProfileImage = async () => {
+    if (!imageDraft) return;
     setBusy(true);
     try {
-      const oldPath = field === "avatar_path" ? person.avatarPath : person.coverPath;
-      await uploadProfileImage(client, userId, file, field);
+      const oldPath = imageDraft.field === "avatar_path" ? person.avatarPath : person.coverPath;
+      const prepared = await prepareProfileImage(imageDraft.file, imageDraft.field, imageDraft.zoom);
+      await uploadProfileImage(client, userId, prepared, imageDraft.field);
       const updated = await onProfileUpdated();
       setPerson(updated);
+      setImageDraft(null);
       if (oldPath && !/^https?:\/\//i.test(oldPath)) {
         const { error: cleanupError } = await client.storage.from("social-media").remove([oldPath]);
         if (cleanupError) {
           console.error("Não foi possível limpar a imagem antiga do perfil.", cleanupError);
           notify("Imagem atualizada. Não foi possível limpar a cópia anterior do armazenamento.");
-          event.target.value = "";
           return;
         }
       }
-      notify(field === "avatar_path" ? "Foto do perfil atualizada." : "Foto de capa atualizada.");
+      notify(imageDraft.field === "avatar_path" ? "Foto do perfil atualizada." : "Foto de capa atualizada.");
     } catch (failure) {
-      console.error("Falha ao salvar imagem do perfil.", failure);
+      console.error("Falha ao ajustar e salvar imagem do perfil.", failure);
       notify(getErrorMessage(failure, "Não foi possível salvar esta imagem."));
     } finally {
       setBusy(false);
-      event.target.value = "";
     }
   };
   const clearProfileImage = async field => {
@@ -1734,7 +1892,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       <div className="social-profile-main"><AuthorLink author={author} ownId={userId} /><div className="social-profile-bio"><h2>{person.name}{person.verified && <ShieldCheck size={17} fill="currentColor" />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}</div>
         {isOwn ? <button className="button subtle small-button" onClick={beginEdit}>Editar perfil</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
       </div>
-      <div className="social-profile-metrics"><span><strong>{postCount}</strong> publicações</span><span><strong>{follow.followers}</strong> seguidores</span><span><strong>{follow.following}</strong> seguindo</span><button onClick={handleProfileShare}><Share2 size={15} /> Compartilhar perfil</button></div>
+      <div className="social-profile-metrics"><span><strong>{postCount}</strong> publicações</span><button type="button" onClick={() => openConnections("followers")}><strong>{follow.followers}</strong> seguidores</button><button type="button" onClick={() => openConnections("following")}><strong>{follow.following}</strong> seguindo</button><button onClick={handleProfileShare}><Share2 size={15} /> Compartilhar perfil</button></div>
       {isOwn && <button className="social-signout" onClick={async () => {
         if (onSignOut) {
           onSignOut();
@@ -1758,6 +1916,39 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       }} notify={notify} />)
         : <div className="social-empty-feed"><MessageCircle size={24} /><h3>Nenhuma publicação por aqui</h3><p>As publicações deste perfil aparecerão nesta área.</p></div>}
     {postsHasMore && <button className="button subtle wide-button social-load-more" onClick={loadMoreProfilePosts} disabled={postsLoading}>{postsLoading ? "Carregando…" : "Carregar mais publicações"}</button>}
-    {editOpen && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && setEditOpen(false)}><section className="social-share-dialog" role="dialog" aria-modal="true" aria-label="Editar perfil"><header><strong>Editar perfil</strong><button className="social-icon-button" onClick={() => setEditOpen(false)} aria-label="Fechar"><X size={18} /></button></header><form onSubmit={saveProfile} className="social-profile-edit-form"><label>Nome<input value={draft.name} onChange={event => setDraft(current => ({ ...current, name: event.target.value }))} required maxLength={120} /></label><label>Nome de usuário<input value={draft.username} onChange={event => setDraft(current => ({ ...current, username: event.target.value }))} maxLength={24} /></label><label>Biografia<textarea value={draft.bio} onChange={event => setDraft(current => ({ ...current, bio: event.target.value }))} maxLength={2000} /></label><label>Cidade<input value={draft.city} onChange={event => setDraft(current => ({ ...current, city: event.target.value }))} maxLength={120} /></label><div className="social-profile-image-fields"><label className="button subtle small-button">{person.avatar ? "Alterar foto do perfil" : "Adicionar foto do perfil"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => updateProfileImage(event, "avatar_path")} disabled={busy} /></label>{person.avatar && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("avatar_path")}>Remover foto</button>}<label className="button subtle small-button">{person.cover ? "Alterar capa" : "Adicionar capa"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => updateProfileImage(event, "cover_path")} disabled={busy} /></label>{person.cover && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("cover_path")}>Remover capa</button>}<small>Imagens salvas diretamente na sua conta (até 5 MB cada).</small></div><label className="social-private-toggle"><input type="checkbox" checked={draft.isPrivate} onChange={event => setDraft(current => ({ ...current, isPrivate: event.target.checked }))} /> Perfil privado — aprovo quem pode me seguir</label><button className="button primary wide-button" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button></form></section></div>}
+    {connectionsDialog && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && setConnectionsDialog(null)}><section className="social-share-dialog social-connections-dialog" role="dialog" aria-modal="true" aria-label={connectionsDialog.direction === "followers" ? "Seguidores" : "Perfis seguidos"}><header><strong>{connectionsDialog.direction === "followers" ? "Seguidores" : "Seguindo"}</strong><button className="social-icon-button" onClick={() => setConnectionsDialog(null)} aria-label="Fechar"><X size={18} /></button></header>{connectionsError && <p className="social-inline-error" role="alert">{connectionsError}<button type="button" onClick={() => openConnections(connectionsDialog.direction)}>Tentar novamente</button></p>}{connectionsDialog.profiles.length > 0 && <ul className="social-connection-list">{connectionsDialog.profiles.map(connection => <li key={connection.id}><Link to={`/profile/${connection.id}`} onClick={() => setConnectionsDialog(null)}><span className="social-person-avatar">{connection.avatar ? <img src={connection.avatar} alt="" /> : connection.name.slice(0, 1).toUpperCase()}</span><span><strong>{connection.name}</strong><small>{connection.username ? `@${connection.username}` : "Perfil Fortalfy"}</small></span><ArrowRight size={16} /></Link></li>)}</ul>}{connectionsLoading && <p className="social-inline-status" role="status"><LoaderCircle className="spin" size={16} /> Carregando perfis…</p>}{!connectionsLoading && !connectionsError && !connectionsDialog.profiles.length && <p className="social-empty-comments">Nenhum perfil aparece nesta lista.</p>}{connectionsHasMore && <button className="button subtle wide-button" onClick={loadMoreConnections} disabled={connectionsLoading}>Carregar mais perfis</button>}</section></div>}
+    {editOpen && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && setEditOpen(false)}>
+      <section className="social-share-dialog" role="dialog" aria-modal="true" aria-label="Editar perfil">
+        <header><strong>Editar perfil</strong><button className="social-icon-button" onClick={() => setEditOpen(false)} aria-label="Fechar"><X size={18} /></button></header>
+        <form onSubmit={saveProfile} className="social-profile-edit-form">
+          <label>Nome<input value={draft.name} onChange={event => setDraft(current => ({ ...current, name: event.target.value }))} required maxLength={120} /></label>
+          <label>Nome de usuário<input value={draft.username} onChange={event => setDraft(current => ({ ...current, username: event.target.value.toLowerCase() }))} maxLength={30} pattern="[A-Za-z0-9._]{3,30}" /><small>De 3 a 30 caracteres: letras, números, ponto e sublinhado.</small>{profileUsername.length >= 3 && /^[a-z0-9._]{3,30}$/.test(profileUsername) && <small className={`auth-username-availability ${profileUsernameCheck.error ? "is-error" : profileUsernameCheck.available ? "is-available" : profileUsernameCheck.available === false ? "is-unavailable" : ""}`}>{profileUsernameCheck.username !== profileUsername || profileUsernameCheck.checking ? "Verificando disponibilidade…" : profileUsernameCheck.error ? "Não foi possível verificar agora; a disponibilidade será validada ao salvar." : profileUsernameCheck.available ? "Nome de usuário disponível." : "Nome de usuário em uso ou reservado."}</small>}</label>
+          <label>Biografia<textarea value={draft.bio} onChange={event => setDraft(current => ({ ...current, bio: event.target.value }))} maxLength={2000} /></label>
+          <label>Cidade<input value={draft.city} onChange={event => setDraft(current => ({ ...current, city: event.target.value }))} maxLength={120} /></label>
+          <div className="social-profile-image-fields">
+            <label className="button subtle small-button">{person.avatar ? "Alterar foto do perfil" : "Adicionar foto do perfil"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => updateProfileImage(event, "avatar_path")} disabled={busy} /></label>
+            {person.avatar && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("avatar_path")}>Remover foto</button>}
+            <label className="button subtle small-button">{person.cover ? "Alterar capa" : "Adicionar capa"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => updateProfileImage(event, "cover_path")} disabled={busy} /></label>
+            {person.cover && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("cover_path")}>Remover capa</button>}
+            <small>Selecione uma imagem para ajustar o corte. Arquivos de até 15 MB são comprimidos antes do envio; GIFs animados devem ter até 5 MB.</small>
+          </div>
+          <label className="social-private-toggle"><input type="checkbox" checked={draft.isPrivate} onChange={event => setDraft(current => ({ ...current, isPrivate: event.target.checked }))} /> Perfil privado — aprovo quem pode me seguir</label>
+          <button className="button primary wide-button" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button>
+        </form>
+      </section>
+    </div>}
+    {imageDraft && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !busy && setImageDraft(null)}>
+      <section className="social-share-dialog social-image-crop-dialog" role="dialog" aria-modal="true" aria-label={imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}>
+        <header><strong>{imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}</strong><button className="social-icon-button" onClick={() => setImageDraft(null)} aria-label="Fechar" disabled={busy}><X size={18} /></button></header>
+        <div className={`social-image-crop-preview ${imageDraft.field === "avatar_path" ? "avatar" : "cover"}`}>
+          <img src={imageDraft.previewUrl} alt="Prévia do corte da imagem" style={{ transform: `scale(${imageDraft.zoom})` }} />
+        </div>
+        {imageDraft.file.type === "image/gif"
+          ? <p className="social-image-crop-note">O GIF será mantido animado; o corte e a compressão não serão aplicados.</p>
+          : <label className="social-image-zoom">Ajustar enquadramento<input type="range" min="1" max="2" step="0.05" value={imageDraft.zoom} onChange={event => setImageDraft(current => ({ ...current, zoom: Number(event.target.value) }))} /></label>}
+        <p className="social-image-crop-note">A imagem é cortada ao centro no formato {imageDraft.field === "avatar_path" ? "quadrado" : "horizontal"} e comprimida antes de ser enviada.</p>
+        <footer className="social-image-crop-actions"><button className="button subtle" disabled={busy} onClick={() => setImageDraft(null)}>Cancelar</button><button className="button primary" disabled={busy} onClick={saveProfileImage}>{busy ? "Preparando imagem…" : "Usar esta imagem"}</button></footer>
+      </section>
+    </div>}
   </div>;
 }

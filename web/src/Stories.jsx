@@ -4,11 +4,8 @@ import {
   Play, Plus, Trash2, Volume2, VolumeX, X,
 } from "lucide-react";
 import { isValidVideoDuration } from "./appLogic.js";
+import { deleteStory, loadStories, loadStoryViewers, publishStory as createStory, recordStoryView, setStoryLike } from "./storyService.js";
 
-const DATABASE_NAME = "fortalfy-stories-local";
-const DATABASE_VERSION = 1;
-const STORY_STORE = "stories";
-const STORY_LIFETIME = 24 * 60 * 60 * 1000;
 const IMAGE_LIMIT = 15 * 1024 * 1024;
 const VIDEO_LIMIT = 40 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -31,79 +28,6 @@ function readVideoDuration(file) {
     video.onloadedmetadata = () => finish(resolve, video.duration);
     video.onerror = () => finish(reject, new Error("Não foi possível abrir este vídeo para conferir sua duração."));
     video.src = objectUrl;
-  });
-}
-
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    if (!("indexedDB" in window)) {
-      reject(new Error("Este navegador não oferece armazenamento local seguro para Stories."));
-      return;
-    }
-    const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORY_STORE)) {
-        request.result.createObjectStore(STORY_STORE, { keyPath: "id" });
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error("Não foi possível abrir o armazenamento local."));
-  });
-}
-
-async function readStoredStories() {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORY_STORE, "readwrite");
-    const store = transaction.objectStore(STORY_STORE);
-    const request = store.getAll();
-    let stories = [];
-    request.onsuccess = () => {
-      const now = Date.now();
-      stories = request.result;
-      request.result.forEach(story => {
-        if (story.expiresAt <= now) store.delete(story.id);
-      });
-    };
-    transaction.oncomplete = () => resolve(stories.filter(story => story.expiresAt > Date.now()).map(story => ({ ...story, mediaUrl: URL.createObjectURL(story.media) })));
-    transaction.onerror = () => reject(transaction.error || new Error("Não foi possível carregar seus Stories salvos."));
-  });
-}
-
-async function saveStoredStory(story) {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORY_STORE, "readwrite");
-    transaction.objectStore(STORY_STORE).put(story);
-    transaction.oncomplete = resolve;
-    transaction.onerror = () => reject(transaction.error || new Error("Não foi possível salvar este Story no navegador."));
-  });
-}
-
-async function changeStoredStory(storyId, update) {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORY_STORE, "readwrite");
-    const store = transaction.objectStore(STORY_STORE);
-    const request = store.get(storyId);
-    let updated;
-    request.onsuccess = () => {
-      if (!request.result) return;
-      updated = update(request.result);
-      store.put(updated);
-    };
-    transaction.oncomplete = () => resolve(updated || null);
-    transaction.onerror = () => reject(transaction.error || new Error("Não foi possível atualizar este Story salvo."));
-  });
-}
-
-async function deleteStoredStory(storyId) {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORY_STORE, "readwrite");
-    transaction.objectStore(STORY_STORE).delete(storyId);
-    transaction.oncomplete = resolve;
-    transaction.onerror = () => reject(transaction.error || new Error("Não foi possível excluir este Story."));
   });
 }
 
@@ -193,15 +117,15 @@ function StoryComposer({ onClose, onPublish, notify }) {
     try {
       await onPublish(file, caption.trim());
     } catch (publishError) {
-      setError(publishError.message || "Não foi possível salvar o Story neste navegador.");
+      setError(publishError.message || "Não foi possível publicar o Story.");
       setSaving(false);
-      notify("O Story não foi salvo. Revise o espaço disponível e tente novamente.");
+      notify("O Story não foi publicado. Verifique a conexão e tente novamente.");
     }
   };
 
   return <div className="story-composer-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !saving && !validating && onClose()}>
     <section className="story-composer" role="dialog" aria-modal="true" aria-labelledby="story-composer-title">
-      <header className="story-composer-header"><div><span className="eyebrow">SOMENTE NESTE NAVEGADOR</span><h2 id="story-composer-title">Criar Story</h2></div><button type="button" className="icon-button" aria-label="Fechar janela" disabled={saving || validating} onClick={onClose}><X size={20} /></button></header>
+      <header className="story-composer-header"><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2 id="story-composer-title">Criar Story</h2></div><button type="button" className="icon-button" aria-label="Fechar janela" disabled={saving || validating} onClick={onClose}><X size={20} /></button></header>
       <form onSubmit={publish}>
         <div className={`story-upload-preview ${previewUrl ? "has-media" : ""}`}>
           {previewUrl && (file?.type.startsWith("video/") ? <video src={previewUrl} controls playsInline aria-label="Prévia do vídeo do Story" /> : <img src={previewUrl} alt="Prévia da foto do Story" />)}
@@ -213,7 +137,7 @@ function StoryComposer({ onClose, onPublish, notify }) {
           {file && <span>{file.type.startsWith("video/") ? "Vídeo" : "Foto"} · {(file.size / (1024 * 1024)).toFixed(1).replace(".", ",")} MB</span>}
         </div>
         <label className="story-caption-field">Legenda opcional<textarea value={caption} maxLength={180} rows={2} placeholder="Conte um pouco sobre este momento..." onChange={event => setCaption(event.target.value)} /></label>
-        <div className="story-composer-note">O arquivo fica neste dispositivo por até 24 horas. Não será publicado para outras contas sem um serviço de contas e mídia.</div>
+        <div className="story-composer-note">Seu Story será publicado para as contas autorizadas e ficará disponível por 24 horas.</div>
         {error && <p className="story-form-error" role="alert">{error}</p>}
         <footer className="story-composer-footer"><button type="button" className="button subtle" disabled={saving || validating} onClick={onClose}>Cancelar</button><button type="submit" className="button primary" disabled={saving || validating || !file}>{saving ? <><LoaderCircle className="story-spinner" size={16} /> Salvando…</> : validating ? "Conferindo vídeo…" : <>Publicar Story <Plus size={16} /></>}</button></footer>
       </form>
@@ -221,7 +145,7 @@ function StoryComposer({ onClose, onPublish, notify }) {
   </div>;
 }
 
-function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView, onLike, onDelete, notify }) {
+function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose, onView, onLoadViewers, onLike, onDelete, notify }) {
   const [profileIndex, setProfileIndex] = useState(() => Math.max(0, groups.findIndex(group => group.id === initialProfileId)));
   const [storyIndex, setStoryIndex] = useState(() => Math.max(0, (groups.find(group => group.id === initialProfileId)?.items || []).findIndex(story => story.id === initialStoryId)));
   const [paused, setPaused] = useState(false);
@@ -230,6 +154,9 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView
   const [mediaFailed, setMediaFailed] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [showViews, setShowViews] = useState(false);
+  const [viewers, setViewers] = useState([]);
+  const [viewersLoading, setViewersLoading] = useState(false);
+  const [viewersError, setViewersError] = useState("");
   const stageRef = useRef(null);
   const videoRef = useRef(null);
   const tickRef = useRef(0);
@@ -278,10 +205,8 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView
     setMediaReady(false);
     setMediaFailed(false);
     setShowViews(false);
-    if (story && !viewedRef.current.has(story.id)) {
-      viewedRef.current.add(story.id);
-      onView(story);
-    }
+    setViewers([]);
+    setViewersError("");
   }, [story?.id]);
 
   useEffect(() => {
@@ -351,14 +276,32 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView
       notify(error.message);
     }
   };
-  const deleteStory = async () => {
-    if (!window.confirm("Excluir este Story salvo neste navegador?")) return;
+  const registerDisplayedView = () => {
+    if (!story || story.ownerId === userId || story.viewedByMe || viewedRef.current.has(story.id)) return;
+    viewedRef.current.add(story.id);
+    Promise.resolve(onView(story)).catch(error => notify(error.message || "Não foi possível registrar a visualização."));
+  };
+  const toggleViewers = async () => {
+    const opening = !showViews;
+    setShowViews(opening);
+    if (!opening) return;
+    setViewersLoading(true);
+    setViewersError("");
     try {
-      await onDelete(story);
-      notify("Story excluído deste navegador.");
-      if (profile.items.length > 1) setStoryIndex(index => Math.min(index, profile.items.length - 2));
-      else if (profileIndex === 0 && groups.length > 1) setStoryIndex(0);
-      else onClose();
+      setViewers(await onLoadViewers(story.id));
+    } catch (error) {
+      console.error("Falha ao carregar as visualizações do Story.", error);
+      setViewersError(error.message || "Não foi possível carregar as visualizações.");
+    } finally {
+      setViewersLoading(false);
+    }
+  };
+  const deleteCurrentStory = async () => {
+    if (!window.confirm("Excluir este Story da sua conta?")) return;
+    try {
+      const warning = await onDelete(story);
+      notify(warning || "Story excluído da sua conta.");
+      onClose();
     } catch (error) {
       notify(error.message);
     }
@@ -368,8 +311,8 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView
     <section className="story-viewer" ref={stageRef} tabIndex={0} aria-label={`Story de ${profile.name}`} onKeyDown={event => event.key === " " && event.preventDefault()} onPointerDown={handlePress} onPointerUp={handleRelease} onPointerCancel={handleRelease} onClick={navigateTap}>
       <div className="story-viewer-media">
         {isVideo
-          ? <video key={story.id} ref={videoRef} src={story.mediaUrl || story.media} playsInline muted={!soundOn} preload="metadata" onLoadedMetadata={() => setMediaReady(true)} onCanPlay={() => setMediaReady(true)} onWaiting={() => setMediaReady(false)} onPlaying={() => setMediaReady(true)} onError={() => { setMediaFailed(true); setMediaReady(true); }} onEnded={() => next.current?.()} aria-label={`Vídeo do Story de ${profile.name}`} />
-          : <img key={story.id} src={story.media} alt={story.caption || `Story de ${profile.name}`} onLoad={() => setMediaReady(true)} onError={() => { setMediaFailed(true); setMediaReady(true); }} />}
+          ? <video key={story.id} ref={videoRef} src={story.mediaUrl || story.media} playsInline muted={!soundOn} preload="metadata" onLoadedMetadata={() => setMediaReady(true)} onCanPlay={() => setMediaReady(true)} onWaiting={() => setMediaReady(false)} onPlaying={() => { setMediaReady(true); registerDisplayedView(); }} onError={() => { setMediaFailed(true); setMediaReady(true); }} onEnded={() => next.current?.()} aria-label={`Vídeo do Story de ${profile.name}`} />
+          : <img key={story.id} src={story.media} alt={story.caption || `Story de ${profile.name}`} onLoad={() => { setMediaReady(true); registerDisplayedView(); }} onError={() => { setMediaFailed(true); setMediaReady(true); }} />}
       </div>
       <div className="story-viewer-shade" />
       <header className="story-viewer-top">
@@ -388,85 +331,81 @@ function StoryViewer({ groups, initialProfileId, initialStoryId, onClose, onView
       {mediaFailed && <div className="story-media-failed" role="alert"><ImagePlus size={25} /><strong>Não foi possível carregar esta mídia.</strong><button className="button light-button" onClick={event => { event.stopPropagation(); next.current?.(); }}>Avançar</button></div>}
       {story.caption && <p className="story-viewer-caption">{story.caption}</p>}
       <footer className="story-viewer-actions">
-        <button type="button" className="story-view-count" onClick={event => { event.stopPropagation(); setShowViews(value => !value); }}><Eye size={17} /> {story.viewers?.length || 1} visualização</button>
+        {story.ownerId === userId && <button type="button" className="story-view-count" onClick={event => { event.stopPropagation(); void toggleViewers(); }}><Eye size={17} /> {story.viewCount} {story.viewCount === 1 ? "visualização" : "visualizações"}</button>}
         <button type="button" className={`story-like-button ${isLiked ? "liked" : ""}`} aria-pressed={isLiked} onClick={event => { event.stopPropagation(); toggleLike(); }}><Heart size={20} fill={isLiked ? "currentColor" : "none"} /> {isLiked ? "Curtido" : "Curtir"}</button>
-        <button type="button" className="story-delete-button" aria-label="Excluir seu Story" onClick={event => { event.stopPropagation(); deleteStory(); }}><Trash2 size={18} /></button>
+        {story.ownerId === userId && <button type="button" className="story-delete-button" aria-label="Excluir seu Story" onClick={event => { event.stopPropagation(); deleteCurrentStory(); }}><Trash2 size={18} /></button>}
       </footer>
-      {showViews && <div className="story-viewers-popover" onClick={event => event.stopPropagation()}><strong>Visualizações neste navegador</strong>{story.viewers?.length ? story.viewers.map(viewer => <span key={viewer.id}><Eye size={15} /> {viewer.name}</span>) : <p>Nenhuma visualização registrada ainda.</p>}</div>}
+      {showViews && story.ownerId === userId && <div className="story-viewers-popover" onClick={event => event.stopPropagation()}><strong>Visualizações do Story</strong>{viewersLoading ? <p role="status">Carregando visualizações…</p> : viewersError ? <p role="alert">{viewersError}</p> : viewers.length ? <ul>{viewers.map((viewer, index) => <li key={`${viewer.id || "private"}-${index}`}>{viewer.id ? <img src={viewer.avatar || ""} alt="" /> : <span className="story-viewer-private-avatar" aria-hidden="true" />}<span><strong>{viewer.name}</strong>{viewer.username && <small>@{viewer.username}</small>}</span><time>{new Date(viewer.viewedAt).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></li>)}</ul> : <p>Este Story ainda não recebeu visualizações.</p>}</div>}
       <button type="button" className="story-tap-zone previous" aria-label="Story anterior" onClick={event => { event.stopPropagation(); previous.current?.(); }} />
       <button type="button" className="story-tap-zone next" aria-label="Próximo Story" onClick={event => { event.stopPropagation(); next.current?.(); }} />
     </section>
   </div>;
 }
 
-export default function StoryExperience({ user, notify }) {
-  const [localStories, setLocalStories] = useState([]);
+export default function StoryExperience({ client, configured, session, user, notify }) {
+  const [stories, setStories] = useState([]);
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerSelection, setViewerSelection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [storageError, setStorageError] = useState("");
-  const mountedRef = useRef(true);
-  const mediaUrlsRef = useRef([]);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    mountedRef.current = true;
-    readStoredStories().then(stories => {
-      if (!mountedRef.current) {
-        stories.forEach(story => URL.revokeObjectURL(story.mediaUrl));
-        return;
-      }
-      mediaUrlsRef.current = stories.map(story => story.mediaUrl);
-      setLocalStories(stories);
-    }).catch(error => {
-      console.error("Falha ao carregar Stories locais.", error);
-      setStorageError(error.message);
-    }).finally(() => mountedRef.current && setLoading(false));
-    return () => {
-      mountedRef.current = false;
-      mediaUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
-    };
+    let active = true;
+    setLoading(true);
+    setStorageError("");
+    if (!configured || !client || !userId) {
+      setStories([]);
+      setLoading(false);
+      if (userId) setStorageError("Conecte o Supabase e aplique a migração de Stories para ativar este recurso.");
+      return () => { active = false; };
+    }
+    loadStories(client, userId)
+      .then(result => { if (active) setStories(result); })
+      .catch(error => {
+        console.error("Falha ao carregar Stories do Supabase.", error);
+        if (active) setStorageError(error.message || "Não foi possível carregar os Stories.");
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [client, configured, userId, reloadKey]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const cleanupExpired = async () => {
-      const expired = localStories.filter(story => story.expiresAt <= Date.now());
-      if (!expired.length) return;
-      try {
-        await Promise.all(expired.map(story => deleteStoredStory(story.id)));
-        expired.forEach(story => URL.revokeObjectURL(story.mediaUrl));
-        mediaUrlsRef.current = mediaUrlsRef.current.filter(url => !expired.some(story => story.mediaUrl === url));
-        setLocalStories(current => current.filter(story => story.expiresAt > Date.now()));
-      } catch (error) {
-        console.error("Falha ao limpar Stories expirados.", error);
-        setStorageError("Não foi possível limpar automaticamente todos os Stories expirados.");
-      }
-    };
-    const timer = window.setInterval(cleanupExpired, 60000);
-    return () => window.clearInterval(timer);
-  }, [localStories]);
-
   const profiles = useMemo(() => {
-    const ownProfile = {
-      id: "local-device",
+    const byOwner = new Map([[userId, {
+      id: userId,
       name: displayName(user.name),
       avatar: user.avatar || "",
-      isSample: false,
-      followed: true,
-      items: [...localStories].sort((a, b) => b.createdAt - a.createdAt).map(story => ({ ...story, media: story.mediaUrl, isSample: false })),
-    };
-    return [ownProfile];
-  }, [localStories, user.avatar, user.name]);
+      items: [],
+    }]]);
+    stories.forEach(story => {
+      let profile = byOwner.get(story.ownerId);
+      if (!profile) {
+        profile = { id: story.ownerId, name: story.ownerName, avatar: story.avatar, items: [] };
+        byOwner.set(story.ownerId, profile);
+      }
+      profile.items.push(story);
+    });
+    const ownProfile = byOwner.get(userId);
+    const otherProfiles = [...byOwner.values()].filter(profile => profile.id !== userId);
+    return [ownProfile, ...otherProfiles];
+  }, [stories, user.avatar, user.name, userId]);
 
-  const visibleProfiles = profiles;
   const viewableGroups = useMemo(
-    () => visibleProfiles.map(profile => ({ ...profile, items: profile.items.filter(story => story.expiresAt > Date.now()) })).filter(profile => profile.items.length),
-    [visibleProfiles],
+    () => profiles.map(profile => ({ ...profile, items: profile.items.filter(story => story.expiresAt > now) })).filter(profile => profile.id === userId || profile.items.length),
+    [now, profiles, userId],
   );
 
   const closeComposer = () => setComposerOpen(false);
   const showStory = (profileId, storyId) => setViewerSelection({ profileId, storyId });
   const openGroup = profile => {
-    if (profile.id === "local-device" && !profile.items.length) {
+    if (profile.id === userId && !profile.items.length) {
       setComposerOpen(true);
       return;
     }
@@ -474,78 +413,51 @@ export default function StoryExperience({ user, notify }) {
   };
 
   const publishStory = async (file, caption) => {
-    const storage = navigator.storage;
-    if (storage?.estimate) {
-      const { quota, usage } = await storage.estimate();
-      if (quota && quota - (usage || 0) < file.size * 1.2) throw new Error("Há pouco espaço disponível neste navegador para salvar este arquivo.");
-    }
-    const now = Date.now();
-    const id = crypto.randomUUID ? crypto.randomUUID() : `story-${now}-${Math.random().toString(36).slice(2, 8)}`;
-    const story = {
-      id,
-      ownerId: "local-device",
-      ownerName: displayName(user.name),
-      avatar: user.avatar || "",
-      caption,
-      media: file,
-      mediaType: file.type.startsWith("video/") ? "video" : "image",
-      createdAt: now,
-      expiresAt: now + STORY_LIFETIME,
-      viewers: [],
-      liked: false,
-    };
-    await saveStoredStory(story);
-    const mediaUrl = URL.createObjectURL(file);
-    mediaUrlsRef.current.push(mediaUrl);
-    setLocalStories(current => [{ ...story, mediaUrl }, ...current]);
+    await createStory(client, userId, file, caption);
     setComposerOpen(false);
-    notify("Story salvo neste navegador e disponível por 24 horas. Ele não foi enviado à comunidade.");
-    setViewerSelection({ profileId: "local-device", storyId: id });
+    setReloadKey(value => value + 1);
+    notify("Story publicado para a comunidade. Ele expira em 24 horas.");
   };
 
   const markViewed = async story => {
-    if (story.viewers?.some(viewer => viewer.id === "local-browser")) return;
-    try {
-      const updated = await changeStoredStory(story.id, record => ({
-        ...record,
-        viewers: [...(record.viewers || []), { id: "local-browser", name: "Você (neste navegador)", viewedAt: Date.now() }],
-      }));
-      if (updated) setLocalStories(current => current.map(item => item.id === story.id ? { ...item, ...updated, mediaUrl: item.mediaUrl } : item));
-    } catch (error) {
-      console.error("Não foi possível registrar a visualização local.", error);
-      notify(error.message);
-    }
+    if (story.ownerId === userId || story.viewedByMe) return;
+    const recorded = await recordStoryView(client, userId, story);
+    setStories(current => current.map(item => item.id === story.id
+      ? { ...item, viewCount: item.viewCount + (recorded ? 1 : 0), viewedByMe: true }
+      : item));
   };
 
   const toggleLike = async story => {
-    const updated = await changeStoredStory(story.id, record => ({ ...record, liked: !record.liked }));
-    if (updated) setLocalStories(current => current.map(item => item.id === story.id ? { ...item, ...updated, mediaUrl: item.mediaUrl } : item));
+    const liked = !story.liked;
+    await setStoryLike(client, userId, story, liked);
+    setStories(current => current.map(item => item.id === story.id
+      ? { ...item, liked, likeCount: Math.max(0, item.likeCount + (liked ? 1 : -1)) }
+      : item));
   };
 
   const removeStory = async story => {
-    await deleteStoredStory(story.id);
-    URL.revokeObjectURL(story.mediaUrl);
-    mediaUrlsRef.current = mediaUrlsRef.current.filter(url => url !== story.mediaUrl);
-    setLocalStories(current => current.filter(item => item.id !== story.id));
+    const warning = await deleteStory(client, userId, story);
+    setStories(current => current.filter(item => item.id !== story.id));
+    return warning;
   };
 
   return <>
     <section className="stories-experience" aria-label="Stories da comunidade">
       <div className="stories-section-heading"><div><span className="eyebrow">MOMENTOS DA COMUNIDADE</span><h2>Histórias que inspiram</h2></div><button className="button subtle small-button" onClick={() => setComposerOpen(true)}><Plus size={16} /> Criar Story</button></div>
       <div className="stories-row" role="list" aria-label="Perfis com Stories disponíveis">
-        <div className="story-item-wrap">
-          <button className="story-item own-story" role="listitem" onClick={() => openGroup(profiles[0])} aria-label={profiles[0].items.length ? `Ver seu Story, ${profiles[0].items.length} itens` : "Adicionar seu primeiro Story"}>
-            <span className={`story-ring own ${profiles[0].items.length ? "has-story" : ""}`}><span className="story-avatar">{profiles[0].avatar ? <img src={profiles[0].avatar} alt="" /> : displayName(user.name).slice(0, 1).toUpperCase()}</span>{!profiles[0].items.length && <i><Plus size={13} /></i>}</span><span>Seu Story</span>
+        {viewableGroups.map(profile => <div className="story-item-wrap" key={profile.id}>
+          <button className={`story-item ${profile.id === userId ? "own-story" : ""}`} role="listitem" onClick={() => openGroup(profile)} aria-label={profile.id === userId ? profile.items.length ? `Ver seu Story, ${profile.items.length} itens` : "Adicionar seu primeiro Story" : `Ver Story de ${profile.name}`}>
+            <span className={`story-ring ${profile.id === userId ? "own" : ""} ${profile.items.length ? "has-story" : ""}`}><span className="story-avatar">{profile.avatar ? <img src={profile.avatar} alt="" /> : profile.name.slice(0, 1).toUpperCase()}</span>{profile.id === userId && !profile.items.length && <i><Plus size={13} /></i>}</span><span>{profile.id === userId ? "Seu Story" : profile.name}</span>
           </button>
-          {profiles[0].items.length > 0 && <button type="button" className="story-add-own" aria-label="Adicionar outro Story" onClick={() => setComposerOpen(true)}><Plus size={14} /></button>}
-        </div>
-        {!profiles[0].items.length && <p className="stories-filter-empty">Ainda não há Stories publicados por outras contas.</p>}
+          {profile.id === userId && profile.items.length > 0 && <button type="button" className="story-add-own" aria-label="Adicionar outro Story" onClick={() => setComposerOpen(true)}><Plus size={14} /></button>}
+        </div>)}
+        {!loading && !storageError && !stories.length && <p className="stories-filter-empty">Ainda não há Stories publicados pela comunidade.</p>}
       </div>
       {loading && <p className="stories-status" role="status"><LoaderCircle className="story-spinner" size={15} /> Carregando Stories…</p>}
-      {storageError && <p className="stories-status error" role="alert">{storageError}</p>}
-      <p className="stories-filter-disclosure">Stories próprios ficam salvos neste navegador por 24 horas; publicação sincronizada ainda não está ativa.</p>
+      {storageError && <div className="stories-status error" role="alert">{storageError}<button type="button" className="button subtle small-button" onClick={() => setReloadKey(value => value + 1)}>Tentar novamente</button></div>}
+      <p className="stories-filter-disclosure">Os Stories publicados ficam visíveis para as contas autorizadas e expiram após 24 horas.</p>
     </section>
     {composerOpen && <StoryComposer onClose={closeComposer} onPublish={publishStory} notify={notify} />}
-    {viewerSelection && <StoryViewer groups={viewableGroups} initialProfileId={viewerSelection.profileId} initialStoryId={viewerSelection.storyId} onClose={() => setViewerSelection(null)} onView={markViewed} onLike={toggleLike} onDelete={removeStory} notify={notify} />}
+    {viewerSelection && <StoryViewer groups={viewableGroups} userId={userId} initialProfileId={viewerSelection.profileId} initialStoryId={viewerSelection.storyId} onClose={() => setViewerSelection(null)} onView={markViewed} onLoadViewers={storyId => loadStoryViewers(client, userId, storyId)} onLike={toggleLike} onDelete={removeStory} notify={notify} />}
   </>;
 }

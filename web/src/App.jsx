@@ -2,17 +2,18 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Camera,
-  Bell, Bookmark, Check, ChevronDown, ChevronRight,
+  Bell, Bookmark, Check, ChevronDown, ChevronRight, CircleAlert,
   CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
 import Brand from "./Brand.jsx";
-import BottomNav from "./MobileNavigation.jsx";
+import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 import FortalShop from "./FortalShop.jsx";
 import FortalfyStudio from "./FortalfyStudio.jsx";
 import StoryExperience from "./Stories.jsx";
+import { WeeklyClientPlan } from "./WeeklyPlans.jsx";
 import { OnboardingGate, SocialFeed, SocialMessages, SocialPeople, SocialProfile } from "./SocialScreens.jsx";
 import { getErrorMessage, isDemoUser, loadProfile } from "./socialService.js";
 import {
@@ -22,8 +23,7 @@ import {
 import { fortalfyAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
-import { shopOffers, shopProducts } from "./shopData.js";
-import { courseList, gyms, profile } from "./data.js";
+import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
 
@@ -114,7 +114,7 @@ function SplashScreen({ onClose }) {
 }
 
 function MobileHeader({ location = false, action }) {
-  return <header className="mobile-header"><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
+  return <header className="mobile-header"><NavigationDrawer /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
     {location && <button className="location-chip" onClick={action}><MapPin size={15} /><span>Aldeota, Fortaleza</span><ChevronDown size={14} /></button>}
     {!location && <button className="icon-button" aria-label="Notificações" onClick={action}><Bell size={20} /></button>}
   </header>;
@@ -160,7 +160,7 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile }) 
         <Link to="/feed" className="quick-tile"><span className="quick-icon mint"><Users size={19} /></span><strong>Comunidade</strong><small>Publicações e perfis reais</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
         <Link to="/pass" className="quick-tile"><span className="quick-icon pink"><MapPin size={19} /></span><strong>Parceiros</strong><small>Locais e profissionais aprovados</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
         <Link to="/food" className="quick-tile"><span className="quick-icon yellow"><Utensils size={19} /></span><strong>FortalFood</strong><small>Cardápios publicados por restaurantes</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/shop" className="quick-tile"><span className="quick-icon blue"><ShoppingBag size={19} /></span><strong>Loja</strong><small>Conheça os produtos Fortalfy</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/shop" className="quick-tile"><span className="quick-icon blue"><ShoppingBag size={19} /></span><strong>Loja</strong><small>Catálogo oficial quando disponível</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
       </div>
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
@@ -199,7 +199,6 @@ function FeedScreen({ notify, feedArts, profileDetails, profilePosts, savePosts,
     imageAlt: author === "Studio Viva" ? "Espaço de treino funcional" : "",
   }, shared);
   return <Screen title="Stories" subtitle="INSPIRAÇÃO REAL, UM TREINO DE CADA VEZ" className="feed-screen">
-    <StoryExperience user={profileDetails} notify={notify} />
     <Link className="composer-card" to="/profile?compose=1"><span className="avatar">{profileDetails.name.slice(0, 1).toUpperCase()}</span><span>No que você está pensando?</span><Plus size={19} /></Link>
     {profilePosts.map(post => <article className="feed-post profile-feed-post" key={post.id}>
       <div className="post-head"><div className="avatar">{profileDetails.avatar ? <img src={profileDetails.avatar} alt="" /> : profileDetails.name.slice(0, 1).toUpperCase()}</div><div className="post-author"><strong>{post.sharedFrom ? `${profileDetails.name} compartilhou` : profileDetails.name}</strong><span>{post.sharedFrom ? `De ${post.sharedFrom} · ${new Date(post.createdAt).toLocaleDateString("pt-BR")}` : `Publicação neste aparelho · ${new Date(post.createdAt).toLocaleDateString("pt-BR")}`}</span></div><span className="created-art-label">{post.sharedFrom ? "COMPARTILHADO" : "LOCAL"}</span></div>
@@ -434,7 +433,7 @@ function loadShopCart() {
   const saved = loadLocalValue(SHOP_CART_STORAGE_KEY, []);
   if (!Array.isArray(saved)) return [];
   return saved.filter(line => line
-    && shopProducts.some(product => product.id === line.id)
+    && typeof line.id === "string"
     && ((line.options && typeof line.options === "object" && !Array.isArray(line.options)
       && Object.values(line.options).every(value => typeof value === "string"))
       || (typeof line.shade === "string" && typeof line.size === "string"))
@@ -666,7 +665,7 @@ function ProfileScreen({ notify, user, setUser, posts, savePosts }) {
   </Screen>;
 }
 
-function WorkoutScreen({ notify, onActivity, activity }) {
+function WorkoutScreen({ notify, onActivity, activity, client, session }) {
   const [name, setName] = useState("");
   const [minutes, setMinutes] = useState("");
   const [error, setError] = useState("");
@@ -689,8 +688,9 @@ function WorkoutScreen({ notify, onActivity, activity }) {
     setError("");
     notify("Treino registrado neste aparelho.");
   };
-  return <Screen title="Treinos" subtitle="SEUS REGISTROS" className="workout-screen">
+  return <Screen title="Personal" subtitle="TREINO DA SEMANA E SEUS REGISTROS" className="workout-screen">
     <Link to="/home" className="back-link"><ArrowLeft size={17} /> Voltar</Link>
+    <WeeklyClientPlan client={client} session={session} kind="personal" notify={notify} />
     <section className="workout-progress-card"><div><span className="eyebrow">REGISTROS NESTE APARELHO</span><h2>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</h2><p>O Fortalfy não prescreve treinos nem lê sensores nesta tela.</p></div></section>
     <p className="reference-disclosure">Seus registros ficam neste navegador e não são sincronizados com sua conta ou com dispositivos.</p>
     <form className="meal-entry-form" onSubmit={saveWorkout}><h2>Registrar treino realizado</h2><label>Tipo ou nome do treino<input required maxLength={60} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: musculação, caminhada" /></label><label>Duração em minutos<input required type="number" min="1" max="600" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} placeholder="Ex.: 45" /></label>{error && <p className="social-inline-error" role="alert">{error}</p>}<button className="button primary wide-button" type="submit">Salvar registro</button></form>
@@ -699,7 +699,7 @@ function WorkoutScreen({ notify, onActivity, activity }) {
   </Screen>;
 }
 
-function NutritionScreen({ notify, onActivity, activity }) {
+function NutritionScreen({ notify, onActivity, activity, client, session }) {
   const [addingMeal, setAddingMeal] = useState(false);
   const [mealName, setMealName] = useState("");
   const [mealCalories, setMealCalories] = useState("");
@@ -718,7 +718,8 @@ function NutritionScreen({ notify, onActivity, activity }) {
     setAddingMeal(false);
     notify("Refeição adicionada ao diário neste dispositivo.");
   };
-  return <Screen title="Nutrição Hoje" subtitle={`${today.toLocaleUpperCase()} · SUA ROTINA`} className="nutrition-screen">
+  return <Screen title="Nutricionista" subtitle={`${today.toLocaleUpperCase()} · PLANO SEMANAL E SEU DIARIO`} className="nutrition-screen">
+    <WeeklyClientPlan client={client} session={session} kind="nutrition" notify={notify} />
     <div className="nutrition-summary"><div className="nutrition-donut"><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>kcal informadas</span><small>hoje neste aparelho</small></div></div><div className="macro-details"><span className="eyebrow">METAS NUTRICIONAIS</span><p className="nutrition-unset">Nenhuma meta ou macro foi configurado. Dados nutricionais só aparecerão quando forem informados por você ou por um profissional.</p><Link to="/progress" className="text-link">Ver registros de evolução <ArrowRight size={15} /></Link></div></div>
     <p className="reference-disclosure">O total soma apenas as calorias digitadas por você; o app não estima calorias nem recomenda metas clínicas.</p>
     <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Seus registros ficam neste dispositivo e podem ser apagados ao limpar os dados do navegador.</small></span></div>
@@ -747,47 +748,22 @@ function ProgressScreen({ activity }) {
   </Screen>;
 }
 
-function AcademyScreen() {
-  const [tab, setTab] = useState("Todos");
-  const [course, setCourse] = useState(null);
-  const visibleCourses = courseList.filter(item => tab === "Todos" || item.category === tab);
-  return <Screen title="Fortalfy Academy" subtitle="CURSOS ONLINE" className="academy-screen">
-    <div className="academy-banner"><span className="academy-cap">✳</span><span className="eyebrow">APRENDA NO SEU RITMO</span><h2>Conhecimento que<br />acompanha sua jornada.</h2><p>Conteúdos para apoiar sua rotina e seu bem-estar.</p><div className="academy-proof"><span><Sparkles size={14} /> Novos conteúdos em preparação</span></div></div>
-    <p className="reference-disclosure">Cursos, professores, avaliações e valores serão confirmados antes da abertura das inscrições.</p>
-    <div className="chip-row academy-tabs">{["Todos", "Treino", "Nutrição", "Rotina"].map(item => <button key={item} className={`filter-chip ${tab === item ? "active" : ""}`} onClick={() => setTab(item)}>{item}</button>)}</div>
-    <section className="featured-course"><span className="eyebrow">CONTEÚDO EM PREPARAÇÃO</span><h2>Como Criar um Ciclo<br />de Treino Perfeito</h2><p>Orientações para organizar sua rotina de movimento.</p><div className="course-bottom"><strong>Em breve</strong><button className="button lime-button" onClick={() => setCourse({ title: "Como Criar um Ciclo de Treino Perfeito", lessons: "Conteúdo em preparação", price: "" })}>Ver detalhes <ArrowRight size={16} /></button></div></section>
-    <div className="section-title-row"><h2>Continue aprendendo</h2><button className="text-link" onClick={() => notify("Seu certificado ficará disponível ao concluir um curso.")}>Meus certificados <ArrowRight size={15} /></button></div>
-    <div className="academy-course-list">{visibleCourses.map(item => <article className="academy-course-card" key={item.title}><PhotoCard image={item.image} alt="" /><div><span className="eyebrow">FORTALFY ACADEMY</span><h3>{item.title}</h3><p>{item.subtitle}</p><small>Conteúdo em preparação</small><div><strong>Em breve</strong><button className="text-link" onClick={() => setCourse(item)}>Ver detalhes <ArrowRight size={15} /></button></div></div></article>)}</div>
-    {course && <Modal title={course.title} onClose={() => setCourse(null)}><div className="course-player"><Play size={34} /><span>CONTEÚDO EM PREPARAÇÃO</span></div><p className="modal-description">A programação, os professores e os valores serão divulgados quando os cursos estiverem disponíveis.</p><button className="button primary wide-button" onClick={() => setCourse(null)}>Entendi</button></Modal>}
+function EarningsScreen({ session }) {
+  return <Screen title="Meus rendimentos" subtitle="INFORMACOES FINANCEIRAS REAIS" className="earnings-screen">
+    <section className="weekly-empty earnings-empty"><span className="weekly-empty-icon"><Wallet size={24} /></span><h2>Nenhum rendimento disponivel</h2><p>{session?.user?.id ? "A Fortalfy ainda nao tem um provedor de pagamentos ativo nem registros de repasse nesta conta. Nenhum saldo ou transacao e simulado." : "Entre em uma conta real para consultar informacoes financeiras quando esse servico estiver disponivel."}</p>{session?.user?.id ? <Link className="button subtle" to="/trainer">Ver area profissional <ArrowRight size={16} /></Link> : <Link className="button primary" to="/profile">Entrar na conta <ArrowRight size={16} /></Link>}<Link className="text-link" to="/progress">Ver registros de atividade <ArrowRight size={15} /></Link></section>
   </Screen>;
 }
 
-function LiveScreen({ notify }) {
-  const [joined, setJoined] = useState(false);
-  const [message, setMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState([["João", "Como contar proteína no dia a dia?"], ["Mariana", "Quantas refeições devo fazer?"], ["Camila", "Adorei essa dica! 💚"]]);
-  const sendMessage = event => {
-    event.preventDefault();
-    if (!message.trim()) return;
-    if (!joined) {
-      notify("Entre na live para participar da conversa.");
-      return;
-    }
-    setChatMessages(current => [...current, ["Você", message.trim()]]);
-    setMessage("");
-  };
-  return <Screen className="live-screen">
-    <div className="live-header"><Link to="/home" aria-label="Voltar para início"><Brand light /></Link><span>FORTALFY LIVE</span><span className="live-now-badge">EM BREVE</span></div>
-    <main className="live-content">
-      <div className="live-eyebrow"><Sparkles size={14} /> PROGRAMAÇÃO DE BEM-ESTAR</div>
-      <div className="live-visual"><PhotoCard image="./assets/pass-demo-gym-nextfit.jpg" alt="Imagem de referência de uma aula de movimento" /><div className="live-visual-overlay"><span>FORTALFY LIVE</span><h1>Uma rotina melhor começa com o que é possível hoje.</h1><span className="live-teacher"><span className="nutritionist-avatar">DA</span> Profissional convidada</span></div><span className="viewer-count"><Sparkles size={15} /> Aula em preparação</span></div>
-      <p className="reference-disclosure">A transmissão, a programação e os profissionais serão confirmados antes da abertura das aulas.</p>
-      <div className="live-title-row"><div><span className="eyebrow">SAÚDE E ROTINA</span><h2>Como construir uma rotina mais leve</h2><p>Conteúdo em preparação · sem cobrança.</p></div></div>
-      <section className="live-chat"><div className="section-title-row"><h3>Conversa da aula</h3><span>Prévia nesta tela</span></div>{chatMessages.slice(-4).map((msg, index) => <div className="chat-message" key={`${msg[0]}-${index}`}><span className="chat-avatar">{msg[0][0]}</span><p><strong>{msg[0]}</strong>{msg[1]}</p></div>)}<form className="chat-input" onSubmit={sendMessage}><input value={message} onChange={event => setMessage(event.target.value)} placeholder="Enviar mensagem" aria-label="Mensagem para a live" /><button type="submit" aria-label="Enviar mensagem"><Send size={16} /></button></form><small className="live-chat-note">As mensagens ficam nesta tela e não são enviadas a outras pessoas.</small></section>
-      <button className="button lime-button wide-button live-join" onClick={() => { setJoined(true); notify("Sua participação foi anotada nesta tela. Nenhuma cobrança foi realizada."); }}>{joined ? <><Check size={18} /> Interesse anotado</> : <>Quero saber mais <ArrowRight size={18} /></>}</button>
-      <section className="upcoming-lives"><SectionTitle title="Próximas lives" /><div className="upcoming-live"><span className="live-calendar"><Sparkles size={16} /></span><div><strong>Novos encontros em breve</strong><small>Programação e horários serão divulgados aqui.</small></div></div></section>
-    </main>
-    <BottomNav />
+function AcademyScreen() {
+  return <Screen title="Fortalfy Academy" subtitle="CURSOS E APRENDIZADO" className="academy-screen">
+    <div className="academy-banner"><span className="academy-cap"><Play size={20} /></span><span className="eyebrow">FORTALFY ACADEMY</span><h2>Aprenda no seu ritmo.</h2><p>Cursos e aulas aparecerão aqui quando forem publicados por profissionais.</p></div>
+    <div className="empty-state"><CircleHelp size={24} /><h3>Nenhum curso publicado</h3><p>A Academy ainda não possui cursos disponíveis. Não há aulas, preços ou certificados fictícios.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
+  </Screen>;
+}
+
+function LiveScreen() {
+  return <Screen title="Fortalfy Live" subtitle="TRANSMISSÕES" className="live-screen">
+    <div className="empty-state"><Play size={24} /><h3>Nenhuma transmissão programada</h3><p>Lives só serão exibidas após a publicação de uma transmissão real por um profissional. Não há chat, público ou cobrança simulados.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
   </Screen>;
 }
 
@@ -1271,13 +1247,13 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/academy", "/live", "/partner/gym", "/shop", "/studio"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/shop", "/cart", "/studio"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/");
   return <div className={mobile ? "mobile-app" : "professional-root"}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} />} />
-      <Route path="/feed" element={<Screen title="Comunidade" subtitle="BEM-ESTAR EM CONEXÃO" className="feed-screen"><section className="community-promo"><img src={fortalfyAsset("publicidade", "04-feed-comunidade.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2>Seu bem-estar também se constrói junto.</h2><p>Conteúdo real aparece quando publicado por pessoas da comunidade.</p></div></section>{authSession?.user?.id && socialProfile && <StoryExperience user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/feed" element={<Screen title="Comunidade" subtitle="BEM-ESTAR EM CONEXÃO" className="feed-screen"><section className="community-promo"><img src={fortalfyAsset("publicidade", "04-feed-comunidade.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2>Seu bem-estar também se constrói junto.</h2><p>Conteúdo real aparece quando publicado por pessoas da comunidade.</p></div></section>{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="Reels" subtitle="VÍDEOS DA COMUNIDADE" className="feed-screen reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
@@ -1286,20 +1262,30 @@ function AppContent() {
       <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/local" element={<Navigate to="/profile" replace />} />
-      <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
-      <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} />} />
+      <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} />} />
+      <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} />} />
       <Route path="/curated" element={<Navigate to="/food" replace />} />
       <Route path="/progress" element={<ProgressScreen activity={activity} />} />
+      <Route path="/earnings" element={<EarningsScreen session={authSession} />} />
       <Route path="/academy" element={<AcademyScreen />} />
-      <Route path="/live" element={<LiveScreen notify={notify} />} />
+      <Route path="/live" element={<LiveScreen />} />
+      <Route path="/live/:liveId" element={<LiveScreen />} />
+      <Route path="/stories" element={<Navigate to="/feed" replace />} />
+      <Route path="/gyms" element={<Navigate to="/pass" replace />} />
+      <Route path="/courses" element={<Navigate to="/academy" replace />} />
+      <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
+      <Route path="/restaurants" element={<Navigate to="/food" replace />} />
+      <Route path="/results" element={<Navigate to="/progress" replace />} />
+      <Route path="/settings" element={<Navigate to="/profile" replace />} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/partner/:type" element={<LivePartnerScreen client={supabase} />} />
       <Route path="/hire/:role" element={<LiveHiringScreen key={location.pathname} client={supabase} session={authSession} notify={notify} />} />
       <Route path="/shop" element={<FortalShop cart={shopCart} setCart={setShopCart} notify={notify} />} />
+      <Route path="/cart" element={<FortalShop cart={shopCart} setCart={setShopCart} initialDialog="cart" notify={notify} />} />
       <Route path="/studio" element={<FortalfyStudio artwork={studioArtwork} setArtwork={setStudioArtwork} savedArts={savedArts} setSavedArts={setSavedArts} setFeedArts={setFeedArts} notify={notify} />} />
-      <Route path="/trainer" element={<Dashboard key="trainer" role="trainer" notify={notify} />} />
-      <Route path="/nutritionist" element={<Dashboard key="nutritionist" role="nutritionist" notify={notify} />} />
-      <Route path="*" element={<Navigate to="/home" replace />} />
+      <Route path="/trainer" element={<Dashboard key="trainer" role="trainer" client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} onRetryProfile={retrySocialProfile} />} />
+      <Route path="/nutritionist" element={<Dashboard key="nutritionist" role="nutritionist" client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} onRetryProfile={retrySocialProfile} />} />
+      <Route path="*" element={<Screen title="Página não encontrada" subtitle="FORTALFY"><div className="empty-state"><CircleHelp size={24} /><h3>Este endereço não existe</h3><p>Escolha uma área disponível para continuar.</p><Link className="button subtle" to="/home">Voltar ao início <ArrowRight size={16} /></Link></div></Screen>} />
     </Routes>
     {supabase && authSession?.user?.id && !isDemoUser(authSession.user.id) && (
       <OnboardingGate

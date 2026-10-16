@@ -1,7 +1,7 @@
 const GOALS = new Set(["emagrecimento", "forca", "cardio", "mobilidade", "alimentacao", "bem-estar", "comunidade"]);
 const INTERESTS = new Set(["feed", "food", "shop", "treinos", "pass"]);
 const ACCOUNT_KINDS = new Set(["cliente", "personal", "nutricionista", "academia"]);
-const USERNAME_PATTERN = /^[a-z0-9_]{3,24}$/;
+const USERNAME_PATTERN = /^[a-z0-9._]{3,30}$/;
 
 function validBirthDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return false;
@@ -20,7 +20,7 @@ export function validateSignup(fields, today = new Date()) {
   const username = fields.username?.trim().toLowerCase() || "";
 
   if (name.length < 2 || name.length > 120) errors.name = "Informe seu nome (de 2 a 120 caracteres).";
-  if (!USERNAME_PATTERN.test(username)) errors.username = "Use de 3 a 24 caracteres: letras, números ou _.";
+  if (!USERNAME_PATTERN.test(username)) errors.username = "Use de 3 a 30 caracteres: letras, números, ponto ou _.";
   if (!ACCOUNT_KINDS.has(fields.kind || "cliente")) errors.kind = "Escolha um tipo de conta válido.";
   if (!validBirthDate(fields.birthDate)) {
     errors.birthDate = "Informe uma data de nascimento válida.";
