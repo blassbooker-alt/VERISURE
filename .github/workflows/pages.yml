@@ -43,6 +43,7 @@ jobs:
           npm run build
       - name: Prepare Pages artifact
         run: |
+          cp CNAME web/dist/CNAME
           touch web/dist/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
