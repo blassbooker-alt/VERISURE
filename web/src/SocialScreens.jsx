@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, Bookmark, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
+  ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
   ImagePlus, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal,
   Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, X, Zap,
 } from "lucide-react";
@@ -786,6 +786,10 @@ function AuthorLink({ author, ownId }) {
   </Link>;
 }
 
+function VerificationBadge({ size = 15 }) {
+  return <BadgeCheck className="social-verification-badge" size={size} strokeWidth={2.4} aria-label="Verificado" role="img" />;
+}
+
 function LinkifiedText({ text }) {
   const parts = text.split(/(https?:\/\/[^\s]+|#[\p{L}\p{N}_]+|@[a-zA-Z0-9._]+)/gu);
   return <p className="social-post-copy">{parts.map((part, index) => {
@@ -1128,7 +1132,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     <header className="social-post-header">
       <AuthorLink author={post.author} ownId={userId} />
       <div className="social-post-author">
-        <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <ShieldCheck size={15} fill="currentColor" />}</Link>
+        <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
         <span><time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · {post.visibility === "followers" ? <Users size={12} /> : <Users size={12} />} {post.visibility === "followers" ? "Seguidores" : "Público"}</span>
       </div>
       <div className="social-post-menu-wrap">
@@ -1246,7 +1250,7 @@ export function SocialPeople({ client, session, configured, notify }) {
         {!loading && !error && !profiles.length && <div className="social-empty-feed"><Users size={23} /><h3>{search.trim() ? "Nenhum perfil encontrado" : "Você já está entre as primeiras pessoas"}</h3><p>{search.trim() ? "Confira o nome ou o usuário digitado." : "Quando outras pessoas se cadastrarem, os perfis públicos aparecerão aqui."}</p></div>}
         {!!profiles.length && <div className="social-people-grid">{profiles.map(person => <Link className="social-person-card" key={person.id} to={`/profile/${person.id}`}>
           <span className="social-person-avatar">{person.avatar ? <img src={person.avatar} alt="" loading="lazy" /> : person.name.slice(0, 1).toUpperCase()}</span>
-          <span className="social-person-name">{person.name}{person.verified && <ShieldCheck size={15} fill="currentColor" />}</span>
+          <span className="social-person-name">{person.name}{person.verified && <VerificationBadge />}</span>
           <span className="social-person-username">@{person.username || "fortalfy"}</span>
           {person.bio && <span className="social-person-bio">{person.bio}</span>}
           <span className="social-person-action">Ver perfil <ChevronRight size={14} /></span>
@@ -1889,7 +1893,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     <CommunityNavigation active="" />
     <section className="social-profile-card">
       <div className="social-profile-cover">{person.cover && <img src={person.cover} alt="" />}</div>
-      <div className="social-profile-main"><AuthorLink author={author} ownId={userId} /><div className="social-profile-bio"><h2>{person.name}{person.verified && <ShieldCheck size={17} fill="currentColor" />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}</div>
+      <div className="social-profile-main"><AuthorLink author={author} ownId={userId} /><div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}</div>
         {isOwn ? <button className="button subtle small-button" onClick={beginEdit}>Editar perfil</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
       </div>
       <div className="social-profile-metrics"><span><strong>{postCount}</strong> publicações</span><button type="button" onClick={() => openConnections("followers")}><strong>{follow.followers}</strong> seguidores</button><button type="button" onClick={() => openConnections("following")}><strong>{follow.following}</strong> seguindo</button><button onClick={handleProfileShare}><Share2 size={15} /> Compartilhar perfil</button></div>

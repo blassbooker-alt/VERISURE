@@ -1765,7 +1765,7 @@ img { display: block; max-width: 100%; }
 .social-post-author { display: grid; flex: 1; gap: 3px; min-width: 0; }
 .social-post-author > a { display: flex; align-items: center; gap: 5px; width: fit-content; max-width: 100%; color: #183c2b; font-size: 13px; }
 .social-post-author > a > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.social-post-author > a svg { flex: 0 0 auto; color: #338cbe; }
+.social-verification-badge { flex: 0 0 auto; color: #fff; fill: #16834b; stroke: #fff; }
 .social-post-author > span { display: flex; align-items: center; gap: 4px; color: #88948b; font-size: 10px; }
 .social-post-menu-wrap { position: relative; }
 .social-icon-button { width: 37px; height: 37px; display: grid; place-items: center; border: 0; border-radius: 50%; color: #65756a; background: transparent; }
@@ -1863,7 +1863,7 @@ img { display: block; max-width: 100%; }
 .social-profile-main > .social-avatar { width: 76px; height: 76px; border: 4px solid white; }
 .social-profile-bio { min-width: 0; flex: 1; padding-top: 28px; }
 .social-profile-bio h2 { display: flex; align-items: center; gap: 5px; margin: 0; color: #1b3d2b; font-size: 18px; }
-.social-profile-bio h2 svg { flex: 0 0 auto; color: #338cbe; }
+.social-profile-bio h2 .social-verification-badge { width: 18px; height: 18px; }
 .social-profile-bio > span, .social-profile-bio > small { color: #849087; font-size: 10px; }
 .social-profile-bio p { margin: 7px 0 3px; color: #53655a; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .social-profile-main > .button { flex: 0 0 auto; }
@@ -1905,7 +1905,7 @@ img { display: block; max-width: 100%; }
 .social-person-avatar { width: 48px; height: 48px; display: grid; place-items: center; overflow: hidden; margin-bottom: 9px; border-radius: 50%; color: #205439; background: #e7f2e5; font-size: 17px; font-weight: 800; }
 .social-person-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .social-person-name { max-width: 100%; display: flex; align-items: center; gap: 4px; color: #203f2e; font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
-.social-person-name svg { flex: 0 0 auto; color: #338cbe; }
+.social-person-name .social-verification-badge { width: 15px; height: 15px; }
 .social-person-username { margin-top: 3px; color: #76857a; font-size: 10px; }
 .social-person-bio { display: -webkit-box; overflow: hidden; margin-top: 8px; color: #5d6e62; font-size: 11px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .social-person-action { display: flex; align-items: center; gap: 2px; margin-top: 10px; color: #226443; font-size: 11px; font-weight: 750; }

@@ -9,6 +9,7 @@
 - Sistema visual atualizado com tokens compartilhados, cabeçalho e navegação persistente no desktop, navegação inferior no mobile, indicador de aba atual e espaçamentos responsivos.
 - Menu principal mobile renderizado sobre a página em camada independente do cabeçalho, para evitar recorte e sobreposição incorreta em telas pequenas.
 - Selo visual de verificação dos perfis sociais está temporariamente habilitado para todas as contas pela flag `GLOBAL_PROFILE_VERIFICATION_BADGE_ENABLED` em `web/src/socialService.js`. O selo não valida identidade nem concede aprovação profissional; selos oficiais de parceiros continuam vinculados à aprovação registrada no Supabase.
+- O selo de perfil usa o formato roseta com check inspirado no padrão visual do Instagram, em verde Fortalfy com check branco.
 - Tela inicial simplificada: comparação de planos e catálogo de módulos começam recolhidos, continuam acessíveis sem perder funcionalidades e a busca expande os resultados do catálogo quando necessário.
 - Cadastro local deixou de persistir senhas novas em texto legível: usa PBKDF2 com salt aleatório e 310.000 iterações; contas legadas migram ao hash após um login local bem-sucedido.
 - Navegação inferior com cinco destinos: Início, Feed, Food, Pass e Perfil.
