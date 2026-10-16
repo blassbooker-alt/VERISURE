@@ -1707,11 +1707,8 @@ img { display: block; max-width: 100%; }
   border-radius: 11px; color: #173c2b; background: #fff; font-size: 13px;
 }
 .social-profile-edit-form textarea { min-height: 80px; resize: vertical; }
-.social-profile-image-fields { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
-.social-profile-image-fields > .button { position: relative; overflow: hidden; cursor: pointer; }
-.social-profile-image-fields input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-.social-profile-image-fields > small { flex-basis: 100%; color: #849087; font-size: 9px; }
 .social-remove-image { border: 0; padding: 6px; color: #9b4940; background: transparent; font-size: 10px; }
+.social-remove-image-actions { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: -3px; }
 .social-auth-message { margin: 0; color: #7a4824; font-size: 12px; line-height: 1.5; }
 .social-auth-form > label > small { color: #77877b; font-size: 10px; font-weight: 500; }
 .social-auth-choice-group { display: grid; gap: 9px; min-width: 0; margin: 0; padding: 12px; border: 1px solid #e1eae3; border-radius: 12px; text-align: left; }
@@ -1857,10 +1854,17 @@ img { display: block; max-width: 100%; }
 .social-follow-request > a small { color: #89958c; font-size: 9px; }
 .social-follow-request > .button { min-height: 32px; padding: 0 9px; font-size: 9px; }
 .social-profile-card { overflow: hidden; padding: 0 14px 12px; }
-.social-profile-cover { height: 115px; margin: 0 -14px; overflow: hidden; background: linear-gradient(120deg, #0a3d2e, #7da85a); }
+.social-profile-cover { height: 115px; position: relative; margin: 0 -14px; overflow: hidden; background: linear-gradient(120deg, #0a3d2e, #7da85a); }
 .social-profile-cover img { width: 100%; height: 100%; object-fit: cover; }
+.social-profile-cover.has-image img { display: block; }
+.social-profile-cover-edit { min-height: 34px; position: absolute; right: 12px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; color: #fff; background: #10271dbd; border: 1px solid #ffffff66; border-radius: 999px; font-size: 10px; font-weight: 750; cursor: pointer; backdrop-filter: blur(8px); }
+.social-profile-cover-edit input, .social-profile-avatar-edit input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+.social-profile-cover-edit input:focus-visible, .social-profile-avatar-edit input:focus-visible { outline: none; }
+.social-profile-cover-edit:focus-within, .social-profile-avatar-edit:focus-within { outline: 3px solid #8ed39d; outline-offset: 3px; }
 .social-profile-main { display: flex; align-items: center; gap: 11px; margin-top: -27px; }
-.social-profile-main > .social-avatar { width: 76px; height: 76px; border: 4px solid white; }
+.social-profile-avatar-wrap { width: 76px; height: 76px; position: relative; flex: 0 0 auto; }
+.social-profile-avatar-wrap > .social-avatar { width: 76px; height: 76px; border: 4px solid white; }
+.social-profile-avatar-edit { width: 28px; height: 28px; position: absolute; right: 0; bottom: 0; display: grid; place-items: center; color: #fff; background: #174f3b; border: 2px solid #fff; border-radius: 50%; cursor: pointer; }
 .social-profile-bio { min-width: 0; flex: 1; padding-top: 28px; }
 .social-profile-bio h2 { display: flex; align-items: center; gap: 5px; margin: 0; color: #1b3d2b; font-size: 18px; }
 .social-profile-bio h2 .social-verification-badge { width: 18px; height: 18px; }
@@ -1977,7 +1981,7 @@ img { display: block; max-width: 100%; }
   .social-post-actions svg { width: 16px; }
   .social-comment-row.is-reply { margin-left: 25px; }
   .social-profile-main { align-items: flex-start; flex-wrap: wrap; }
-  .social-profile-main > .social-avatar { width: 64px; height: 64px; }
+  .social-profile-avatar-wrap, .social-profile-avatar-wrap > .social-avatar { width: 64px; height: 64px; }
   .social-profile-main > .button { margin: -1px 0 0 auto; }
   .social-profile-actions { width: 100%; }
   .social-profile-actions .button { flex: 1; justify-content: center; }

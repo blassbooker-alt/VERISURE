@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
+  ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
   ImagePlus, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal,
   Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, X, Zap,
 } from "lucide-react";
@@ -1585,6 +1585,11 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   const [profileUsernameCheck, setProfileUsernameCheck] = useState({ username: "", checking: false, available: null, error: "" });
 
   useEffect(() => {
+    if (!imageDraft?.previewUrl) return undefined;
+    return () => URL.revokeObjectURL(imageDraft.previewUrl);
+  }, [imageDraft?.previewUrl]);
+
+  useEffect(() => {
     if (!editOpen || !client || !/^[a-z0-9._]{3,30}$/.test(profileUsername)) {
       setProfileUsernameCheck({ username: profileUsername, checking: false, available: null, error: "" });
       return undefined;
@@ -1892,9 +1897,15 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   return <div className="social-profile">
     <CommunityNavigation active="" />
     <section className="social-profile-card">
-      <div className="social-profile-cover">{person.cover && <img src={person.cover} alt="" />}</div>
-      <div className="social-profile-main"><AuthorLink author={author} ownId={userId} /><div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}</div>
-        {isOwn ? <button className="button subtle small-button" onClick={beginEdit}>Editar perfil</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
+      <div className={`social-profile-cover${person.cover ? " has-image" : ""}`}>{person.cover && <img src={person.cover} alt="" />}
+        {isOwn && <label className="social-profile-cover-edit" title="Alterar foto de capa"><Camera size={16} /><span>Editar capa</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Escolher foto de capa" onChange={event => updateProfileImage(event, "cover_path")} disabled={busy} /></label>}
+      </div>
+      <div className="social-profile-main">
+        <div className="social-profile-avatar-wrap"><AuthorLink author={author} ownId={userId} />
+          {isOwn && <label className="social-profile-avatar-edit" title="Alterar foto do perfil"><Camera size={14} /><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Escolher foto do perfil" onChange={event => updateProfileImage(event, "avatar_path")} disabled={busy} /></label>}
+        </div>
+        <div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}</div>
+        {isOwn ? <button className="button subtle small-button" onClick={beginEdit}>Editar informações</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
       </div>
       <div className="social-profile-metrics"><span><strong>{postCount}</strong> publicações</span><button type="button" onClick={() => openConnections("followers")}><strong>{follow.followers}</strong> seguidores</button><button type="button" onClick={() => openConnections("following")}><strong>{follow.following}</strong> seguindo</button><button onClick={handleProfileShare}><Share2 size={15} /> Compartilhar perfil</button></div>
       {isOwn && <button className="social-signout" onClick={async () => {
@@ -1929,13 +1940,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
           <label>Nome de usuário<input value={draft.username} onChange={event => setDraft(current => ({ ...current, username: event.target.value.toLowerCase() }))} maxLength={30} pattern="[A-Za-z0-9._]{3,30}" /><small>De 3 a 30 caracteres: letras, números, ponto e sublinhado.</small>{profileUsername.length >= 3 && /^[a-z0-9._]{3,30}$/.test(profileUsername) && <small className={`auth-username-availability ${profileUsernameCheck.error ? "is-error" : profileUsernameCheck.available ? "is-available" : profileUsernameCheck.available === false ? "is-unavailable" : ""}`}>{profileUsernameCheck.username !== profileUsername || profileUsernameCheck.checking ? "Verificando disponibilidade…" : profileUsernameCheck.error ? "Não foi possível verificar agora; a disponibilidade será validada ao salvar." : profileUsernameCheck.available ? "Nome de usuário disponível." : "Nome de usuário em uso ou reservado."}</small>}</label>
           <label>Biografia<textarea value={draft.bio} onChange={event => setDraft(current => ({ ...current, bio: event.target.value }))} maxLength={2000} /></label>
           <label>Cidade<input value={draft.city} onChange={event => setDraft(current => ({ ...current, city: event.target.value }))} maxLength={120} /></label>
-          <div className="social-profile-image-fields">
-            <label className="button subtle small-button">{person.avatar ? "Alterar foto do perfil" : "Adicionar foto do perfil"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => updateProfileImage(event, "avatar_path")} disabled={busy} /></label>
-            {person.avatar && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("avatar_path")}>Remover foto</button>}
-            <label className="button subtle small-button">{person.cover ? "Alterar capa" : "Adicionar capa"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => updateProfileImage(event, "cover_path")} disabled={busy} /></label>
-            {person.cover && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("cover_path")}>Remover capa</button>}
-            <small>Selecione uma imagem para ajustar o corte. Arquivos de até 15 MB são comprimidos antes do envio; GIFs animados devem ter até 5 MB.</small>
-          </div>
+          {(person.avatar || person.cover) && <div className="social-remove-image-actions">{person.avatar && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("avatar_path")}>Remover foto do perfil</button>}{person.cover && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("cover_path")}>Remover foto de capa</button>}</div>}
           <label className="social-private-toggle"><input type="checkbox" checked={draft.isPrivate} onChange={event => setDraft(current => ({ ...current, isPrivate: event.target.checked }))} /> Perfil privado — aprovo quem pode me seguir</label>
           <button className="button primary wide-button" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button>
         </form>
@@ -1950,7 +1955,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         {imageDraft.file.type === "image/gif"
           ? <p className="social-image-crop-note">O GIF será mantido animado; o corte e a compressão não serão aplicados.</p>
           : <label className="social-image-zoom">Ajustar enquadramento<input type="range" min="1" max="2" step="0.05" value={imageDraft.zoom} onChange={event => setImageDraft(current => ({ ...current, zoom: Number(event.target.value) }))} /></label>}
-        <p className="social-image-crop-note">A imagem é cortada ao centro no formato {imageDraft.field === "avatar_path" ? "quadrado" : "horizontal"} e comprimida antes de ser enviada.</p>
+        <p className="social-image-crop-note">Arraste o controle para ajustar o enquadramento. A imagem será cortada e otimizada ao salvar.</p>
         <footer className="social-image-crop-actions"><button className="button subtle" disabled={busy} onClick={() => setImageDraft(null)}>Cancelar</button><button className="button primary" disabled={busy} onClick={saveProfileImage}>{busy ? "Preparando imagem…" : "Usar esta imagem"}</button></footer>
       </section>
     </div>}
