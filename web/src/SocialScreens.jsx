@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
+  Activity, ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
   ImagePlus, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal,
   Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
 import { fortalfyAsset } from "./assetPath.js";
+import PartnerStorefront from "./PartnerStorefront.jsx";
+import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
+import { FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectReelVideo, isFortalReelRatio } from "./reelMedia.js";
 import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
@@ -17,7 +20,7 @@ import {
   updateComment, updatePost, uploadProfileImage,
 } from "./socialService.js";
 import {
-  createAccount, loadUserPreferences, saveOnboarding, signInWithGoogle,
+  createAccount, isExistingEmailSignup, isUsernameAvailabilityFunctionMissing, loadUserPreferences, saveOnboarding, signInWithGoogle,
   validateOnboarding, validateSignup,
 } from "./authService.js";
 
@@ -41,7 +44,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
   const signupUsername = fields.username.trim().replace(/^@/, "").toLowerCase();
-  const [usernameCheck, setUsernameCheck] = useState({ username: "", checking: false, available: null, error: "" });
+  const [usernameCheck, setUsernameCheck] = useState({ username: "", checking: false, available: null, error: "", missingFunction: false });
 
   const signupGoals = [
     ["emagrecimento", "🔥 Emagrecimento"],
@@ -69,19 +72,23 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
 
   useEffect(() => {
     if (mode !== "signup" || !/^[a-z0-9._]{3,30}$/.test(signupUsername) || !client) {
-      setUsernameCheck({ username: signupUsername, checking: false, available: null, error: "" });
+      setUsernameCheck({ username: signupUsername, checking: false, available: null, error: "", missingFunction: false });
       return undefined;
     }
     let active = true;
     const timer = window.setTimeout(() => {
-      setUsernameCheck({ username: signupUsername, checking: true, available: null, error: "" });
+      setUsernameCheck({ username: signupUsername, checking: true, available: null, error: "", missingFunction: false });
       isUsernameAvailable(client, signupUsername)
         .then(available => {
-          if (active) setUsernameCheck({ username: signupUsername, checking: false, available, error: "" });
+          if (active) setUsernameCheck({ username: signupUsername, checking: false, available, error: "", missingFunction: false });
         })
         .catch(error => {
+          if (isUsernameAvailabilityFunctionMissing(error)) {
+            if (active) setUsernameCheck({ username: signupUsername, checking: false, available: null, error: "", missingFunction: true });
+            return;
+          }
           console.error("Falha ao verificar a disponibilidade do nome de usuario.", error);
-          if (active) setUsernameCheck({ username: signupUsername, checking: false, available: null, error: getErrorMessage(error) });
+          if (active) setUsernameCheck({ username: signupUsername, checking: false, available: null, error: getErrorMessage(error), missingFunction: false });
         });
     }, 350);
     return () => {
@@ -119,13 +126,24 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         onRecovered?.();
       } else if (mode === "signup") {
         if (!configured || !client) throw new Error("A conexão com o servidor de autenticação ainda não foi configurada.");
-        if (!await isUsernameAvailable(client, signupUsername)) {
-          const unavailable = new Error("Esse nome de usuario ja esta em uso ou reservado.");
-          unavailable.code = "fortalfy_username_unavailable";
-          throw unavailable;
+        try {
+          if (!await isUsernameAvailable(client, signupUsername)) {
+            const unavailable = new Error("Esse nome de usuario ja esta em uso ou reservado.");
+            unavailable.code = "fortalfy_username_unavailable";
+            throw unavailable;
+          }
+        } catch (error) {
+          if (!isUsernameAvailabilityFunctionMissing(error)) throw error;
+          console.warn("A verificação de username não está instalada no Supabase; a restrição única do banco validará o cadastro.");
         }
         const redirectTo = `${window.location.origin}${window.location.pathname}`;
         const data = await createAccount(client, fields, redirectTo);
+        if (isExistingEmailSignup(data)) {
+          setMessage("Este e-mail já está cadastrado. Se você acabou de solicitar a criação da conta, confira se há uma mensagem de confirmação na caixa de entrada ou no spam. Se já confirmou, entre ou use “Esqueceu a senha?”.");
+          setMessageType("info");
+          setMode("login");
+          return;
+        }
         if (data?.session) {
           setMessage("Conta criada com sucesso! Bem-vindo(a) ao Fortalfy.");
           setMessageType("success");
@@ -158,7 +176,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         if (error) {
           const errText = (error.message || "").toLowerCase();
           if (errText.includes("invalid login credentials") || error.code === "invalid_credentials") {
-            setMessage("E-mail ou senha incorretos. Verifique suas credenciais de acesso.");
+            setMessage("O Supabase não aceitou este e-mail e senha. Se a conta acabou de ser criada, confirme o e-mail primeiro; se já confirmou, confira o endereço ou use “Esqueceu a senha?”.");
           } else if (errText.includes("email not confirmed")) {
             setMessage("Seu e-mail ainda não foi confirmado. Verifique o link de confirmação enviado para sua caixa de entrada.");
           } else {
@@ -437,6 +455,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                   <option value="personal">Personal trainer</option>
                   <option value="nutricionista">Nutricionista</option>
                   <option value="academia">Academia</option>
+                  <option value="marca">Loja / marca</option>
                 </select>
                 <small className="auth-hint-text">Perfis de parceiros só aparecem na descoberta após aprovação da equipe.</small>
               </div>
@@ -460,12 +479,12 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                   />
                 </div>
                 <small className="auth-hint-text">De 3 a 30 caracteres: letras, números, ponto e sublinhado (_).</small>
-                {signupUsername.length >= 3 && /^[a-z0-9._]{3,30}$/.test(signupUsername) && (
+                {signupUsername.length >= 3 && /^[a-z0-9._]{3,30}$/.test(signupUsername) && !usernameCheck.missingFunction && (
                   <small className={`auth-username-availability ${usernameCheck.error ? "is-error" : usernameCheck.available ? "is-available" : usernameCheck.available === false ? "is-unavailable" : ""}`}>
                     {usernameCheck.username !== signupUsername || usernameCheck.checking
                       ? "Verificando disponibilidade…"
                       : usernameCheck.error
-                        ? "Não foi possível verificar agora; a disponibilidade será validada ao criar a conta."
+                        ? "Não foi possível confirmar a disponibilidade agora. Tente novamente antes de criar a conta."
                         : usernameCheck.available
                           ? "Nome de usuário disponível."
                           : "Nome de usuário em uso ou reservado."}
@@ -790,6 +809,15 @@ function VerificationBadge({ size = 15 }) {
   return <BadgeCheck className="social-verification-badge" size={size} strokeWidth={2.4} aria-label="Verificado" role="img" />;
 }
 
+function communityRole(kind) {
+  return ({
+    academia: "Academia",
+    marca: "Marca esportiva",
+    nutricionista: "Nutricionista",
+    personal: "Profissional de educação física",
+  })[kind] || "";
+}
+
 function LinkifiedText({ text }) {
   const parts = text.split(/(https?:\/\/[^\s]+|#[\p{L}\p{N}_]+|@[a-zA-Z0-9._]+)/gu);
   return <p className="social-post-copy">{parts.map((part, index) => {
@@ -828,11 +856,37 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
 
 function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   const watchedMedia = useRef(new Set());
+  const containerRef = useRef(null);
+  useEffect(() => {
+    if (!reelMode || !containerRef.current || typeof IntersectionObserver === "undefined") return undefined;
+    const video = containerRef.current.querySelector("video");
+    if (!video) return undefined;
+    let intersects = false;
+    const syncPlayback = () => {
+      if (intersects && document.visibilityState === "visible") {
+        video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
+      } else {
+        video.pause();
+      }
+    };
+    const observer = new IntersectionObserver(entries => {
+      intersects = entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= 0.65);
+      syncPlayback();
+    }, { threshold: [0, 0.65, 1] });
+    observer.observe(containerRef.current);
+    document.addEventListener("visibilitychange", syncPlayback);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", syncPlayback);
+      video.pause();
+    };
+  }, [media, reelMode]);
   if (!media?.length) return null;
-  return <div className={`social-media-grid count-${Math.min(media.length, 4)}`}>
-    {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className="social-media-item">
+  const hasVideo = media.some(item => item.media_type === "video");
+  return <div ref={containerRef} className={`social-media-grid count-${Math.min(media.length, 4)}${hasVideo && !reelMode ? " has-landscape-video" : ""}`}>
+    {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className={`social-media-item${item.media_type === "video" && !reelMode ? " is-landscape-video" : ""}`}>
       {item.media_type === "video"
-        ? <video src={item.url} controls playsInline preload="metadata" loop={reelMode} muted={reelMode} onTimeUpdate={event => {
+        ? <video src={item.url} controls playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode} muted={reelMode} onTimeUpdate={event => {
           if (!reelMode || !onReelWatch || watchedMedia.current.has(item.id || item.storage_path)) return;
           const video = event.currentTarget;
           const threshold = video.duration > 0 ? Math.min(3, video.duration / 2) : Infinity;
@@ -851,9 +905,29 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
   const [files, setFiles] = useState([]);
   const [visibility, setVisibility] = useState("public");
   const [busy, setBusy] = useState(false);
+  const [videoEditorFile, setVideoEditorFile] = useState(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const reelPostId = useRef("");
+  if (!reelPostId.current) reelPostId.current = crypto.randomUUID();
 
   const chooseFiles = event => {
     const selected = Array.from(event.target.files || []);
+    if (videosOnly) {
+      if (!selected.length) return;
+      if (selected.length !== 1) {
+        notify("Selecione um único vídeo para o FortalReels.");
+        event.target.value = "";
+        return;
+      }
+      if (selected[0].size > FORTALREEL_MAX_FILE_BYTES) {
+        notify("O vídeo selecionado ultrapassa o limite de 40 MB.");
+        event.target.value = "";
+        return;
+      }
+      setVideoEditorFile(selected[0]);
+      event.target.value = "";
+      return;
+    }
     const current = files.length;
     if (current + selected.length > 10) {
       notify("Adicione no máximo 10 fotos ou vídeos por publicação.");
@@ -863,11 +937,6 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
     for (const file of selected) {
       const image = file.type.startsWith("image/") && ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type);
       const video = ["video/mp4", "video/webm"].includes(file.type);
-      if (videosOnly && !video) {
-        notify("Para criar um Reel, selecione um vídeo MP4 ou WebM.");
-        event.target.value = "";
-        return;
-      }
       if (!image && !video) {
         notify("Use imagens JPG, PNG, WEBP ou GIF e vídeos MP4 ou WebM.");
         event.target.value = "";
@@ -891,11 +960,33 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
     }
     setBusy(true);
     try {
-      await publishPost(client, userId, { body, files, visibility });
+      if (videosOnly) {
+        const file = files[0];
+        const media = await inspectReelVideo(file);
+        if (!isFortalReelRatio(media.width, media.height)) {
+          throw new Error("O vídeo final precisa estar no formato vertical 9:16. Recorte o vídeo antes de publicar.");
+        }
+        if (media.duration > FORTALREEL_MAX_DURATION_SECONDS) {
+          throw new Error("O vídeo final não pode ultrapassar 90 segundos.");
+        }
+      }
+      await publishPost(client, userId, {
+        body,
+        files,
+        visibility,
+        isReel: videosOnly,
+        postId: videosOnly ? reelPostId.current : "",
+      });
       setBody("");
       setFiles([]);
-      notify("Publicação enviada para a comunidade.");
-      await onPublished();
+      reelPostId.current = crypto.randomUUID();
+      notify(videosOnly ? "Reel publicado no FortalReels." : "Publicação enviada para a comunidade.");
+      try {
+        await onPublished();
+      } catch (refreshError) {
+        console.error("Publicação concluída, mas não foi possível atualizar o Feed.", refreshError);
+        notify("Publicação concluída. Atualize o Feed para visualizá-la.");
+      }
     } catch (error) {
       console.error("Falha ao publicar no Feed.", error);
       notify(getErrorMessage(error, "Não foi possível publicar. Sua publicação não foi enviada."));
@@ -904,15 +995,30 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
     }
   };
 
-  return <form className="social-create-post" onSubmit={submit}>
-    <label className="social-create-text"><span className="sr-only">{videosOnly ? "Legenda do Reel" : "Texto da publicação"}</span><textarea value={body} maxLength={5000} rows={3} onChange={event => setBody(event.target.value)} placeholder={videosOnly ? "Escreva uma legenda para seu Reel..." : "No que você está pensando?"} /><small>{body.length}/5.000</small></label>
+  return <>
+  <form className={`social-create-post${videosOnly ? " social-reel-create-post" : ""}`} onSubmit={submit}>
+    <label className="social-create-text"><span className="sr-only">{videosOnly ? "Legenda do Reel" : "Texto da publicação"}</span><textarea value={body} maxLength={5000} rows={3} onChange={event => setBody(event.target.value)} placeholder={videosOnly ? "Escreva uma legenda para seu Reel..." : "Compartilhe uma conquista, dica de treino ou novidade do esporte..."} /><small>{body.length}/5.000</small></label>
     {!!files.length && <div className="social-file-list">{files.map((file, index) => <span key={`${file.name}-${index}`}>{file.type.startsWith("video/") ? <Video size={14} /> : <ImagePlus size={14} />}{file.name}<button type="button" aria-label={`Remover ${file.name}`} onClick={() => setFiles(current => current.filter((_, itemIndex) => itemIndex !== index))}><X size={14} /></button></span>)}</div>}
     <div className="social-create-footer">
-      <label className="button subtle small-button social-file-picker">{videosOnly ? <Clapperboard size={16} /> : <ImagePlus size={16} />}{videosOnly ? " Vídeo do Reel" : " Foto/vídeo"}<input type="file" accept={videosOnly ? "video/mp4,video/webm" : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"} multiple={!videosOnly} onChange={chooseFiles} /></label>
+      {videosOnly && <button className="button subtle small-button" type="button" onClick={() => setCameraOpen(true)}><Camera size={16} /> Gravar vertical</button>}
+      <label className="button subtle small-button social-file-picker">{videosOnly ? <Clapperboard size={16} /> : <ImagePlus size={16} />}{videosOnly ? " Escolher vídeo" : " Foto/vídeo esportivo"}<input type="file" accept={videosOnly ? "video/mp4,video/webm,video/quicktime" : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"} multiple={!videosOnly} onChange={chooseFiles} /></label>
       <label className="social-visibility"><ShieldCheck size={14} /><select value={visibility} onChange={event => setVisibility(event.target.value)}><option value="public">Público</option><option value="followers">Seguidores</option></select><ChevronDown size={13} /></label>
       <button className="button primary small-button" type="submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />} {videosOnly ? "Publicar Reel" : "Publicar"}</button>
     </div>
-  </form>;
+  </form>
+  {videoEditorFile && <ReelVideoEditor file={videoEditorFile} onCancel={() => setVideoEditorFile(null)} onReady={async file => {
+    const metadata = await inspectReelVideo(file);
+    if (!isFortalReelRatio(metadata.width, metadata.height) || metadata.duration > FORTALREEL_MAX_DURATION_SECONDS) {
+      throw new Error("O vídeo final precisa estar no formato 9:16 e ter no máximo 90 segundos.");
+    }
+    setFiles([file]);
+    setVideoEditorFile(null);
+  }} notify={notify} />}
+  {cameraOpen && <ReelCameraRecorder onCancel={() => setCameraOpen(false)} onCaptured={file => {
+    setCameraOpen(false);
+    setVideoEditorFile(file);
+  }} />}
+  </>;
 }
 
 function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false }) {
@@ -931,6 +1037,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const [lightboxMedia, setLightboxMedia] = useState([]);
   const [followingAuthor, setFollowingAuthor] = useState(false);
   const [authorFollowRequest, setAuthorFollowRequest] = useState("");
+  const [followStateLoaded, setFollowStateLoaded] = useState(false);
   const [saved, setSaved] = useState(Boolean(post.savedByMe));
   const [liked, setLiked] = useState(Boolean(post.likedByMe));
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
@@ -956,13 +1063,18 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   useEffect(() => {
     if (own) return undefined;
     let active = true;
+    setFollowStateLoaded(false);
     loadFollowState(client, userId, post.author_id)
       .then(state => {
         if (!active) return;
         setFollowingAuthor(state.isFollowing);
         setAuthorFollowRequest(state.requestStatus);
+        setFollowStateLoaded(true);
       })
-      .catch(error => console.error("Não foi possível carregar o estado de seguimento.", error));
+      .catch(error => {
+        console.error("Não foi possível carregar o estado de seguimento.", error);
+        if (active) setFollowStateLoaded(true);
+      });
     return () => { active = false; };
   }, [client, userId, post.author_id, own]);
 
@@ -1133,8 +1245,9 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       <AuthorLink author={post.author} ownId={userId} />
       <div className="social-post-author">
         <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
-        <span><time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · {post.visibility === "followers" ? <Users size={12} /> : <Users size={12} />} {post.visibility === "followers" ? "Seguidores" : "Público"}</span>
+        <span>{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>
       </div>
+      {!own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
       <div className="social-post-menu-wrap">
         <button className="social-icon-button" aria-label="Opções da publicação" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><MoreHorizontal size={20} /></button>
         {menuOpen && <div className="social-post-menu">
@@ -1485,7 +1598,12 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const reelListRef = useRef(null);
+  const loadingMoreRef = useRef(false);
   const userId = session?.user?.id;
+  const canPublishReels = Boolean(profile?.partnerApproved
+    && ["personal", "nutricionista", "academia", "marca"].includes(profile.kind));
   const filters = [["latest", "Mais recentes"], ["following", "Seguindo"]];
 
   const refresh = async () => {
@@ -1524,7 +1642,19 @@ export function SocialFeed({ client, configured, session, profile, profileError 
     return () => { active = false; };
   }, [client, userId, filter, mediaType]);
 
+  useEffect(() => {
+    if (mediaType !== "video" || !posts.length || !reelListRef.current) return;
+    try {
+      const savedPosition = Number(sessionStorage.getItem("fortalfy.reels.scroll"));
+      if (Number.isFinite(savedPosition) && savedPosition > 0) reelListRef.current.scrollTop = savedPosition;
+    } catch (failure) {
+      console.error("Não foi possível restaurar a posição do FortalReels.", failure);
+    }
+  }, [mediaType, posts.length, loading]);
+
   const loadMore = async () => {
+    if (loadingMoreRef.current || !hasMore) return;
+    loadingMoreRef.current = true;
     setLoading(true);
     try {
       const result = await loadFeed(client, userId, { filter, offset: posts.length, mediaType });
@@ -1534,26 +1664,53 @@ export function SocialFeed({ client, configured, session, profile, profileError 
       console.error("Falha ao carregar mais publicações.", failure);
       notify(getErrorMessage(failure, "Não foi possível carregar mais publicações."));
     } finally {
+      loadingMoreRef.current = false;
       setLoading(false);
     }
   };
 
   const reelMode = mediaType === "video";
   if (recovery) return <SocialAuth client={client} configured={configured} notify={notify} recovery onRecovered={onRecovered} />;
-  if (!session) return <><CommunityNavigation active={reelMode ? "reels" : "feed"} /><SocialAuth client={client} configured={configured} notify={notify} /></>;
-  if (profileError) return <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
+  if (!session) return <>{!reelMode && <CommunityNavigation active="feed" />}<SocialAuth client={client} configured={configured} notify={notify} /></>;
+  if (profileError) return <div className="social-feed-error" role="alert">{reelMode && <Link to="/feed" className="social-reels-back" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link>}<CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
   if (!profile) return <div className="social-inline-status"><LoaderCircle className="spin" size={17} /> Preparando seu perfil…</div>;
-  return <div className="social-feed">
-    <CommunityNavigation active={reelMode ? "reels" : "feed"} />
-    {reelMode && <div className="social-reels-intro"><Clapperboard size={19} /><span><strong>Reels da comunidade</strong><small>Vídeos públicos publicados por pessoas cadastradas.</small></span></div>}
+  return <div className={`social-feed${reelMode ? " social-reels-page" : ""}`}>
+    {!reelMode && <><CommunityNavigation active="feed" /><section className="social-feed-hero"><div className="social-feed-hero-copy"><span className="eyebrow"><Activity size={13} /> COMUNIDADE FORTALFY</span><h1>Esporte, saúde e movimento em conversa.</h1><p>Acompanhe atualizações de academias, profissionais de nutrição e educação física, atletas e pessoas que vivem o esporte.</p></div><div className="social-feed-hero-art" aria-hidden="true"><Dumbbell size={44} /><span>SEU RITMO<br />EM MOVIMENTO</span></div></section><nav className="social-feed-topics" aria-label="Explorar a comunidade"><Link to="/partner/gym"><Dumbbell size={15} /> Academias</Link><Link to="/nutrition"><Activity size={15} /> Nutrição</Link><Link to="/workout"><Zap size={15} /> Treinos</Link><Link to="/reels"><Video size={15} /> Vídeos</Link></nav></>}
+    {reelMode && <div className="social-reels-intro"><Link className="social-reels-back" to="/feed" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link><Clapperboard size={19} /><span><strong>FortalReels</strong><small>Vídeos verticais 9:16 · até 90 segundos</small></span><button type="button" className="button primary small-button" onClick={() => {
+      if (!canPublishReels) {
+        notify("A publicação no FortalReels é exclusiva de criadores e parceiros aprovados.");
+        return;
+      }
+      setComposerOpen(value => !value);
+    }}><Video size={15} />{composerOpen ? "Fechar criação" : "Criar Reel"}</button></div>}
     <div className="social-feed-toolbar"><div className="social-filter-tabs">{filters.map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}</div><button className="social-refresh" onClick={refresh} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={15} /> : "Atualizar"}</button></div>
-    <CreatePost client={client} userId={userId} onPublished={refresh} notify={notify} videosOnly={reelMode} />
+    {(!reelMode || composerOpen) && <CreatePost client={client} userId={userId} onPublished={async () => { setComposerOpen(false); await refresh(); }} notify={notify} videosOnly={reelMode} />}
     {!reelMode && feedArts.length > 0 && <section className="social-local-creations"><h3>Criações deste aparelho</h3><p>Essas peças ainda não foram publicadas para outras contas.</p><div>{feedArts.map(art => <article key={art.id}><img src={art.dataUrl} alt={`Criação local: ${art.title}`} /><span>SOMENTE NESTE APARELHO</span><strong>{art.title}</strong></article>)}</div></section>}
-    {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
-    {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando publicações…</p>}
-    {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{reelMode ? "Ainda não há Reels" : filter === "following" ? "Você ainda não segue ninguém" : "O Feed está começando"}</h2><p>{reelMode ? "Quando a comunidade publicar vídeos, eles aparecerão aqui. Você pode publicar o primeiro Reel agora." : filter === "following" ? "Siga perfis para ver as publicações deles aqui." : "Quando as pessoas publicarem, as novidades aparecerão aqui. Você pode começar com uma publicação sua."}</p></div>}
-    {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode={reelMode} />)}
-    {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais publicações"}</button>}
+    {reelMode
+      ? <section className="social-reels-list" ref={reelListRef} aria-label="Vídeos FortalReels" onScroll={event => {
+        try {
+          sessionStorage.setItem("fortalfy.reels.scroll", String(event.currentTarget.scrollTop));
+        } catch (failure) {
+          console.error("Não foi possível salvar a posição do FortalReels.", failure);
+        }
+        if (hasMore && !loadingMoreRef.current
+            && event.currentTarget.scrollHeight - event.currentTarget.scrollTop - event.currentTarget.clientHeight < event.currentTarget.clientHeight * 2) {
+          void loadMore();
+        }
+      }}>
+        {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
+        {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando Reels…</p>}
+        {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>Ainda não há Reels</h2><p>Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui.</p></div>}
+        {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode />)}
+        {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais Reels"}</button>}
+      </section>
+      : <>
+        {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
+        {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando publicações…</p>}
+        {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Você ainda não segue ninguém" : "O Feed está começando"}</h2><p>{filter === "following" ? "Siga perfis para ver as publicações deles aqui." : "Quando as pessoas publicarem, as novidades aparecerão aqui. Você pode começar com uma publicação sua."}</p></div>}
+        {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} />)}
+        {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais publicações"}</button>}
+      </>}
   </div>;
 }
 
@@ -1919,6 +2076,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     </section>
     {detailsError && <p className="social-inline-error" role="alert">{detailsError}</p>}
     {isOwn && requests.length > 0 && <section className="social-follow-requests"><h3>Solicitações para seguir <span>{requests.length}</span></h3>{requests.map(request => <div className="social-follow-request" key={request.follower_id}><AuthorLink author={request.follower} ownId={userId} /><Link to={`/profile/${request.follower_id}`}><strong>{request.follower?.name || "Pessoa Fortalfy"}</strong><small>{formatDate(request.created_at)}</small></Link><button className="button primary small-button" disabled={busy} onClick={() => handleFollowRequest(request, true)}>Aceitar</button><button className="button subtle small-button" disabled={busy} onClick={() => handleFollowRequest(request, false)}>Recusar</button></div>)}</section>}
+    {(person.kind === "marca" || person.kind === "academia") && <PartnerStorefront client={client} profile={person} userId={userId} isOwn={isOwn} notify={notify} />}
     <h3 className="social-profile-posts-title">Publicações</h3>
     {postsError && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{postsError}</span><button onClick={retryProfilePosts} disabled={postsLoading}>{postsLoading ? "Tentando…" : "Tentar novamente"}</button></div>}
     {person.isPrivate && !isOwn && !follow.isFollowing ? <div className="social-empty-feed"><ShieldCheck size={23} /><h3>Este perfil é privado</h3><p>Envie uma solicitação para ver suas publicações.</p></div>

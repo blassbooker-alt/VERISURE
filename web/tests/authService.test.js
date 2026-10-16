@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  createAccount, isDemoUser, loadUserPreferences, saveOnboarding, signInWithGoogle,
+  createAccount, isDemoUser, isExistingEmailSignup, isUsernameAvailabilityFunctionMissing, loadUserPreferences, saveOnboarding, signInWithGoogle,
   validateOnboarding, validateSignup,
 } from "../src/authService.js";
 
@@ -70,6 +70,35 @@ test("Google OAuth uses the official provider without collecting provider creden
     provider: "google",
     options: { redirectTo: "https://fortalfy.example/" },
   });
+});
+
+test("missing username availability RPC falls back only to the database uniqueness constraint", () => {
+  assert.equal(isUsernameAvailabilityFunctionMissing({
+    code: "PGRST202",
+    message: "Could not find the function public.is_fortalfy_username_available",
+  }), true);
+  assert.equal(isUsernameAvailabilityFunctionMissing({
+    code: "42883",
+    message: "function public.is_fortalfy_username_available does not exist",
+  }), true);
+  assert.equal(isUsernameAvailabilityFunctionMissing({ code: "NETWORK_ERROR", message: "Offline" }), false);
+  assert.equal(isUsernameAvailabilityFunctionMissing({ code: "PGRST202", message: "Could not find some other function" }), false);
+});
+
+test("signup recognizes Supabase's privacy response for an already registered email", () => {
+  assert.equal(isExistingEmailSignup({
+    user: { id: "user-1", identities: [] },
+    session: null,
+  }), true);
+  assert.equal(isExistingEmailSignup({
+    user: { id: "user-2", identities: [{ provider: "email" }] },
+    session: null,
+  }), false);
+  assert.equal(isExistingEmailSignup({
+    user: { id: "user-3", identities: [] },
+    session: { access_token: "session" },
+  }), false);
+  assert.equal(isExistingEmailSignup(null), false);
 });
 
 test("auth service surfaces provider errors", async () => {

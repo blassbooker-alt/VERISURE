@@ -3,3 +3,6 @@ verify_jwt = true
 
 [functions.mercado-pago-sandbox-webhook]
 verify_jwt = false
+
+[functions.validate-fortalreel-media]
+verify_jwt = true

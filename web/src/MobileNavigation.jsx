@@ -1,4 +1,4 @@
-import { ArrowRight, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, Utensils, Wallet, X, Ticket, UserRound, Users } from "lucide-react";
+import { ArrowRight, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, Utensils, Wallet, X, Ticket, UserRound, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -12,6 +12,7 @@ const primaryTabs = [
 ];
 
 const drawerItems = [
+  { to: "/reels", label: "FortalReels", detail: "Vídeos verticais fitness", icon: Clapperboard },
   { to: "/pass", label: "Fortalpass", detail: "Academias e modalidades", icon: Ticket },
   { to: "/shop", label: "Fortalshop", detail: "Produtos oficiais", icon: ShoppingBag },
   { to: "/nutrition", label: "Nutricionista", detail: "Plano alimentar semanal", icon: Utensils },
@@ -65,6 +66,7 @@ export default function BottomNav() {
     ? "/home"
     : primaryTabs.find(tab => location.pathname === tab.to)?.to;
   if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
+  if (location.pathname === "/reels") return null;
   return <nav className="bottom-nav" aria-label="Navegação principal">{primaryTabs.map(({ to, label, icon: Icon }) =>
     <Link key={to} to={to} className={`bottom-nav-item ${active === to ? "active" : ""}`} aria-current={active === to ? "page" : undefined}>
       <Icon size={21} strokeWidth={active === to ? 2.5 : 1.8} /><span>{label}</span>

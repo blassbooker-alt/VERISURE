@@ -1,6 +1,6 @@
 const GOALS = new Set(["emagrecimento", "forca", "cardio", "mobilidade", "alimentacao", "bem-estar", "comunidade"]);
 const INTERESTS = new Set(["feed", "food", "shop", "treinos", "pass"]);
-const ACCOUNT_KINDS = new Set(["cliente", "personal", "nutricionista", "academia"]);
+const ACCOUNT_KINDS = new Set(["cliente", "personal", "nutricionista", "academia", "marca"]);
 const USERNAME_PATTERN = /^[a-z0-9._]{3,30}$/;
 
 function validBirthDate(value) {
@@ -58,6 +58,16 @@ export function validateOnboarding(fields, today = new Date()) {
 export function isDemoUser(userId) {
   if (!userId || typeof userId !== "string") return false;
   return userId === "demo-user-fortalfy" || userId.startsWith("demo-") || userId.startsWith("local-");
+}
+
+export function isUsernameAvailabilityFunctionMissing(error) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
+  return (error?.code === "PGRST202" || error?.code === "42883")
+    && /is_fortalfy_username_available/i.test(message);
+}
+
+export function isExistingEmailSignup(data) {
+  return Boolean(!data?.session && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
 }
 
 export async function loadUserPreferences(client, userId) {

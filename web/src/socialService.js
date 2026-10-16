@@ -1,6 +1,5 @@
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
-const GLOBAL_PROFILE_VERIFICATION_BADGE_ENABLED = true;
 
 export function isDemoUser(userId) {
   if (!userId || typeof userId !== "string") return false;
@@ -30,7 +29,7 @@ export function mapProfile(row) {
     avatar: row.avatar_path || "",
     cover: row.cover_path || "",
     kind: row.kind || "cliente",
-    verified: GLOBAL_PROFILE_VERIFICATION_BADGE_ENABLED || Boolean(row.verified_at || row.partner_approved_at),
+    verified: Boolean(row.verified_at || row.partner_approved_at),
     partnerApproved: Boolean(row.partner_approved_at),
     isPrivate: Boolean(row.is_private),
   };
@@ -176,9 +175,9 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
 
   const mediaRelation = mediaType ? "post_media!inner" : "post_media";
   let query = client.from("posts").select(`
-    id,author_id,body,visibility,shared_post_id,published_at,
+    id,author_id,body,visibility,shared_post_id,is_reel,published_at,
     author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
-    ${mediaRelation}(id,storage_path,media_type,sort_order),
+    ${mediaRelation}(id,storage_path,media_type,sort_order,reel_validated),
     likes:post_likes(count),
     comments:post_comments(count)
   `, { count: "exact" })
@@ -188,6 +187,7 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
   if (followedIds) query = query.in("author_id", followedIds);
   if (authorId) query = query.eq("author_id", authorId);
   if (mediaType) query = query.eq("post_media.media_type", mediaType);
+  if (mediaType === "video") query = query.eq("is_reel", true).eq("post_media.reel_validated", true);
 
   const { data, error, count } = await query;
   if (error) throw error;
@@ -446,22 +446,77 @@ export async function loadComments(client, userId, postId, { offset = 0, limit =
   return { comments, hasMore: count == null ? rows.length === limit : offset + rows.length < count };
 }
 
-export async function publishPost(client, userId, { body, files = [], visibility = "public" }) {
+export async function publishPost(client, userId, {
+  body, files = [], visibility = "public", isReel = false, postId: requestedPostId = "",
+}) {
   requireRealUser(userId);
   if (!client) throw new Error("A conexão com o Supabase não está configurada.");
+  if (isReel && (files.length !== 1 || !["video/mp4", "video/webm"].includes(files[0]?.type))) {
+    throw new Error("O FortalReels aceita um único vídeo MP4 ou WebM por publicação.");
+  }
   const uploaded = [];
-  const postId = crypto.randomUUID();
+  const postId = isReel ? requestedPostId || crypto.randomUUID() : crypto.randomUUID();
+  if (isReel && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(postId)) {
+    throw new Error("Não foi possível iniciar esta publicação do FortalReels.");
+  }
+  const publishReel = async storagePath => {
+    const { data, error } = await client.functions.invoke("validate-fortalreel-media", {
+      body: {
+        storagePath,
+        postId,
+        caption: body.trim(),
+        visibility,
+      },
+    });
+    if (error) {
+      const response = error.context;
+      if (response && typeof response.json === "function") {
+        let payload;
+        try {
+          payload = await response.json();
+        } catch { /* The original function error remains available. */ }
+        if (typeof payload?.error === "string" && payload.error) throw new Error(payload.error);
+      }
+      throw error;
+    }
+    if (!data?.valid || data.postId !== postId || data.storagePath !== storagePath) {
+      throw new Error("O servidor não confirmou a publicação vertical do FortalReels.");
+    }
+    return { id: data.postId };
+  };
   let postCreated = false;
   try {
     for (const [index, file] of files.entries()) {
-      const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || (file.type === "video/mp4" ? "mp4" : "webp");
+      const extension = file.type.startsWith("video/")
+        ? file.type === "video/mp4" ? "mp4" : "webm"
+        : file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "webp";
       const path = `${userId}/posts/${postId}/${String(index).padStart(2, "0")}.${extension}`;
       const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, file, {
         contentType: file.type,
         upsert: false,
       });
-      if (uploadError) throw uploadError;
-      uploaded.push({ post_id: postId, storage_path: path, media_type: file.type.startsWith("video/") ? "video" : "image", sort_order: index });
+      if (uploadError) {
+        if (isReel) {
+          try {
+            return await publishReel(path);
+          } catch (publishError) {
+            const { error: cleanupError } = await client.storage.from(MEDIA_BUCKET).remove([path]);
+            if (cleanupError) console.error("Não foi possível limpar o upload pendente do FortalReels.", cleanupError);
+            throw publishError;
+          }
+        }
+        throw uploadError;
+      }
+      const mediaType = file.type.startsWith("video/") ? "video" : "image";
+      const uploadedMedia = {
+        post_id: postId,
+        storage_path: path,
+        media_type: mediaType,
+        sort_order: index,
+        reel_validated: false,
+      };
+      uploaded.push(uploadedMedia);
+      if (isReel) return await publishReel(path);
     }
     const { error: postError } = await client.from("posts").insert({
       id: postId,
@@ -469,6 +524,7 @@ export async function publishPost(client, userId, { body, files = [], visibility
       body: body.trim(),
       visibility,
       media_path: uploaded[0]?.storage_path || null,
+      is_reel: isReel,
     });
     if (postError) throw postError;
     postCreated = true;
@@ -539,6 +595,18 @@ export async function deletePost(client, postId) {
   const { data: media, error: mediaError } = await client.from("post_media")
     .select("storage_path").eq("post_id", postId);
   if (mediaError) throw mediaError;
+  const { data: post, error: postLookupError } = await client.from("posts")
+    .select("is_reel").eq("id", postId).maybeSingle();
+  if (postLookupError) throw postLookupError;
+  if (post?.is_reel) {
+    const { error } = await client.from("posts").delete().eq("id", postId);
+    if (error) throw error;
+    if (media?.length) {
+      const { error: cleanupError } = await client.storage.from(MEDIA_BUCKET).remove(media.map(item => item.storage_path));
+      if (cleanupError) throw cleanupError;
+    }
+    return;
+  }
   if (media?.length) {
     const { error } = await client.storage.from(MEDIA_BUCKET).remove(media.map(item => item.storage_path));
     if (error) throw error;

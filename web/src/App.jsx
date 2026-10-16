@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
-  Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Camera,
+  Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
   Bell, Bookmark, Check, ChevronDown, ChevronRight, CircleAlert,
-  CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Lock, MapPin, MessageCircle,
+  CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Info, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
 } from "lucide-react";
@@ -120,14 +120,14 @@ function MobileHeader({ location = false, action }) {
   </header>;
 }
 
-function Screen({ children, title, subtitle, location = false, className = "", action }) {
-  return <div className="app-screen">
-    <MobileHeader location={location} action={action} />
+function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false }) {
+  return <div className={`app-screen${immersive ? " immersive-screen" : ""}`}>
+    {!immersive && <MobileHeader location={location} action={action} />}
     <main className={`screen-content ${className}`}>
-      {title && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
+      {title && !immersive && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
       {children}
     </main>
-    <BottomNav />
+    {!immersive && <BottomNav />}
   </div>;
 }
 
@@ -231,6 +231,8 @@ function FoodScreen({ client, configured, session }) {
   const [error, setError] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [sort, setSort] = useState("recommended");
   const [menu, setMenu] = useState(null);
   useEffect(() => {
     let active = true;
@@ -256,26 +258,69 @@ function FoodScreen({ client, configured, session }) {
     return () => { active = false; };
   }, [client, configured, session?.user?.id]);
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
-  const visible = items.filter(item => `${item.name} ${item.description} ${item.restaurant.name}`.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
+  const filters = [
+    { id: "all", label: "Todos" },
+    { id: "protein", label: "Com proteína declarada", visible: items.some(item => item.nutrition?.protein_g != null) },
+    { id: "no-added-sugar", label: "Sem açúcar adicionado declarado", visible: items.some(item => item.nutrition?.sugars_added_g === 0) },
+    { id: "ingredients", label: "Ingredientes informados", visible: items.some(item => item.ingredients.length > 0) },
+    { id: "nutrition", label: "Com tabela nutricional", visible: items.some(item => item.nutrition) },
+  ].filter(filter => filter.id === "all" || filter.visible);
+  const matchingItems = items.filter(item => {
+    const matchesSearch = `${item.name} ${item.description} ${item.restaurant.name} ${item.ingredients.join(" ")}`
+      .toLocaleLowerCase("pt-BR").includes(normalizedSearch);
+    if (!matchesSearch) return false;
+    if (activeFilter === "protein") return item.nutrition?.protein_g != null;
+    if (activeFilter === "no-added-sugar") return item.nutrition?.sugars_added_g === 0;
+    if (activeFilter === "ingredients") return item.ingredients.length > 0;
+    if (activeFilter === "nutrition") return Boolean(item.nutrition);
+    return true;
+  });
+  const visible = [...matchingItems].sort((left, right) => {
+    if (sort === "price-ascending") return left.price - right.price;
+    if (sort === "protein-descending") return (right.nutrition?.protein_g ?? -1) - (left.nutrition?.protein_g ?? -1);
+    return 0;
+  });
   const formatPrice = price => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
+  const formatNutrient = (value, unit) => value == null ? "Não informado" : `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(value)} ${unit}`;
+  const restaurantsCount = new Set(items.map(item => item.restaurant.id)).size;
+  const nutritionLabels = [
+    ["Energia", "energy_kcal", "kcal"],
+    ["Proteínas", "protein_g", "g"],
+    ["Carboidratos", "carbohydrates_g", "g"],
+    ["Açúcares totais", "sugars_total_g", "g"],
+    ["Açúcares adicionados", "sugars_added_g", "g"],
+    ["Gorduras totais", "fat_total_g", "g"],
+    ["Gorduras saturadas", "fat_saturated_g", "g"],
+    ["Gorduras trans", "fat_trans_g", "g"],
+    ["Fibras", "fiber_g", "g"],
+    ["Sódio", "sodium_mg", "mg"],
+    ["Sal", "salt_g", "g"],
+  ];
   return <Screen title="FortalFood" subtitle="CARDÁPIOS DOS RESTAURANTES" className="food-screen">
-    <section className="food-promo"><img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">FORTALFOOD</span><h2>Cardápios publicados por restaurantes.</h2><p>Consulte os itens e valores cadastrados pelos parceiros.</p></div></section>
-    <label className="search-field"><Search size={19} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar restaurantes e itens" aria-label="Buscar restaurantes e itens" /><button aria-label="Limpar busca" onClick={() => setSearch("")}>{search && <X size={17} />}</button></label>
-    <SectionTitle title="Itens disponíveis" />
+    <section className="food-promo"><img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" aria-hidden="true" /><div className="food-promo-copy"><span className="eyebrow">FORTALFOOD · COMIDA DE VERDADE</span><h2>Seu ritmo também se alimenta.</h2><p>Encontre pratos fitness de restaurantes parceiros e consulte composição e informações declaradas.</p><button type="button" className="food-promo-cta" onClick={() => document.getElementById("food-menu")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Explorar cardápios <ArrowRight size={15} /></button></div><div className="food-promo-mark" aria-hidden="true"><Utensils size={40} /></div></section>
+    <div className="food-marketplace-intro"><div><span className="eyebrow">ESCOLHAS PARA SUA ROTINA</span><h2>Comer bem, do seu jeito.</h2><p>Pratos dos restaurantes parceiros Fortalfy.</p></div><div className="food-marketplace-count"><strong>{loading || needsLogin || error ? "—" : items.length}</strong><span>pratos disponíveis</span><small>{loading ? "Carregando parceiros" : needsLogin ? "Entre para consultar o cardápio" : error ? "Não foi possível consultar agora" : `${restaurantsCount} ${restaurantsCount === 1 ? "restaurante" : "restaurantes"} parceiros`}</small></div></div>
+    <label className="search-field food-search-field"><Search size={19} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Busque um prato, ingrediente ou restaurante" aria-label="Buscar pratos, ingredientes ou restaurantes" /><button type="button" aria-label="Limpar busca" onClick={() => setSearch("")}>{search && <X size={17} />}</button></label>
+    <div className="food-discovery-controls"><div className="food-filter-row" role="group" aria-label="Filtrar pratos">{filters.map(filter => <button type="button" key={filter.id} className={`food-filter-chip${activeFilter === filter.id ? " active" : ""}`} aria-pressed={activeFilter === filter.id} onClick={() => setActiveFilter(filter.id)}>{filter.label}</button>)}</div><label className="food-sort-control">Ordenar por<select aria-label="Ordenar pratos" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">Recomendados</option><option value="price-ascending">Menor preço</option>{items.some(item => item.nutrition?.protein_g != null) && <option value="protein-descending">Mais proteína declarada</option>}</select></label></div>
+    <section className="food-data-explainer"><Info size={17} /><p><strong>Transparência no prato:</strong> ingredientes, açúcares, sódio, sal e gorduras aparecem quando informados pelo restaurante. Açúcar total e adicionado são dados distintos; óleos aparecem na lista de ingredientes quando declarados.</p></section>
+    <div className="food-menu-heading" id="food-menu"><div><span className="eyebrow">CARDÁPIO DE PARCEIROS</span><h2>Pratos para descobrir {(loading || needsLogin || error) ? "" : <span>{visible.length}</span>}</h2></div></div>
     {loading && <p className="food-status" role="status">Carregando cardápios…</p>}
     {needsLogin && <div className="empty-state"><Lock size={24} /><h3>Entre para acessar os cardápios</h3><p>Os cardápios são carregados da plataforma e exigem uma conta autenticada.</p><Link className="button primary" to="/feed">Entrar ou criar conta <ArrowRight size={16} /></Link></div>}
     {error && <div className="social-inline-error" role="alert">{error}</div>}
     {!loading && !error && !needsLogin && <div className="food-card-list">{visible.map(item => <article className="food-card" key={item.id}>
-      <div className="food-card-image">{item.image ? <img className="food-item-image" src={item.image} alt={item.name} loading="lazy" /> : <div className="food-item-placeholder" aria-label="Sem imagem cadastrada"><Utensils size={28} /></div>}<span>DISPONÍVEL</span></div>
-      <div className="food-card-body"><div className="food-card-heading"><div><h3>{item.name}</h3><span>{item.restaurant.name}{item.restaurant.city ? ` · ${item.restaurant.city}` : ""}</span></div></div>
+      <button type="button" className="food-card-image" onClick={() => setMenu(item)} aria-label={`Ver detalhes de ${item.name}`}>{item.image ? <img className="food-item-image" src={item.image} alt="" loading="lazy" /> : <div className="food-item-placeholder" aria-hidden="true"><Utensils size={28} /></div>}<span className="food-card-image-label">CARDÁPIO PARCEIRO</span>{item.nutrition?.status === "verified" && <span className="food-verified-pill"><BadgeCheck size={13} /> Nutrição verificada</span>}</button>
+      <div className="food-card-body"><div className="food-card-heading"><div><span className="food-restaurant-label">{item.restaurant.name}{item.restaurant.city ? ` · ${item.restaurant.city}` : ""}</span><h3>{item.name}</h3></div></div>
         <p className="food-item-description">{item.description}</p>
-        {item.portionLabel && <p>Porção: <strong>{item.portionLabel}</strong></p>}
-        <div className="food-card-footer"><strong>{formatPrice(item.price)}</strong><div><button className="button subtle small-button" onClick={() => setMenu(item)}>Detalhes</button><Link className="button primary small-button" to={`/profile/${item.restaurant.id}`}>Restaurante <ArrowRight size={15} /></Link></div></div>
+        <div className="food-card-facts">{item.portionLabel && <span>{item.portionLabel}</span>}{item.nutrition?.energy_kcal != null && <span>{formatNutrient(item.nutrition.energy_kcal, "kcal")}</span>}{item.nutrition?.protein_g != null && <span>{formatNutrient(item.nutrition.protein_g, "proteína")}</span>}</div>
+        <div className="food-card-footer"><div><span>Preço do parceiro</span><strong>{formatPrice(item.price)}</strong></div><button type="button" className="button primary small-button" onClick={() => setMenu(item)}>Ver prato <ArrowRight size={15} /></button></div>
       </div>
     </article>)}
-    {!visible.length && <div className="empty-state"><Search size={24} /><h3>{items.length ? "Nenhum item encontrado" : "Nenhum cardápio disponível"}</h3><p>{items.length ? "Tente buscar por outro restaurante ou item." : "Os restaurantes aprovados ainda não publicaram itens disponíveis."}</p>{search && <button className="button subtle" onClick={() => setSearch("")}>Limpar busca</button>}</div>}
+    {!visible.length && <div className="empty-state"><Search size={24} /><h3>{items.length ? "Nenhum prato encontrado" : "Nenhum cardápio disponível"}</h3><p>{items.length ? "Tente outro termo ou remova o filtro selecionado." : "Os restaurantes aprovados ainda não publicaram pratos disponíveis."}</p>{(search || activeFilter !== "all") && <button className="button subtle" onClick={() => { setSearch(""); setActiveFilter("all"); }}>Limpar busca e filtros</button>}</div>}
     </div>}
-    {menu && <Modal title={menu.name} onClose={() => setMenu(null)}><p>{menu.description}</p><p><strong>{formatPrice(menu.price)}</strong> · {menu.restaurant.name}</p>{menu.portionLabel && <p>Porção: {menu.portionLabel}</p>}{menu.allergens.length > 0 && <p>Alergênicos informados pelo restaurante: {menu.allergens.join(", ")}</p>}<p className="food-order-disclosure">A solicitação e o pagamento de pedidos ainda não estão disponíveis no aplicativo.</p><Link className="button primary wide-button" to={`/profile/${menu.restaurant.id}`} onClick={() => setMenu(null)}>Ver perfil do restaurante <ArrowRight size={16} /></Link></Modal>}
+    {menu && <Modal title={menu.name} onClose={() => setMenu(null)}><div className="food-detail-layout">{menu.image && <img className="food-detail-image" src={menu.image} alt={menu.name} />}<div className="food-detail-restaurant"><span className="eyebrow">RESTAURANTE PARCEIRO</span><strong>{menu.restaurant.name}</strong>{menu.restaurant.city && <span>{menu.restaurant.city}</span>}</div><p className="food-detail-description">{menu.description}</p><div className="food-detail-price"><span>Preço informado pelo restaurante</span><strong>{formatPrice(menu.price)}</strong>{menu.portionLabel && <small>Porção: {menu.portionLabel}</small>}</div>
+      <section className="food-detail-section"><h3>Ingredientes e preparo</h3>{menu.ingredients.length > 0 ? <><ul className="food-ingredient-list">{menu.ingredients.map((ingredient, index) => <li key={`${ingredient}-${index}`}>{ingredient}</li>)}</ul><p className="food-nutrition-context">Óleos e gorduras usados no preparo aparecem aqui quando declarados pelo restaurante.</p></> : <p className="food-nutrition-context">Ingredientes e óleos usados no preparo ainda não foram informados. Consulte o restaurante antes de escolher.</p>}</section>
+      {menu.allergens.length > 0 && <section className="food-allergen-notice"><strong>Alergênicos declarados pelo restaurante</strong><span>{menu.allergens.join(", ")}</span></section>}
+      {menu.nutrition ? <section className="food-detail-section"><div className="food-nutrition-heading"><h3>Informação nutricional</h3>{menu.nutrition.status === "verified" && <span><BadgeCheck size={14} /> Verificada</span>}</div><p className="food-nutrition-context">Valores por porção quando informados pelo parceiro. Açúcares totais e adicionados, sódio e sal são dados separados. {menu.nutrition.status === "verified" ? "Dados verificados pela Fortalfy." : "Dados fornecidos pelo restaurante e ainda não verificados pela Fortalfy."}</p><div className="food-nutrition-grid">{nutritionLabels.filter(([, key]) => menu.nutrition[key] != null).map(([label, key, unit]) => <div key={key}><span>{label}</span><strong>{formatNutrient(menu.nutrition[key], unit)}</strong></div>)}</div>{menu.nutrition.sourceName && <small className="food-nutrition-source">Fonte: {menu.nutrition.sourceName}{menu.nutrition.sourceDate ? ` · ${menu.nutrition.sourceDate}` : ""}</small>}</section> : <p className="food-order-disclosure">A tabela nutricional não foi informada. Consulte o restaurante sobre açúcar, sal, sódio e gorduras.</p>}
+      <p className="food-order-disclosure">O app ainda não recebe pedidos nem processa pagamentos. Confirme disponibilidade, entrega e composição diretamente com o restaurante.</p><Link className="button primary wide-button" to={`/profile/${menu.restaurant.id}`} onClick={() => setMenu(null)}>Ver perfil do restaurante <ArrowRight size={16} /></Link></div></Modal>}
   </Screen>;
 }
 
@@ -1249,12 +1294,13 @@ function AppContent() {
   }, [shopCart]);
   const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/shop", "/cart", "/studio"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/");
-  return <div className={mobile ? "mobile-app" : "professional-root"}>
+  const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id && socialProfile);
+  return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} />} />
-      <Route path="/feed" element={<Screen title="Comunidade" subtitle="BEM-ESTAR EM CONEXÃO" className="feed-screen"><section className="community-promo"><img src={fortalfyAsset("publicidade", "04-feed-comunidade.jpg")} alt="" aria-hidden="true" /><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2>Seu bem-estar também se constrói junto.</h2><p>Conteúdo real aparece quando publicado por pessoas da comunidade.</p></div></section>{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
-      <Route path="/reels" element={<Screen title="Reels" subtitle="VÍDEOS DA COMUNIDADE" className="feed-screen reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
+      <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />

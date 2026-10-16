@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState,
   loadMutualFollowState, loadProfileConnections, mapProfile, recordReelView,
-  prepareProfileImage, respondFollowRequest, startConversation,
+  prepareProfileImage, publishPost, respondFollowRequest, startConversation,
+  setFollow,
 } from "../src/socialService.js";
 
 function query(result, onSelect = () => {}) {
@@ -17,7 +18,7 @@ function query(result, onSelect = () => {}) {
   };
 }
 
-test("profile mapping enables the global verification badge without changing approval status", () => {
+test("profile mapping only shows verification for actually verified or approved profiles", () => {
   assert.deepEqual(mapProfile({
     id: "user-1",
     display_name: "Ana",
@@ -40,7 +41,7 @@ test("profile mapping enables the global verification badge without changing app
     avatar: "",
     cover: "",
     kind: "cliente",
-    verified: true,
+    verified: false,
     partnerApproved: false,
     isPrivate: true,
   });
@@ -86,6 +87,58 @@ test("follow state uses the privacy-aware aggregate RPC and normalizes counts", 
     name: "get_fortalfy_profile_social_stats",
     params: { p_profile_id: "profile-1" },
   }]);
+});
+
+test("following a Reel author persists public follows and private follow requests", async () => {
+  const calls = [];
+  const client = {
+    from(table) {
+      return {
+        upsert: async (row, options) => {
+          calls.push({ table, operation: "upsert", row, options });
+          return { error: null };
+        },
+        select: () => ({
+          eq: (column, value) => ({
+            eq: (nextColumn, nextValue) => ({
+              maybeSingle: async () => {
+                calls.push({ table, operation: "lookup", column, value, nextColumn, nextValue });
+                return { data: null, error: null };
+              },
+            }),
+          }),
+        }),
+        insert: async row => {
+          calls.push({ table, operation: "insert", row });
+          return { error: null };
+        },
+      };
+    },
+  };
+
+  assert.equal(await setFollow(client, "viewer-1", "creator-1", true), "following");
+  assert.equal(await setFollow(client, "viewer-1", "private-creator-1", true, true), "requested");
+  assert.deepEqual(calls, [
+    {
+      table: "profile_follows",
+      operation: "upsert",
+      row: { follower_id: "viewer-1", followed_id: "creator-1" },
+      options: { onConflict: "follower_id,followed_id", ignoreDuplicates: true },
+    },
+    {
+      table: "follow_requests",
+      operation: "lookup",
+      column: "follower_id",
+      value: "viewer-1",
+      nextColumn: "followed_id",
+      nextValue: "private-creator-1",
+    },
+    {
+      table: "follow_requests",
+      operation: "insert",
+      row: { follower_id: "viewer-1", followed_id: "private-creator-1", status: "pending" },
+    },
+  ]);
 });
 
 test("profile connection lists use the access-controlled paginated RPC", async () => {
@@ -139,6 +192,40 @@ test("Reel view and follow-request responses use server-validated RPCs", async (
     { name: "record_fortalfy_reel_view", params: { p_post_id: "reel-1" } },
     { name: "respond_fortalfy_follow_request", params: { p_follower_id: "follower-1", p_accept: true } },
   ]);
+});
+
+test("Reel publication delegates validation and atomic metadata writes to the server", async () => {
+  const calls = [];
+  const file = { name: "vertical.webm", type: "video/webm", size: 1024 };
+  const postId = "ad1f2df8-5a5d-4fca-aeb8-9cb03f72c137";
+  const client = {
+    storage: { from: bucket => ({
+      upload: async (path, uploadedFile) => {
+        calls.push({ operation: "upload", bucket, path, file: uploadedFile });
+        return { error: null };
+      },
+      remove: async paths => ({ error: null, paths }),
+    }) },
+    functions: { invoke: async (name, options) => {
+      calls.push({ operation: "validate", name, options });
+      return { data: { valid: true, postId, storagePath: options.body.storagePath }, error: null };
+    } },
+  };
+  assert.deepEqual(await publishPost(client, "owner-1", {
+    body: "Treino vertical",
+    files: [file],
+    isReel: true,
+    postId,
+  }), { id: postId });
+  assert.deepEqual(calls.map(call => call.operation), ["upload", "validate"]);
+  assert.equal(calls[0].path, `owner-1/posts/${postId}/00.webm`);
+  assert.equal(calls[1].name, "validate-fortalreel-media");
+  assert.deepEqual(calls[1].options.body, {
+    storagePath: calls[0].path,
+    postId,
+    caption: "Treino vertical",
+    visibility: "public",
+  });
 });
 
 test("profile images preserve valid animated GIFs and reject excessive source sizes", async () => {

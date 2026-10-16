@@ -35,12 +35,12 @@ export const shopProducts = catalog.map(([id, file, name, category, price]) => (
   imageAlt: name,
   category,
   price,
-  description: "Produto do catálogo Fortalfy.",
-  detail: "Consulte as características, a disponibilidade e o prazo de entrega com a loja antes da compra.",
-  specs: [`Categoria: ${category}`, "Disponibilidade a confirmar com a loja"],
+  description: "Item do catálogo de referência Fortalfy. Não representa uma oferta ativa de vendedor.",
+  detail: "Este catálogo não está associado a lojas nem confirma preço, disponibilidade ou prazo de entrega.",
+  specs: [`Categoria: ${category}`, "Preço, vendedor e disponibilidade não confirmados"],
   shades: [],
   sizes: [],
-  tag: "CATÁLOGO",
+  tag: "REFERÊNCIA",
 }));
 
 const suppliedCatalog = [
@@ -71,7 +71,7 @@ const suppliedCatalog = [
   ["FS-CORDA-DIG", "Corda de Pular Digital com Contador", "Eletrônicos · Cardio", 59.9, 39, "FS-CORDA-DIG.jpg", "Modelo", ["Único"]],
 ];
 
-const suppliedProducts = suppliedCatalog.map(([sku, name, category, price, stock, image, optionLabel, values]) => ({
+const suppliedProducts = suppliedCatalog.map(([sku, name, category, price, , image, variationName, variationValues]) => ({
   id: sku,
   sku,
   name,
@@ -79,17 +79,38 @@ const suppliedProducts = suppliedCatalog.map(([sku, name, category, price, stock
   imageAlt: name,
   category,
   price,
-  stock,
-  description: "Produto do catálogo Fortalshop enviado para a loja.",
-  detail: `Estoque informado no catálogo: ${stock} unidades. Confirme disponibilidade e prazo com a loja antes da compra.`,
-  specs: [`SKU: ${sku}`, `Estoque informado: ${stock} unidades`],
-  options: [{ label: optionLabel, values }],
+  description: "Item do catálogo de referência Fortalfy. Não representa uma oferta ativa de vendedor.",
+  detail: "Produto do catálogo Fortalfy. Preço, disponibilidade e entrega ainda precisam ser confirmados pela loja antes de qualquer pedido.",
+  specs: [`Código do produto: ${sku}`, `${variationName}: ${variationValues.join(", ")}`],
+  variation: { name: variationName, values: variationValues },
   shades: [],
   sizes: [],
-  tag: "FORTALSHOP",
+  tag: "REFERÊNCIA",
 }));
 
 shopProducts.push(...suppliedProducts);
+
+export function getShopDepartment(product) {
+  return product.category.split(/[·>]/, 1)[0].trim();
+}
+
+function normalizeShopSearchText(value) {
+  return value.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+export function filterShopProducts(products, { search = "", category = "Todas", sort = "recommended" } = {}) {
+  const searchTerms = normalizeShopSearchText(search).trim().split(/\s+/).filter(Boolean);
+  const filtered = products.filter(product => {
+    const matchesCategory = category === "Todas" || getShopDepartment(product) === category;
+    const searchableText = normalizeShopSearchText(`${product.name} ${product.category} ${product.sku || ""}`);
+    return matchesCategory && searchTerms.every(term => searchableText.includes(term));
+  });
+
+  if (sort === "price-asc") return filtered.sort((first, second) => first.price - second.price);
+  if (sort === "price-desc") return filtered.sort((first, second) => second.price - first.price);
+  if (sort === "name") return filtered.sort((first, second) => first.name.localeCompare(second.name, "pt-BR"));
+  return filtered;
+}
 
 export const shopOffers = [
   { id: "supplements", title: "Suplementos", image: fortalfyAsset("produtos", "FS-WHEY-C900.jpg"), productId: "FS-WHEY-C900" },

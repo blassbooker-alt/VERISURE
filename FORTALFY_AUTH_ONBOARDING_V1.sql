@@ -64,8 +64,8 @@ begin
   username_value := lower(btrim(coalesce(metadata ->> 'username', '')));
   if username_value = '' then
     username_value := 'user_' || left(replace(new.id::text, '-', ''), 12);
-  elsif username_value !~ '^[a-z0-9_]{3,24}$' then
-    raise exception 'Username must contain 3-24 lowercase letters, numbers, or underscores';
+  elsif username_value !~ '^[a-z0-9._]{3,30}$' then
+    raise exception 'Username must contain 3-30 lowercase letters, numbers, dots, or underscores';
   end if;
 
   if coalesce(metadata ->> 'birth_date', '') <> '' then

@@ -315,7 +315,7 @@ create policy "approved partner listings are visible" on public.partner_listings
       select 1 from public.profiles p
       where p.id = profile_id
         and p.partner_approved_at is not null
-        and p.kind in ('personal', 'nutricionista', 'academia')
+        and p.kind in ('personal', 'nutricionista', 'academia', 'marca')
     )
   );
 drop policy if exists "partners manage own listing" on public.partner_listings;
@@ -324,7 +324,7 @@ create policy "partners manage own listing" on public.partner_listings
   using (auth.uid() = profile_id)
   with check (
     auth.uid() = profile_id
-    and exists (select 1 from public.profiles p where p.id = profile_id and p.kind in ('personal', 'nutricionista', 'academia'))
+    and exists (select 1 from public.profiles p where p.id = profile_id and p.kind in ('personal', 'nutricionista', 'academia', 'marca'))
   );
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
