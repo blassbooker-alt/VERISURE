@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, isFortalReelDurationAllowed, isFortalReelRatio,
+  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectMp4AudioTrack, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "../src/reelMedia.js";
 
 test("FortalReels accepts only vertical 9:16 dimensions within the metadata tolerance", () => {
@@ -25,6 +25,30 @@ test("FortalReels permits videos up to three minutes and rejects longer duration
 
 test("FortalReels keeps a 40 MB upload ceiling for processed files", () => {
   assert.equal(FORTALREEL_MAX_FILE_BYTES, 40 * 1024 * 1024);
+});
+
+function mp4Box(type, payload) {
+  const header = Buffer.alloc(8);
+  header.writeUInt32BE(header.length + payload.length);
+  header.write(type, 4, 4, "latin1");
+  return Buffer.concat([header, payload]);
+}
+
+function mp4Track(handler) {
+  const handlerData = Buffer.alloc(12);
+  handlerData.write(handler, 8, 4, "latin1");
+  return mp4Box("trak", mp4Box("mdia", mp4Box("hdlr", handlerData)));
+}
+
+test("FortalReels detects original MP4 audio tracks without treating silent video as audio", async () => {
+  const movie = mp4Box("moov", Buffer.concat([mp4Track("vide"), mp4Track("soun")]));
+  const silentMovie = mp4Box("moov", mp4Track("vide"));
+  const withAudio = new Blob([mp4Box("ftyp", Buffer.alloc(8)), movie], { type: "video/mp4" });
+  const withoutAudio = new Blob([mp4Box("ftyp", Buffer.alloc(8)), silentMovie], { type: "video/mp4" });
+  const unsupported = new Blob([movie], { type: "video/webm" });
+  assert.equal(await inspectMp4AudioTrack(withAudio), true);
+  assert.equal(await inspectMp4AudioTrack(withoutAudio), false);
+  assert.equal(await inspectMp4AudioTrack(unsupported), null);
 });
 
 test("9:16 crop preserves the source aspect without stretching portrait and landscape videos", () => {

@@ -2187,6 +2187,11 @@ img { display: block; max-width: 100%; }
 .reel-editor-controls input[type="range"] { width: 100%; accent-color: #338054; }
 .reel-editor-trim { display: grid; gap: 12px; padding: 13px; border: 1px solid #e4ece6; border-radius: 13px; background: #f8faf8; }
 .reel-editor-trim > strong { display: flex; align-items: center; gap: 6px; color: #2f6945; font-size: 11px; }
+.reel-soundtrack-toggle { display: flex; align-items: flex-start; gap: 9px; padding: 11px; border: 1px solid #d9ead8; border-radius: 12px; color: #294b37; background: #f4faf1; cursor: pointer; }
+.reel-soundtrack-toggle input { width: 16px; min-height: 16px; margin: 1px 0 0; accent-color: #338054; }
+.reel-soundtrack-toggle span { display: grid; gap: 4px; }
+.reel-soundtrack-toggle strong { font-size: 11px; }
+.reel-soundtrack-toggle small { color: #718076; font-size: 10px; line-height: 1.4; }
 .reel-editor-note { padding: 10px; border-radius: 10px; background: #f1f7f1; }
 .reel-editor-error { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; padding: 10px; border-radius: 10px; color: #8b3434; background: #fff0f0; font-size: 12px; }
 .reel-editor-dialog > footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }

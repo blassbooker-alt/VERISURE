@@ -965,7 +965,7 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   </div>;
 }
 
-function CreatePost({ client, userId, onPublished, notify, videosOnly = false }) {
+function CreatePost({ client, userId, onPublished, notify, videosOnly = false, soundtrackByDefault = false }) {
   const [body, setBody] = useState("");
   const [files, setFiles] = useState([]);
   const [visibility, setVisibility] = useState("public");
@@ -1066,7 +1066,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
       <button className="button primary small-button" type="submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />} {videosOnly ? "Publicar Reel" : "Publicar"}</button>
     </div>
   </form>
-  {videoEditorFile && <ReelVideoEditor file={videoEditorFile} onCancel={() => setVideoEditorFile(null)} onReady={async file => {
+  {videoEditorFile && <ReelVideoEditor file={videoEditorFile} soundtrackByDefault={soundtrackByDefault} onCancel={() => setVideoEditorFile(null)} onReady={async file => {
     const metadata = await inspectReelVideo(file);
     if (!isFortalReelRatio(metadata.width, metadata.height) || metadata.duration > FORTALREEL_MAX_DURATION_SECONDS) {
       throw new Error(`O vídeo final precisa estar no formato 9:16 e ter no máximo ${FORTALREEL_MAX_DURATION_SECONDS} segundos.`);
@@ -1744,7 +1744,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
       setComposerOpen(value => !value);
     }}><Video size={15} />{composerOpen ? "Fechar criação" : "Criar Reel"}</button></div>}
     <div className="social-feed-toolbar"><div className="social-filter-tabs">{filters.map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}</div><button className="social-refresh" onClick={refresh} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={15} /> : "Atualizar"}</button></div>
-    {(!reelMode || composerOpen) && <CreatePost client={client} userId={userId} onPublished={async () => { setComposerOpen(false); await refresh(); }} notify={notify} videosOnly={reelMode} />}
+    {(!reelMode || composerOpen) && <CreatePost client={client} userId={userId} onPublished={async () => { setComposerOpen(false); await refresh(); }} notify={notify} videosOnly={reelMode} soundtrackByDefault={reelMode && profile.username?.toLowerCase() === "fortalfy"} />}
     {!reelMode && feedArts.length > 0 && <section className="social-local-creations"><h3>Criações deste aparelho</h3><p>Essas peças ainda não foram publicadas para outras contas.</p><div>{feedArts.map(art => <article key={art.id}><img src={art.dataUrl} alt={`Criação local: ${art.title}`} /><span>SOMENTE NESTE APARELHO</span><strong>{art.title}</strong></article>)}</div></section>}
     {reelMode
       ? <section className="social-reels-list" ref={reelListRef} aria-label="Vídeos FortalReels" onScroll={event => {

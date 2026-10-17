@@ -4,6 +4,7 @@ export const FORTALREEL_WIDTH = 1080;
 export const FORTALREEL_HEIGHT = 1920;
 export const FORTALREEL_RATIO = FORTALREEL_WIDTH / FORTALREEL_HEIGHT;
 export const FORTALREEL_RATIO_TOLERANCE = 0.0025;
+const FORTALREEL_SOUNDTRACK_URL = new URL("./assets/fortalfy-reel-instrumental.wav", import.meta.url).href;
 
 export function isFortalReelDurationAllowed(duration) {
   return Number.isFinite(duration) && duration > 0 && duration <= FORTALREEL_MAX_DURATION_SECONDS;
@@ -26,6 +27,60 @@ export function calculateReelCrop(width, height, x = 0.5, y = 0.5) {
   const left = (width - cropWidth) * Math.max(0, Math.min(1, x));
   const top = (height - cropHeight) * Math.max(0, Math.min(1, y));
   return { left, top, width: cropWidth, height: cropHeight };
+}
+
+function readBoxes(view, start, end) {
+  const boxes = [];
+  for (let offset = start; offset + 8 <= end;) {
+    const size32 = view.getUint32(offset);
+    const type = String.fromCharCode(
+      view.getUint8(offset + 4), view.getUint8(offset + 5),
+      view.getUint8(offset + 6), view.getUint8(offset + 7),
+    );
+    const headerSize = size32 === 1 ? 16 : 8;
+    const size = size32 === 1 ? Number(view.getBigUint64(offset + 8)) : size32 || end - offset;
+    if (!Number.isSafeInteger(size) || size < headerSize || offset + size > end) break;
+    boxes.push({ type, start: offset + headerSize, end: offset + size });
+    offset += size;
+  }
+  return boxes;
+}
+
+function hasAudioTrackInMovie(movieBuffer) {
+  const view = new DataView(movieBuffer);
+  const tracks = readBoxes(view, 0, view.byteLength).filter(box => box.type === "trak");
+  return tracks.some(track => {
+    const media = readBoxes(view, track.start, track.end).find(box => box.type === "mdia");
+    const handler = media && readBoxes(view, media.start, media.end).find(box => box.type === "hdlr");
+    if (!handler || handler.start + 12 > handler.end) return false;
+    const type = String.fromCharCode(
+      view.getUint8(handler.start + 8), view.getUint8(handler.start + 9),
+      view.getUint8(handler.start + 10), view.getUint8(handler.start + 11),
+    );
+    return type === "soun";
+  });
+}
+
+export async function inspectMp4AudioTrack(file) {
+  if (!file || !["video/mp4", "video/quicktime"].includes(file.type)) return null;
+  for (let offset = 0; offset + 8 <= file.size;) {
+    const header = await file.slice(offset, offset + 16).arrayBuffer();
+    if (header.byteLength < 8) break;
+    const view = new DataView(header);
+    const size32 = view.getUint32(0);
+    const type = String.fromCharCode(view.getUint8(4), view.getUint8(5), view.getUint8(6), view.getUint8(7));
+    const headerSize = size32 === 1 ? 16 : 8;
+    const size = size32 === 1 ? Number(view.getBigUint64(8)) : size32 || file.size - offset;
+    if (!Number.isSafeInteger(size) || size < headerSize || offset + size > file.size) {
+      throw new Error("Não foi possível validar a faixa de áudio do vídeo MP4.");
+    }
+    if (type === "moov") {
+      const movie = await file.slice(offset + headerSize, offset + size).arrayBuffer();
+      return hasAudioTrackInMovie(movie);
+    }
+    offset += size;
+  }
+  throw new Error("O arquivo MP4 não contém os metadados necessários para validar o áudio.");
 }
 
 export async function inspectReelVideo(file, { allowOversize = false } = {}) {
@@ -75,6 +130,7 @@ export async function cropReelVideo(file, {
   y = 0.5,
   start = 0,
   end,
+  addSoundtrack = false,
   onProgress = () => {},
 } = {}) {
   const duration = Number.isFinite(end) ? end - start : NaN;
@@ -94,6 +150,7 @@ export async function cropReelVideo(file, {
   video.playsInline = true;
   video.src = url;
   let audioContext;
+  let soundtrackSource;
   let stream;
   let animationFrame = 0;
   let recorder;
@@ -120,6 +177,19 @@ export async function cropReelVideo(file, {
       audioSource.connect(audioContext.destination);
       audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
       await audioContext.resume();
+      if (addSoundtrack) {
+        const response = await fetch(FORTALREEL_SOUNDTRACK_URL);
+        if (!response.ok) throw new Error("Não foi possível carregar a trilha instrumental Fortalfy.");
+        const soundtrackBuffer = await audioContext.decodeAudioData(await response.arrayBuffer());
+        soundtrackSource = audioContext.createBufferSource();
+        soundtrackSource.buffer = soundtrackBuffer;
+        soundtrackSource.loop = true;
+        const soundtrackGain = audioContext.createGain();
+        soundtrackGain.gain.value = 0.55;
+        soundtrackSource.connect(soundtrackGain);
+        soundtrackGain.connect(audioDestination);
+        soundtrackSource.start();
+      }
     } catch (error) {
       stream.getTracks().forEach(track => track.stop());
       throw new Error(`Não foi possível preparar o áudio deste vídeo: ${error.message}`);
@@ -186,6 +256,13 @@ export async function cropReelVideo(file, {
     if (recorder && recorder.state !== "inactive") recorder.stop();
     cancelAnimationFrame(animationFrame);
     stream?.getTracks().forEach(track => track.stop());
+    if (soundtrackSource) {
+      try {
+        soundtrackSource.stop();
+      } catch (error) {
+        if (error.name !== "InvalidStateError") throw error;
+      }
+    }
     video.pause();
     video.removeAttribute("src");
     video.load();

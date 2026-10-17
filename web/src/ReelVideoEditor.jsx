@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Check, CircleAlert, LoaderCircle, RotateCw, X } from "lucide-react";
 import {
-  cropReelVideo, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio,
+  cropReelVideo, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectMp4AudioTrack, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "./reelMedia.js";
 
 const roundTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 
-export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
+export function ReelVideoEditor({ file, onCancel, onReady, notify, soundtrackByDefault = false }) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [metadata, setMetadata] = useState(null);
+  const [sourceHasAudio, setSourceHasAudio] = useState(undefined);
+  const [addSoundtrack, setAddSoundtrack] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -18,13 +20,19 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
     let active = true;
     setPreviewUrl(url);
     setMetadata(null);
+    setSourceHasAudio(undefined);
     setError("");
-    inspectReelVideo(file, { allowOversize: true }).then(data => {
+    Promise.all([
+      inspectReelVideo(file, { allowOversize: true }),
+      inspectMp4AudioTrack(file),
+    ]).then(([data, hasAudio]) => {
       if (!active) return;
       setMetadata(data);
+      setSourceHasAudio(hasAudio);
+      setAddSoundtrack(hasAudio === false && soundtrackByDefault);
     }).catch(failure => active && setError(failure.message));
     return () => { active = false; URL.revokeObjectURL(url); };
-  }, [file]);
+  }, [file, soundtrackByDefault]);
 
   const prepare = async () => {
     if (!metadata || !isFortalReelDurationAllowed(metadata.duration)) {
@@ -34,15 +42,18 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
     setBusy(true);
     setError("");
     try {
+      const useSoundtrack = sourceHasAudio === false && addSoundtrack;
       const needsProcessing = !["video/mp4", "video/webm"].includes(file.type)
         || !isFortalReelRatio(metadata.width, metadata.height)
-        || file.size > FORTALREEL_MAX_FILE_BYTES;
+        || file.size > FORTALREEL_MAX_FILE_BYTES
+        || useSoundtrack;
       const prepared = needsProcessing
         ? await cropReelVideo(file, {
           width: metadata.width,
           height: metadata.height,
           start: 0,
           end: metadata.duration,
+          addSoundtrack: useSoundtrack,
           onProgress: setProgress,
         })
         : file;
@@ -68,11 +79,14 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
           <div className="reel-editor-controls">
             <p>{metadata.width} × {metadata.height} · duração completa {roundTime(metadata.duration)}{verticalSource ? " · formato vertical" : " · imagem integral preservada"}</p>
             {!isFortalReelDurationAllowed(metadata.duration) && <p className="reel-editor-error">O vídeo completo excede o limite de {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos e não será cortado.</p>}
-            <p className="reel-editor-note">O vídeo e o áudio originais serão preservados do início ao fim. A adaptação para 9:16 mantém toda a imagem, com fundo preenchido quando necessário. Arquivos grandes serão comprimidos para publicação.</p>
+            {sourceHasAudio === false && <label className="reel-soundtrack-toggle"><input type="checkbox" checked={addSoundtrack} onChange={event => setAddSoundtrack(event.target.checked)} /><span><strong>Adicionar trilha instrumental Fortalfy</strong><small>Trilha original sem letras; o vídeo completo será mantido.</small></span></label>}
+            {sourceHasAudio === true && <p className="reel-editor-note">Áudio original detectado e preservado do início ao fim.</p>}
+            {sourceHasAudio === null && <p className="reel-editor-note">O áudio original será preservado. Este formato não permite confirmar uma faixa de áudio para adicionar outra trilha automaticamente.</p>}
+            <p className="reel-editor-note">A adaptação para 9:16 mantém toda a imagem, com fundo preenchido quando necessário. Arquivos grandes serão comprimidos para publicação.</p>
           </div>
         </div>
         {busy && <div className="reel-editor-progress" role="status"><span style={{ width: `${Math.round(progress * 100)}%` }} />Preparando vídeo vertical…</div>}
-        <footer><button className="button subtle" onClick={onCancel} disabled={busy}>Cancelar</button><button className="button primary" onClick={prepare} disabled={busy || !metadata || !isFortalReelDurationAllowed(metadata.duration)}><Check size={16} />{busy ? "Processando…" : "Usar vídeo completo"}</button></footer>
+        <footer><button className="button subtle" onClick={onCancel} disabled={busy}>Cancelar</button><button className="button primary" onClick={prepare} disabled={busy || !metadata || sourceHasAudio === undefined || !isFortalReelDurationAllowed(metadata.duration)}><Check size={16} />{busy ? "Processando…" : "Usar vídeo completo"}</button></footer>
       </>}
     </section>
   </div>;
