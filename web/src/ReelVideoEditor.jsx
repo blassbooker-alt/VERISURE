@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Check, CircleAlert, LoaderCircle, RotateCw, Scissors, X } from "lucide-react";
 import {
-  calculateReelCrop, cropReelVideo, FORTALREEL_MAX_DURATION_SECONDS, inspectReelVideo, isFortalReelRatio,
+  calculateReelCrop, cropReelVideo, FORTALREEL_MAX_DURATION_SECONDS, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "./reelMedia.js";
 
 const roundTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -35,8 +35,8 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
   }, [file]);
 
   const prepare = async () => {
-    if (!metadata || end - start <= 0 || end - start > FORTALREEL_MAX_DURATION_SECONDS) {
-      setError("Selecione um trecho com duração entre 1 e 90 segundos.");
+    if (!metadata || !isFortalReelDurationAllowed(end - start)) {
+      setError(`Selecione um trecho com duração entre 1 e ${FORTALREEL_MAX_DURATION_SECONDS} segundos.`);
       return;
     }
     setBusy(true);
@@ -82,7 +82,7 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
               <label>Posição horizontal <input type="range" min="0" max="1" step="0.01" value={cropX} onChange={event => setCropX(Number(event.target.value))} /></label>
               <label>Posição vertical <input type="range" min="0" max="1" step="0.01" value={cropY} onChange={event => setCropY(Number(event.target.value))} /></label>
             </>}
-            <div className="reel-editor-trim"><strong><Scissors size={15} /> Trecho do vídeo · máximo 90 segundos</strong>
+            <div className="reel-editor-trim"><strong><Scissors size={15} /> Trecho do vídeo · máximo {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos</strong>
               <label>Início: {roundTime(start)}<input type="range" min="0" max={startLimit} step="0.1" value={start} onChange={event => setStart(Math.min(Number(event.target.value), end - 1))} /></label>
               <label>Fim: {roundTime(end)}<input type="range" min={Math.min(metadata.duration, start + 1)} max={metadata.duration} step="0.1" value={end} onChange={event => setEnd(Math.min(Number(event.target.value), start + FORTALREEL_MAX_DURATION_SECONDS))} /></label>
             </div>

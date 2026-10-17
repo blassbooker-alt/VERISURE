@@ -1,3 +1,4 @@
+import { createSecureId } from "./secureId.js";
 import { signMedia } from "./socialService.js";
 
 const STORE_KINDS = new Set(["marca", "academia"]);
@@ -55,7 +56,7 @@ export async function saveStoreProduct(client, profile, userId, fields, existing
   let imagePath = existing?.image_path || "";
   if (fields.imageFile) {
     const extension = fields.imageFile.type === "image/png" ? "png" : fields.imageFile.type === "image/webp" ? "webp" : "jpg";
-    imagePath = `${userId}/store-products/${crypto.randomUUID()}.${extension}`;
+    imagePath = `${userId}/store-products/${createSecureId()}.${extension}`;
     const { error: uploadError } = await client.storage.from("social-media").upload(imagePath, fields.imageFile, {
       contentType: fields.imageFile.type,
       upsert: false,

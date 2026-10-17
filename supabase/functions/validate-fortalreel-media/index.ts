@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const MAX_BYTES = 40 * 1024 * 1024;
-const MAX_DURATION_SECONDS = 90;
+const MAX_DURATION_SECONDS = 180;
 const REEL_RATIO = 9 / 16;
 const RATIO_TOLERANCE = 0.0025;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -242,7 +242,7 @@ function inspectVideo(bytes: Uint8Array, mimeType: string) {
     throw new Error("O vídeo processado não está no formato vertical 9:16.");
   }
   if (!Number.isFinite(metadata.durationSeconds) || metadata.durationSeconds <= 0 || metadata.durationSeconds > MAX_DURATION_SECONDS) {
-    throw new Error("O vídeo processado precisa ter duração entre 1 e 90 segundos.");
+    throw new Error(`O vídeo processado precisa ter duração entre 1 e ${MAX_DURATION_SECONDS} segundos.`);
   }
   return metadata;
 }

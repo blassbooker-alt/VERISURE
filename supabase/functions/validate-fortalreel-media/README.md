@@ -2,9 +2,11 @@
 
 Deploy `validate-fortalreel-media` with JWT verification enabled and apply
 `FORTALFY_REELS_9_16_SUPABASE.sql` after `FORTALFY_SOCIAL_V1_SUPABASE.sql` and
-`FORTALFY_SOCIAL_VIEWS_V1.sql`. The function downloads the uploaded object from
-the private `social-media` bucket and reads its container metadata on the server.
-Only vertical 9:16 videos up to 90 seconds are sent to the `publish_fortalreel`
+`FORTALFY_SOCIAL_VIEWS_V1.sql`. For existing projects, also apply
+`FORTALFY_REELS_DURATION_180S_V1.sql` and redeploy this function to enable the
+180-second limit. The function downloads the uploaded object from the private
+`social-media` bucket and reads its container metadata on the server. Only
+vertical 9:16 videos up to 180 seconds are sent to the `publish_fortalreel`
 database function, which atomically records the trusted validation and creates
 the post and media metadata after checking the creator's current approval.
 

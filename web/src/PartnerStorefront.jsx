@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, Building2, ExternalLink, ImagePlus, LoaderCircle, MapPin, PackagePlus, Pencil, Save, Store, Trash2, X } from "lucide-react";
+import { BadgeCheck, Building2, ExternalLink, ImagePlus, LoaderCircle, MapPin, PackagePlus, Pencil, Save, Store, Trash2, X, ArrowUpRight, Dumbbell, HeartPulse, UsersRound } from "lucide-react";
+import { Link } from "react-router-dom";
 import { deleteStoreProduct, loadStorefront, saveStoreProduct } from "./partnerStoreService.js";
 import { getErrorMessage } from "./socialService.js";
 
 const emptyFields = { name: "", category: "", description: "", price: "", isLaunch: false, isActive: true };
 const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
+const officialShowcase = [
+  { title: "Comunidade", description: "Conecte-se com pessoas que também estão construindo uma rotina mais saudável.", image: "/assets/fortalfy/publicidade/banner-comunidade.jpg", href: "/feed", icon: UsersRound },
+  { title: "Movimento", description: "Descubra conteúdos e ferramentas para acompanhar sua jornada de atividade física.", image: "/assets/fortalfy/treino/07-treino-forca.jpg", href: "/workout", icon: Dumbbell },
+  { title: "Bem-estar", description: "Explore recursos do app pensados para apoiar seu cuidado no dia a dia.", image: "/assets/fortalfy/publicidade/05-inicio-bem-estar.jpg", href: "/home", icon: HeartPulse },
+];
 
 function StoreProductForm({ client, profile, userId, product, onSaved, onCancel, notify }) {
   const [fields, setFields] = useState(product ? {
@@ -67,6 +73,7 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(null);
   const isGym = profile.kind === "academia";
+  const isOfficialBrand = !isGym && profile.username?.toLowerCase() === "fortalfy";
 
   const refresh = async () => {
     setLoading(true);
@@ -100,6 +107,20 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
   };
 
   return <section className="partner-storefront">
+    {isOfficialBrand && <section className="partner-store-brand-showcase" aria-labelledby="partner-store-brand-title">
+      <img className="partner-store-brand-hero-image" src="/assets/fortalfy/publicidade/banner-app-papagaio-a.jpg" alt="Campanha visual da Fortalfy com o mascote da marca" />
+      <div className="partner-store-brand-hero-shade" />
+      <div className="partner-store-brand-hero-content">
+        <span className="partner-store-brand-kicker"><Store size={14} /> VITRINE OFICIAL FORTALFY</span>
+        <h2 id="partner-store-brand-title">Seu bem-estar,<br />no seu ritmo.</h2>
+        <p>Uma plataforma para conectar movimento, comunidade e cuidado em um só lugar.</p>
+        <div className="partner-store-brand-hero-actions">
+          <Link className="button primary small-button" to="/feed">Conhecer a comunidade <ArrowUpRight size={15} /></Link>
+          <Link className="partner-store-brand-secondary-action" to="/home">Explorar o app <ArrowUpRight size={14} /></Link>
+        </div>
+      </div>
+      <span className="partner-store-brand-mark"><img src="/assets/fortalfy-official-logo.png" alt="Símbolo Fortalfy" /></span>
+    </section>}
     <header className="partner-storefront-heading"><div><span className="eyebrow">{isGym ? "ECOSSISTEMA DA ACADEMIA" : "LOJA OFICIAL"}</span><h2>{isGym ? "Conheça nossa academia" : "Conheça nossa marca"}</h2><p>Informações e produtos cadastrados por este parceiro.</p></div>{profile.partnerApproved && <span className="partner-store-approved"><BadgeCheck size={15} /> Parceiro aprovado</span>}</header>
     <div className="partner-store-about">
       <span className="partner-store-about-icon">{isGym ? <Building2 size={22} /> : <Store size={22} />}</span>
@@ -111,6 +132,13 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
     </div>
     <div className="partner-store-products-heading"><div><span className="eyebrow">VITRINE</span><h3>{isGym ? "Produtos e novidades" : "Produtos e lançamentos"}</h3></div>{isOwn && !editing && <button className="button primary small-button" onClick={() => setEditing({ product: null })}><PackagePlus size={15} /> Cadastrar produto</button>}</div>
     {isOwn && !profile.partnerApproved && <p className="partner-store-disclaimer">Sua vitrine ficará visível para o público após a aprovação do perfil de parceiro.</p>}
+    {isOfficialBrand && <section className="partner-store-brand-pillars" aria-label="Conheça o Fortalfy">
+      {officialShowcase.map(({ title, description, image, href, icon: Icon }) => <Link className="partner-store-brand-pillar" to={href} key={title}>
+        <img src={image} alt="" loading="lazy" />
+        <span className="partner-store-brand-pillar-shade" />
+        <span className="partner-store-brand-pillar-copy"><span className="partner-store-brand-pillar-icon"><Icon size={16} /></span><strong>{title}</strong><small>{description}</small><span className="partner-store-brand-pillar-link">Explorar <ArrowUpRight size={13} /></span></span>
+      </Link>)}
+    </section>}
     {editing && <StoreProductForm key={editing.product?.id || "new"} client={client} profile={profile} userId={userId} product={editing.product} onSaved={saveProduct} onCancel={() => setEditing(null)} notify={notify} />}
     {loading ? <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando vitrine…</p>
       : error ? <div className="social-feed-error" role="alert">{error}<button onClick={refresh}>Tentar novamente</button></div>

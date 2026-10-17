@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, isFortalReelRatio,
+  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "../src/reelMedia.js";
 
 test("FortalReels accepts only vertical 9:16 dimensions within the metadata tolerance", () => {
@@ -12,6 +12,15 @@ test("FortalReels accepts only vertical 9:16 dimensions within the metadata tole
   assert.equal(isFortalReelRatio(1920, 1080), false);
   assert.equal(isFortalReelRatio(1000, 1000), false);
   assert.equal(isFortalReelRatio(0, 1920), false);
+});
+
+test("FortalReels permits videos up to three minutes and rejects longer durations", () => {
+  assert.equal(FORTALREEL_MAX_DURATION_SECONDS, 180);
+  assert.equal(isFortalReelDurationAllowed(0), false);
+  assert.equal(isFortalReelDurationAllowed(179.999), true);
+  assert.equal(isFortalReelDurationAllowed(180), true);
+  assert.equal(isFortalReelDurationAllowed(180.001), false);
+  assert.equal(isFortalReelDurationAllowed(Number.NaN), false);
 });
 
 test("9:16 crop preserves the source aspect without stretching portrait and landscape videos", () => {
@@ -25,5 +34,4 @@ test("9:16 crop preserves the source aspect without stretching portrait and land
   assert.equal(portrait.left, 0);
   assert.ok(portrait.top > 0);
 
-  assert.equal(FORTALREEL_MAX_DURATION_SECONDS, 90);
 });

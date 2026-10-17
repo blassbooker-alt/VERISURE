@@ -1,3 +1,5 @@
+import { createSecureId } from "./secureId.js";
+
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
 
@@ -14,6 +16,15 @@ export function getErrorMessage(error, fallback = "Não foi possível concluir e
   if (!error) return fallback;
   if (error.code === "23505") return "Esta ação já foi registrada.";
   if (error.code === "42501") return "Sua conta não tem permissão para esta ação.";
+  if (error.code === "PGRST202" && /get_fortalfy_profile_social_stats/i.test(error.message || "")) {
+    return "O Supabase ainda não tem as funções de perfil social. Aplique FORTALFY_SOCIAL_VIEWS_V1.sql após as migrações base do projeto.";
+  }
+  if (error.code === "42703" && /post_media.*reel_validated/i.test(error.message || "")) {
+    return "O banco ainda não tem o suporte de validação dos Reels. Aplique FORTALFY_REELS_9_16_SUPABASE.sql após FORTALFY_SOCIAL_VIEWS_V1.sql.";
+  }
+  if (error.code === "42703" && /posts\.is_reel/i.test(error.message || "")) {
+    return "O banco ainda não tem o suporte aos Reels. Aplique FORTALFY_REELS_9_16_SUPABASE.sql para ativar essa área.";
+  }
   if (error.code === "PGRST205") return "Esta área ainda não está habilitada no banco. A equipe precisa aplicar as migrações do Fortalfy no Supabase.";
   return error.message || fallback;
 }
@@ -50,7 +61,7 @@ export async function uploadProfileImage(client, userId, file, field) {
   }
   if (file.size > 5 * 1024 * 1024) throw new Error("A imagem do perfil pode ter até 5 MB.");
   const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "webp";
-  const path = `${userId}/profile/${field === "avatar_path" ? "avatar" : "cover"}-${crypto.randomUUID()}.${extension}`;
+  const path = `${userId}/profile/${field === "avatar_path" ? "avatar" : "cover"}-${createSecureId()}.${extension}`;
   const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, file, {
     contentType: file.type,
     upsert: false,
@@ -175,9 +186,9 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
 
   const mediaRelation = mediaType ? "post_media!inner" : "post_media";
   let query = client.from("posts").select(`
-    id,author_id,body,visibility,shared_post_id,is_reel,published_at,
+    id,author_id,body,visibility,shared_post_id,published_at,
     author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
-    ${mediaRelation}(id,storage_path,media_type,sort_order,reel_validated),
+    ${mediaRelation}(id,storage_path,media_type,sort_order),
     likes:post_likes(count),
     comments:post_comments(count)
   `, { count: "exact" })
@@ -455,7 +466,7 @@ export async function publishPost(client, userId, {
     throw new Error("O FortalReels aceita um único vídeo MP4 ou WebM por publicação.");
   }
   const uploaded = [];
-  const postId = isReel ? requestedPostId || crypto.randomUUID() : crypto.randomUUID();
+  const postId = isReel ? requestedPostId || createSecureId() : createSecureId();
   if (isReel && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(postId)) {
     throw new Error("Não foi possível iniciar esta publicação do FortalReels.");
   }
@@ -513,7 +524,6 @@ export async function publishPost(client, userId, {
         storage_path: path,
         media_type: mediaType,
         sort_order: index,
-        reel_validated: false,
       };
       uploaded.push(uploadedMedia);
       if (isReel) return await publishReel(path);
@@ -524,7 +534,6 @@ export async function publishPost(client, userId, {
       body: body.trim(),
       visibility,
       media_path: uploaded[0]?.storage_path || null,
-      is_reel: isReel,
     });
     if (postError) throw postError;
     postCreated = true;
@@ -595,24 +604,12 @@ export async function deletePost(client, postId) {
   const { data: media, error: mediaError } = await client.from("post_media")
     .select("storage_path").eq("post_id", postId);
   if (mediaError) throw mediaError;
-  const { data: post, error: postLookupError } = await client.from("posts")
-    .select("is_reel").eq("id", postId).maybeSingle();
-  if (postLookupError) throw postLookupError;
-  if (post?.is_reel) {
-    const { error } = await client.from("posts").delete().eq("id", postId);
-    if (error) throw error;
-    if (media?.length) {
-      const { error: cleanupError } = await client.storage.from(MEDIA_BUCKET).remove(media.map(item => item.storage_path));
-      if (cleanupError) throw cleanupError;
-    }
-    return;
-  }
+  const { error: postError } = await client.from("posts").delete().eq("id", postId);
+  if (postError) throw postError;
   if (media?.length) {
     const { error } = await client.storage.from(MEDIA_BUCKET).remove(media.map(item => item.storage_path));
     if (error) throw error;
   }
-  const { error } = await client.from("posts").delete().eq("id", postId);
-  if (error) throw error;
 }
 
 export async function sharePost(client, userId, postId, body = "") {
@@ -700,7 +697,35 @@ export async function loadFollowState(client, userId, profileId) {
   requireRealUser(userId);
   requireRealUser(profileId);
   const { data, error } = await client.rpc("get_fortalfy_profile_social_stats", { p_profile_id: profileId });
-  if (error) throw error;
+  if (error) {
+    const missingStatsFunction = error.code === "PGRST202"
+      && /get_fortalfy_profile_social_stats/i.test(error.message || "");
+    if (!missingStatsFunction) throw error;
+
+    const countFollows = async (column, value) => {
+      const result = await client.from("profile_follows")
+        .select("follower_id", { count: "exact", head: true })
+        .eq(column, value);
+      if (result.error) throw result.error;
+      return result.count || 0;
+    };
+    const [followers, following, relationship, request] = await Promise.all([
+      countFollows("followed_id", profileId),
+      countFollows("follower_id", profileId),
+      client.from("profile_follows").select("follower_id")
+        .eq("follower_id", userId).eq("followed_id", profileId).maybeSingle(),
+      client.from("follow_requests").select("status")
+        .eq("follower_id", userId).eq("followed_id", profileId).maybeSingle(),
+    ]);
+    if (relationship.error) throw relationship.error;
+    if (request.error) throw request.error;
+    return {
+      followers,
+      following,
+      isFollowing: Boolean(relationship.data),
+      requestStatus: request.data?.status || "",
+    };
+  }
   const stats = Array.isArray(data) ? data[0] : data;
   if (!stats) throw new Error("Este perfil não está disponível para sua conta.");
   return {

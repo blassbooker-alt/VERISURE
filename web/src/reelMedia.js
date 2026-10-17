@@ -1,9 +1,13 @@
-export const FORTALREEL_MAX_DURATION_SECONDS = 90;
+export const FORTALREEL_MAX_DURATION_SECONDS = 180;
 export const FORTALREEL_MAX_FILE_BYTES = 40 * 1024 * 1024;
 export const FORTALREEL_WIDTH = 1080;
 export const FORTALREEL_HEIGHT = 1920;
 export const FORTALREEL_RATIO = FORTALREEL_WIDTH / FORTALREEL_HEIGHT;
 export const FORTALREEL_RATIO_TOLERANCE = 0.0025;
+
+export function isFortalReelDurationAllowed(duration) {
+  return Number.isFinite(duration) && duration > 0 && duration <= FORTALREEL_MAX_DURATION_SECONDS;
+}
 
 export function isFortalReelRatio(width, height) {
   return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0
@@ -74,8 +78,8 @@ export async function cropReelVideo(file, {
   onProgress = () => {},
 } = {}) {
   const duration = Number.isFinite(end) ? end - start : NaN;
-  if (!Number.isFinite(duration) || start < 0 || duration <= 0 || duration > FORTALREEL_MAX_DURATION_SECONDS) {
-    throw new Error("Escolha um trecho com até 90 segundos.");
+  if (start < 0 || !isFortalReelDurationAllowed(duration)) {
+    throw new Error("Escolha um trecho com até 180 segundos.");
   }
   if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
     throw new Error("Não foi possível definir o enquadramento do vídeo.");

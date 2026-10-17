@@ -9,7 +9,8 @@ import Brand from "./Brand.jsx";
 import { fortalfyAsset } from "./assetPath.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
-import { FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectReelVideo, isFortalReelRatio } from "./reelMedia.js";
+import { createSecureId } from "./secureId.js";
+import { FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio } from "./reelMedia.js";
 import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
@@ -908,7 +909,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
   const [videoEditorFile, setVideoEditorFile] = useState(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const reelPostId = useRef("");
-  if (!reelPostId.current) reelPostId.current = crypto.randomUUID();
+  if (!reelPostId.current) reelPostId.current = createSecureId();
 
   const chooseFiles = event => {
     const selected = Array.from(event.target.files || []);
@@ -966,8 +967,8 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
         if (!isFortalReelRatio(media.width, media.height)) {
           throw new Error("O vídeo final precisa estar no formato vertical 9:16. Recorte o vídeo antes de publicar.");
         }
-        if (media.duration > FORTALREEL_MAX_DURATION_SECONDS) {
-          throw new Error("O vídeo final não pode ultrapassar 90 segundos.");
+        if (!isFortalReelDurationAllowed(media.duration)) {
+          throw new Error(`O vídeo final não pode ultrapassar ${FORTALREEL_MAX_DURATION_SECONDS} segundos.`);
         }
       }
       await publishPost(client, userId, {
@@ -979,7 +980,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
       });
       setBody("");
       setFiles([]);
-      reelPostId.current = crypto.randomUUID();
+      reelPostId.current = createSecureId();
       notify(videosOnly ? "Reel publicado no FortalReels." : "Publicação enviada para a comunidade.");
       try {
         await onPublished();
@@ -1009,7 +1010,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
   {videoEditorFile && <ReelVideoEditor file={videoEditorFile} onCancel={() => setVideoEditorFile(null)} onReady={async file => {
     const metadata = await inspectReelVideo(file);
     if (!isFortalReelRatio(metadata.width, metadata.height) || metadata.duration > FORTALREEL_MAX_DURATION_SECONDS) {
-      throw new Error("O vídeo final precisa estar no formato 9:16 e ter no máximo 90 segundos.");
+      throw new Error(`O vídeo final precisa estar no formato 9:16 e ter no máximo ${FORTALREEL_MAX_DURATION_SECONDS} segundos.`);
     }
     setFiles([file]);
     setVideoEditorFile(null);
@@ -1676,7 +1677,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   if (!profile) return <div className="social-inline-status"><LoaderCircle className="spin" size={17} /> Preparando seu perfil…</div>;
   return <div className={`social-feed${reelMode ? " social-reels-page" : ""}`}>
     {!reelMode && <><CommunityNavigation active="feed" /><section className="social-feed-hero"><div className="social-feed-hero-copy"><span className="eyebrow"><Activity size={13} /> COMUNIDADE FORTALFY</span><h1>Esporte, saúde e movimento em conversa.</h1><p>Acompanhe atualizações de academias, profissionais de nutrição e educação física, atletas e pessoas que vivem o esporte.</p></div><div className="social-feed-hero-art" aria-hidden="true"><Dumbbell size={44} /><span>SEU RITMO<br />EM MOVIMENTO</span></div></section><nav className="social-feed-topics" aria-label="Explorar a comunidade"><Link to="/partner/gym"><Dumbbell size={15} /> Academias</Link><Link to="/nutrition"><Activity size={15} /> Nutrição</Link><Link to="/workout"><Zap size={15} /> Treinos</Link><Link to="/reels"><Video size={15} /> Vídeos</Link></nav></>}
-    {reelMode && <div className="social-reels-intro"><Link className="social-reels-back" to="/feed" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link><Clapperboard size={19} /><span><strong>FortalReels</strong><small>Vídeos verticais 9:16 · até 90 segundos</small></span><button type="button" className="button primary small-button" onClick={() => {
+    {reelMode && <div className="social-reels-intro"><Link className="social-reels-back" to="/feed" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link><Clapperboard size={19} /><span><strong>FortalReels</strong><small>Vídeos verticais 9:16 · até {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos</small></span><button type="button" className="button primary small-button" onClick={() => {
       if (!canPublishReels) {
         notify("A publicação no FortalReels é exclusiva de criadores e parceiros aprovados.");
         return;

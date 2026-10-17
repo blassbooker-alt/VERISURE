@@ -1,5 +1,7 @@
 import { mapProfile, signMedia } from "./socialService.js";
 
+import { createSecureId } from "./secureId.js";
+
 const MEDIA_BUCKET = "social-media";
 const IMAGE_LIMIT = 15 * 1024 * 1024;
 const VIDEO_LIMIT = 40 * 1024 * 1024;
@@ -90,8 +92,7 @@ export async function loadStories(client, userId) {
 export async function publishStory(client, userId, file, caption = "") {
   requireUser(client, userId);
   validateStoryMedia(file, caption);
-  const id = globalThis.crypto?.randomUUID?.();
-  if (!id) throw new Error("Este navegador não oferece geração segura de identificadores para publicar Stories.");
+  const id = createSecureId();
   const extension = MIME_EXTENSIONS.get(file.type);
   const path = `${userId}/stories/${id}.${extension}`;
   const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, file, {

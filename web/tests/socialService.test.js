@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState,
+  deletePost, getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState,
   loadMutualFollowState, loadProfileConnections, mapProfile, recordReelView,
   prepareProfileImage, publishPost, respondFollowRequest, startConversation,
   setFollow,
@@ -47,6 +47,23 @@ test("profile mapping only shows verification for actually verified or approved 
   });
 
   assert.equal(mapProfile(null), null);
+  assert.equal(mapProfile({ verified_at: "2026-10-16T12:00:00Z" }).verified, true);
+  assert.equal(mapProfile({ partner_approved_at: "2026-10-16T12:00:00Z" }).verified, true);
+});
+
+test("profile and Reel schema errors point to the required Supabase migrations", () => {
+  assert.match(getErrorMessage({
+    code: "PGRST202",
+    message: "Could not find the function public.get_fortalfy_profile_social_stats(p_profile_id) in the schema cache",
+  }), /FORTALFY_SOCIAL_VIEWS_V1\.sql/);
+  assert.match(getErrorMessage({
+    code: "42703",
+    message: "column post_media_1.reel_validated does not exist",
+  }), /FORTALFY_REELS_9_16_SUPABASE\.sql/);
+  assert.match(getErrorMessage({
+    code: "42703",
+    message: "column posts.is_reel does not exist",
+  }), /FORTALFY_REELS_9_16_SUPABASE\.sql/);
 });
 
 test("username availability normalizes valid input and skips malformed usernames", async () => {
@@ -87,6 +104,50 @@ test("follow state uses the privacy-aware aggregate RPC and normalizes counts", 
     name: "get_fortalfy_profile_social_stats",
     params: { p_profile_id: "profile-1" },
   }]);
+});
+
+test("follow state uses existing follow tables when the aggregate RPC is not installed", async () => {
+  const client = {
+    rpc: async () => ({
+      data: null,
+      error: {
+        code: "PGRST202",
+        message: "Could not find the function public.get_fortalfy_profile_social_stats(p_profile_id)",
+      },
+    }),
+    from(table) {
+      let filters = {};
+      let options;
+      const builder = {
+        select(_fields, selectOptions) {
+          options = selectOptions;
+          return this;
+        },
+        eq(column, value) {
+          filters = { ...filters, [column]: value };
+          return this;
+        },
+        maybeSingle: async () => ({
+          data: table === "profile_follows" ? { follower_id: "viewer-1" } : null,
+          error: null,
+        }),
+        then(resolve, reject) {
+          const count = filters.followed_id === "profile-1" ? 12 : 4;
+          return Promise.resolve({ count, error: null }).then(resolve, reject);
+        },
+      };
+      assert.ok(["profile_follows", "follow_requests"].includes(table));
+      if (options?.head) assert.equal(table, "profile_follows");
+      return builder;
+    },
+  };
+
+  assert.deepEqual(await loadFollowState(client, "viewer-1", "profile-1"), {
+    followers: 12,
+    following: 4,
+    isFollowing: true,
+    requestStatus: "",
+  });
 });
 
 test("following a Reel author persists public follows and private follow requests", async () => {
@@ -228,6 +289,64 @@ test("Reel publication delegates validation and atomic metadata writes to the se
   });
 });
 
+test("regular posts do not require the optional Reel schema columns", async () => {
+  let insertedPost;
+  const client = {
+    from(table) {
+      assert.equal(table, "posts");
+      return {
+        insert: async post => {
+          insertedPost = post;
+          return { error: null };
+        },
+      };
+    },
+  };
+  const result = await publishPost(client, "owner-1", { body: "Publicação comum" });
+  assert.ok(result.id);
+  assert.equal(insertedPost.body, "Publicação comum");
+  assert.equal(Object.hasOwn(insertedPost, "is_reel"), false);
+});
+
+test("deleting a post removes its row before cleaning up attached media", async () => {
+  const operations = [];
+  const client = {
+    from(table) {
+      if (table === "post_media") {
+        return {
+          select: () => ({
+            eq: async () => ({ data: [{ storage_path: "owner-1/posts/post-1/00.jpg" }], error: null }),
+          }),
+        };
+      }
+      if (table === "posts") {
+        return {
+          delete: () => ({
+            eq: async () => {
+              operations.push("delete-post");
+              return { error: null };
+            },
+          }),
+        };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    },
+    storage: {
+      from: bucket => ({
+        remove: async paths => {
+          operations.push("remove-media");
+          assert.equal(bucket, "social-media");
+          assert.deepEqual(paths, ["owner-1/posts/post-1/00.jpg"]);
+          return { error: null };
+        },
+      }),
+    },
+  };
+
+  await deletePost(client, "post-1");
+  assert.deepEqual(operations, ["delete-post", "remove-media"]);
+});
+
 test("profile images preserve valid animated GIFs and reject excessive source sizes", async () => {
   const gif = { type: "image/gif", size: 1024, name: "avatar.gif" };
   assert.equal(await prepareProfileImage(gif, "avatar_path"), gif);
@@ -279,6 +398,8 @@ test("feed loads mapped counts, the current user's like state, and pagination", 
   assert.equal(result.hasMore, false);
   assert.equal(postSelections.some(fields => fields.includes("posts!")), false);
   assert.equal(postSelections.some(fields => fields.includes("updated_at")), false);
+  assert.equal(postSelections.some(fields => fields.includes("is_reel")), false);
+  assert.equal(postSelections.some(fields => fields.includes("reel_validated")), false);
 });
 
 test("feed loads shared posts and share counts without recursive PostgREST relationships", async () => {

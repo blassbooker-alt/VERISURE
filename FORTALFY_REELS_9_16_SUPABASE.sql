@@ -23,7 +23,7 @@ create table if not exists public.fortalreel_video_validations (
   owner_id uuid not null references public.profiles(id) on delete cascade,
   width integer not null check (width between 1 and 7680),
   height integer not null check (height between 1 and 7680),
-  duration_seconds numeric(7,3) not null check (duration_seconds > 0 and duration_seconds <= 90),
+  duration_seconds numeric(7,3) not null check (duration_seconds > 0 and duration_seconds <= 180),
   validated_at timestamptz not null default now(),
   constraint fortalreel_video_path_owner check (
     storage_path like owner_id::text || '/posts/%'
@@ -75,7 +75,7 @@ begin
       where validation.storage_path = new.media_path
         and validation.owner_id = new.author_id
         and abs(((validation.width::numeric / validation.height::numeric) / (9::numeric / 16)) - 1) <= 0.0025
-        and validation.duration_seconds <= 90
+        and validation.duration_seconds <= 180
     ) into valid_video;
     if not valid_video then
       raise exception 'The server has not validated this video as a 9:16 Reel'
@@ -119,7 +119,7 @@ begin
         where validation.storage_path = new.storage_path
           and validation.owner_id = post_author
           and abs(((validation.width::numeric / validation.height::numeric) / (9::numeric / 16)) - 1) <= 0.0025
-          and validation.duration_seconds <= 90
+          and validation.duration_seconds <= 180
       ) then
       raise exception 'Reel media must be validated by the Fortalfy server'
         using errcode = '23514';
@@ -168,7 +168,7 @@ begin
     or p_width < 1 or p_width > 7680
     or p_height < 1 or p_height > 7680
     or abs(((p_width::numeric / p_height::numeric) / (9::numeric / 16)) - 1) > 0.0025
-    or p_duration_seconds <= 0 or p_duration_seconds > 90 then
+    or p_duration_seconds <= 0 or p_duration_seconds > 180 then
     raise exception 'FortalReels video data is invalid'
       using errcode = '23514';
   end if;
