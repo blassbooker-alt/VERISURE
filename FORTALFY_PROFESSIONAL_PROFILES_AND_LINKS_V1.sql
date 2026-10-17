@@ -654,10 +654,11 @@ begin
   select exists (
     select 1 from public.professional_applications application where application.profile_id = auth.uid()
   ) into has_professional_application;
-  if char_length(coalesce(p_bio, '')) > case
-    when current_kind = 'cliente' and not has_professional_application then 2000
-    else 150
-  end then
+  if current_kind = 'cliente' and not has_professional_application then
+    if char_length(coalesce(p_bio, '')) > 2000 then
+      raise exception 'Profile bios are limited to 2000 characters';
+    end if;
+  elsif char_length(coalesce(p_bio, '')) > 150 then
     raise exception 'Professional profile bios are limited to 150 characters';
   end if;
   update public.profiles set
