@@ -1608,6 +1608,7 @@ export function SocialMessages({ client, session, configured, notify }) {
   const [realtimeStatus, setRealtimeStatus] = useState("CONNECTING");
   const [following, setFollowing] = useState(false);
   const [error, setError] = useState("");
+  const [conversationSearch, setConversationSearch] = useState("");
   const userId = session?.user?.id;
   const targetId = searchParams.get("to");
 
@@ -1776,16 +1777,22 @@ export function SocialMessages({ client, session, configured, notify }) {
   };
 
   const formatMessageTime = value => new Date(value).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  const filteredConversations = conversations.filter(item => {
+    const query = conversationSearch.trim().toLocaleLowerCase("pt-BR");
+    return !query || `${item.person?.name || ""} ${item.latestMessage?.body || ""}`.toLocaleLowerCase("pt-BR").includes(query);
+  });
   if (!configured || !session) return <div className="social-messages-page"><CommunityNavigation active="messages" /><SocialAuth client={client} configured={configured} notify={notify} /></div>;
 
   return <div className="social-messages-page">
     <CommunityNavigation active="messages" />
-    <section className={`social-messages-panel${conversation ? " conversation-open" : ""}`}>
+    <section className={`social-messages-panel${conversation ? " conversation-open" : ""}${!conversations.length ? " no-conversations" : ""}`}>
       <aside className="social-conversation-list">
         <header><div><span className="eyebrow">SUA COMUNIDADE</span><h2>Conversas</h2></div><Link to="/people" className="button subtle small-button"><Users size={15} /> Pessoas</Link></header>
+        <label className="social-conversation-search"><Search size={16} /><input type="search" value={conversationSearch} onChange={event => setConversationSearch(event.target.value)} placeholder="Buscar nas conversas" aria-label="Buscar conversas" /></label>
         {loading && !conversations.length && <p className="social-inline-status"><LoaderCircle className="spin" size={16} /> Carregando conversas…</p>}
-        {!loading && !conversations.length && <div className="social-empty-feed"><MessageCircle size={22} /><h3>Comece uma conversa</h3><p>Abra um perfil público e toque em “Enviar mensagem”.</p><Link className="button primary small-button" to="/people">Encontrar pessoas</Link></div>}
-        {conversations.map(item => <button key={item.id} className={`social-conversation-item${conversation?.id === item.id ? " active" : ""}`} onClick={() => openConversation(item)}>
+        {!loading && !conversations.length && <div className="social-conversation-empty"><span><MessageCircle size={23} /></span><h3>Suas mensagens começam aqui</h3><p>Encontre pessoas da comunidade e inicie uma conversa privada.</p><Link className="button primary small-button" to="/people"><Users size={15} /> Encontrar pessoas</Link></div>}
+        {conversations.length > 0 && !filteredConversations.length && <p className="social-conversation-search-empty">Nenhuma conversa corresponde à busca.</p>}
+        {filteredConversations.map(item => <button key={item.id} className={`social-conversation-item${conversation?.id === item.id ? " active" : ""}`} onClick={() => openConversation(item)}>
           <span className="social-person-avatar">{item.person?.avatar ? <img src={item.person.avatar} alt="" /> : item.person?.name?.slice(0, 1).toUpperCase()}</span>
           <span className="social-conversation-preview"><strong>{item.person?.name || "Pessoa Fortalfy"}</strong><small>{item.latestMessage?.body || "Inicie uma conversa"}</small></span>
           {item.latestMessage && <time>{formatMessageTime(item.latestMessage.created_at)}</time>}
@@ -1808,7 +1815,7 @@ export function SocialMessages({ client, session, configured, notify }) {
         <div className="social-chat-messages" aria-live="polite">{messages.map(message => <article key={message.id} className={`social-chat-bubble${message.sender_id === userId ? " own" : ""}`}><p>{message.body}</p><time dateTime={message.created_at}>{formatMessageTime(message.created_at)}</time></article>)}</div>
         {!conversationAccess.canMessage && <p className="social-inline-status" role="status">Vocês precisam se seguir para conversar. O envio está bloqueado.</p>}
         <form className="social-chat-composer" onSubmit={submitMessage}><label className="sr-only" htmlFor="social-chat-draft">Sua mensagem</label><textarea id="social-chat-draft" rows={1} value={draft} maxLength={4000} onChange={event => setDraft(event.target.value)} placeholder={conversationAccess.canMessage ? "Escreva uma mensagem..." : "Envio bloqueado até o seguimento mútuo"} disabled={!conversationAccess.canMessage} required /><button className="button primary small-button" aria-label="Enviar mensagem" disabled={sending || !draft.trim() || !conversationAccess.canMessage}>{sending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}</button></form>
-      </section> : <div className="social-chat-placeholder"><MessageCircle size={28} /><h3>Suas conversas, em um só lugar</h3><p>As mensagens são privadas entre você e a pessoa escolhida.</p></div>}
+      </section> : <div className="social-chat-placeholder"><span><MessageCircle size={28} /></span><h3>Suas conversas, em um só lugar</h3><p>As mensagens são privadas entre você e a pessoa escolhida.</p></div>}
     </section>
   </div>;
 }
