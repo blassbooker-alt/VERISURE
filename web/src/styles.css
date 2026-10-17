@@ -2331,6 +2331,13 @@ img { display: block; max-width: 100%; }
   .social-chat-window { min-height: 55vh; }
   .social-chat-messages { min-height: 38vh; max-height: 55vh; }
 }
+@media (max-width: 600px) {
+  .social-profile-main { align-items: flex-start; flex-wrap: wrap; }
+  .social-profile-avatar-wrap, .social-profile-avatar-wrap > .social-avatar { width: 64px; height: 64px; }
+  .social-profile-actions { width: 100%; }
+  .social-profile-actions .button { flex: 1; justify-content: center; }
+  .social-profile-bio { padding-top: 29px; }
+}
 @media (max-width: 420px) {
   .social-auth-card { margin: 15px 0; padding: 18px; }
   .social-create-post, .social-post-card { padding: 11px; border-radius: 14px; }
