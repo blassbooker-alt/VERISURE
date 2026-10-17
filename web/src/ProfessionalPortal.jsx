@@ -146,6 +146,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
   const [applications, setApplications] = useState([]);
   const [reviewApplications, setReviewApplications] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentKind, setDocumentKind] = useState("professional_credential");
   const [uploadingDocument, setUploadingDocument] = useState(false);
