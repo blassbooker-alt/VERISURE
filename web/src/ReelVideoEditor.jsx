@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, CircleAlert, LoaderCircle, RotateCw, Scissors, X } from "lucide-react";
+import { Camera, Check, CircleAlert, LoaderCircle, RotateCw, X } from "lucide-react";
 import {
-  calculateReelCrop, cropReelVideo, FORTALREEL_MAX_DURATION_SECONDS, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio,
+  cropReelVideo, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "./reelMedia.js";
 
 const roundTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
@@ -10,10 +10,6 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState("");
-  const [start, setStart] = useState(0);
-  const [end, setEnd] = useState(0);
-  const [cropX, setCropX] = useState(0.5);
-  const [cropY, setCropY] = useState(0.5);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -23,20 +19,16 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
     setPreviewUrl(url);
     setMetadata(null);
     setError("");
-    inspectReelVideo(file).then(data => {
+    inspectReelVideo(file, { allowOversize: true }).then(data => {
       if (!active) return;
       setMetadata(data);
-      setStart(0);
-      setEnd(Math.min(data.duration, FORTALREEL_MAX_DURATION_SECONDS));
-      setCropX(0.5);
-      setCropY(0.5);
     }).catch(failure => active && setError(failure.message));
     return () => { active = false; URL.revokeObjectURL(url); };
   }, [file]);
 
   const prepare = async () => {
-    if (!metadata || !isFortalReelDurationAllowed(end - start)) {
-      setError(`Selecione um trecho com duração entre 1 e ${FORTALREEL_MAX_DURATION_SECONDS} segundos.`);
+    if (!metadata || !isFortalReelDurationAllowed(metadata.duration)) {
+      setError(`O vídeo completo precisa ter até ${FORTALREEL_MAX_DURATION_SECONDS} segundos.`);
       return;
     }
     setBusy(true);
@@ -44,15 +36,13 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
     try {
       const needsProcessing = !["video/mp4", "video/webm"].includes(file.type)
         || !isFortalReelRatio(metadata.width, metadata.height)
-        || start > 0 || end < metadata.duration || cropX !== 0.5 || cropY !== 0.5;
+        || file.size > FORTALREEL_MAX_FILE_BYTES;
       const prepared = needsProcessing
         ? await cropReelVideo(file, {
           width: metadata.width,
           height: metadata.height,
-          x: cropX,
-          y: cropY,
-          start,
-          end,
+          start: 0,
+          end: metadata.duration,
           onProgress: setProgress,
         })
         : file;
@@ -68,29 +58,21 @@ export function ReelVideoEditor({ file, onCancel, onReady, notify }) {
   };
 
   const verticalSource = metadata && isFortalReelRatio(metadata.width, metadata.height);
-  const startLimit = Math.max(0, Math.min(metadata?.duration || 0, end - 1));
   return <div className="reel-editor-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !busy && onCancel()}>
     <section className="reel-editor-dialog" role="dialog" aria-modal="true" aria-label="Editar vídeo FortalReels">
-      <header><div><span className="eyebrow">FORTALREELS · EDITOR 9:16</span><h2>Enquadre seu vídeo</h2></div><button type="button" className="icon-button" aria-label="Fechar editor" onClick={onCancel} disabled={busy}><X size={19} /></button></header>
+      <header><div><span className="eyebrow">FORTALREELS · TELA CHEIA 9:16</span><h2>Prepare seu vídeo completo</h2></div><button type="button" className="icon-button" aria-label="Fechar editor" onClick={onCancel} disabled={busy}><X size={19} /></button></header>
       {error && <p className="reel-editor-error" role="alert"><CircleAlert size={16} />{error}</p>}
       {!metadata ? <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Lendo vídeo…</p> : <>
         <div className="reel-editor-layout">
-          <div className="reel-editor-preview"><video src={previewUrl} controls playsInline style={{ objectPosition: `${cropX * 100}% ${cropY * 100}%` }} /><span>PRÉVIA 9:16</span></div>
+          <div className="reel-editor-preview"><video src={previewUrl} controls playsInline /><span>PRÉVIA 9:16</span></div>
           <div className="reel-editor-controls">
-            <p>{metadata.width} × {metadata.height} · duração original {roundTime(metadata.duration)}{verticalSource ? " · formato vertical" : " · recorte obrigatório"}</p>
-            {!verticalSource && <>
-              <label>Posição horizontal <input type="range" min="0" max="1" step="0.01" value={cropX} onChange={event => setCropX(Number(event.target.value))} /></label>
-              <label>Posição vertical <input type="range" min="0" max="1" step="0.01" value={cropY} onChange={event => setCropY(Number(event.target.value))} /></label>
-            </>}
-            <div className="reel-editor-trim"><strong><Scissors size={15} /> Trecho do vídeo · máximo {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos</strong>
-              <label>Início: {roundTime(start)}<input type="range" min="0" max={startLimit} step="0.1" value={start} onChange={event => setStart(Math.min(Number(event.target.value), end - 1))} /></label>
-              <label>Fim: {roundTime(end)}<input type="range" min={Math.min(metadata.duration, start + 1)} max={metadata.duration} step="0.1" value={end} onChange={event => setEnd(Math.min(Number(event.target.value), start + FORTALREEL_MAX_DURATION_SECONDS))} /></label>
-            </div>
-            <p className="reel-editor-note">O enquadramento preserva as proporções originais; o vídeo nunca é esticado. O servidor também verificará as dimensões e a duração reais antes da publicação.</p>
+            <p>{metadata.width} × {metadata.height} · duração completa {roundTime(metadata.duration)}{verticalSource ? " · formato vertical" : " · imagem integral preservada"}</p>
+            {!isFortalReelDurationAllowed(metadata.duration) && <p className="reel-editor-error">O vídeo completo excede o limite de {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos e não será cortado.</p>}
+            <p className="reel-editor-note">O vídeo e o áudio originais serão preservados do início ao fim. A adaptação para 9:16 mantém toda a imagem, com fundo preenchido quando necessário. Arquivos grandes serão comprimidos para publicação.</p>
           </div>
         </div>
         {busy && <div className="reel-editor-progress" role="status"><span style={{ width: `${Math.round(progress * 100)}%` }} />Preparando vídeo vertical…</div>}
-        <footer><button className="button subtle" onClick={onCancel} disabled={busy}>Cancelar</button><button className="button primary" onClick={prepare} disabled={busy || !metadata}><Check size={16} />{busy ? "Processando…" : "Usar vídeo 9:16"}</button></footer>
+        <footer><button className="button subtle" onClick={onCancel} disabled={busy}>Cancelar</button><button className="button primary" onClick={prepare} disabled={busy || !metadata || !isFortalReelDurationAllowed(metadata.duration)}><Check size={16} />{busy ? "Processando…" : "Usar vídeo completo"}</button></footer>
       </>}
     </section>
   </div>;

@@ -28,11 +28,11 @@ export function calculateReelCrop(width, height, x = 0.5, y = 0.5) {
   return { left, top, width: cropWidth, height: cropHeight };
 }
 
-export async function inspectReelVideo(file) {
+export async function inspectReelVideo(file, { allowOversize = false } = {}) {
   if (!file || !["video/mp4", "video/webm", "video/quicktime"].includes(file.type)) {
     throw new Error("Selecione um vídeo MP4, WebM ou MOV válido.");
   }
-  if (file.size > FORTALREEL_MAX_FILE_BYTES) {
+  if (!allowOversize && file.size > FORTALREEL_MAX_FILE_BYTES) {
     throw new Error("O vídeo selecionado ultrapassa o limite de 40 MB.");
   }
   const url = URL.createObjectURL(file);
@@ -102,7 +102,7 @@ export async function cropReelVideo(file, {
       video.onloadedmetadata = resolve;
       video.onerror = () => reject(new Error("Não foi possível abrir o vídeo para recorte."));
     });
-    const source = calculateReelCrop(video.videoWidth, video.videoHeight, x, y);
+    const backgroundCrop = calculateReelCrop(video.videoWidth, video.videoHeight, x, y);
     const canvas = document.createElement("canvas");
     canvas.width = FORTALREEL_WIDTH;
     canvas.height = FORTALREEL_HEIGHT;
@@ -112,21 +112,23 @@ export async function cropReelVideo(file, {
 
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        audioContext = new AudioContextClass();
-        const audioSource = audioContext.createMediaElementSource(video);
-        const audioDestination = audioContext.createMediaStreamDestination();
-        audioSource.connect(audioDestination);
-        audioSource.connect(audioContext.destination);
-        audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
-      }
+      if (!AudioContextClass) throw new Error("Este navegador não oferece suporte ao processamento de áudio.");
+      audioContext = new AudioContextClass();
+      const audioSource = audioContext.createMediaElementSource(video);
+      const audioDestination = audioContext.createMediaStreamDestination();
+      audioSource.connect(audioDestination);
+      audioSource.connect(audioContext.destination);
+      audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+      await audioContext.resume();
     } catch (error) {
       stream.getTracks().forEach(track => track.stop());
       throw new Error(`Não foi possível preparar o áudio deste vídeo: ${error.message}`);
     }
 
     const { mimeType, extension } = getRecorderMimeType();
-    recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_400_000, audioBitsPerSecond: 128_000 });
+    const maxVideoBitrate = Math.floor((FORTALREEL_MAX_FILE_BYTES * 8 * 0.85) / duration) - 128_000;
+    const videoBitsPerSecond = Math.max(350_000, Math.min(2_400_000, maxVideoBitrate));
+    recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond, audioBitsPerSecond: 128_000 });
     const chunks = [];
     const renderedFile = new Promise((resolve, reject) => {
       recorder.ondataavailable = event => event.data.size && chunks.push(event.data);
@@ -153,9 +155,18 @@ export async function cropReelVideo(file, {
       });
     }
 
+    const fittedScale = Math.min(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+    const fittedWidth = video.videoWidth * fittedScale;
+    const fittedHeight = video.videoHeight * fittedScale;
+    const fittedLeft = (canvas.width - fittedWidth) / 2;
+    const fittedTop = (canvas.height - fittedHeight) / 2;
     let lastProgressAt = 0;
     const drawFrame = () => {
-      context.drawImage(video, source.left, source.top, source.width, source.height, 0, 0, canvas.width, canvas.height);
+      context.save();
+      context.filter = "blur(36px) brightness(.65)";
+      context.drawImage(video, backgroundCrop.left, backgroundCrop.top, backgroundCrop.width, backgroundCrop.height, 0, 0, canvas.width, canvas.height);
+      context.restore();
+      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, fittedLeft, fittedTop, fittedWidth, fittedHeight);
       const now = performance.now();
       if (now - lastProgressAt >= 250) {
         lastProgressAt = now;

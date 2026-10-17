@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, isFortalReelDurationAllowed, isFortalReelRatio,
+  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "../src/reelMedia.js";
 
 test("FortalReels accepts only vertical 9:16 dimensions within the metadata tolerance", () => {
@@ -21,6 +21,10 @@ test("FortalReels permits videos up to three minutes and rejects longer duration
   assert.equal(isFortalReelDurationAllowed(180), true);
   assert.equal(isFortalReelDurationAllowed(180.001), false);
   assert.equal(isFortalReelDurationAllowed(Number.NaN), false);
+});
+
+test("FortalReels keeps a 40 MB upload ceiling for processed files", () => {
+  assert.equal(FORTALREEL_MAX_FILE_BYTES, 40 * 1024 * 1024);
 });
 
 test("9:16 crop preserves the source aspect without stretching portrait and landscape videos", () => {

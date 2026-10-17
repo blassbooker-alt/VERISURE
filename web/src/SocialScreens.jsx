@@ -3,14 +3,14 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import {
   Activity, ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
   ImagePlus, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal,
-  Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, X, Zap,
+  Play, Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
 import { fortalfyAsset } from "./assetPath.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
 import { createSecureId } from "./secureId.js";
-import { FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio } from "./reelMedia.js";
+import { FORTALREEL_MAX_DURATION_SECONDS, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio } from "./reelMedia.js";
 import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
@@ -26,6 +26,27 @@ import {
 } from "./authService.js";
 
 const mediaUrl = path => path || "";
+const REEL_SOUND_EVENT = "fortalfy:reel-sound";
+let reelSoundEnabled = (() => {
+  try {
+    const preference = window.localStorage.getItem("fortalfy.reels.sound");
+    return preference == null || preference === "on";
+  } catch (error) {
+    console.error("Não foi possível carregar a preferência de áudio dos Reels.", error);
+    return false;
+  }
+})();
+
+function saveReelSoundPreference(enabled) {
+  reelSoundEnabled = enabled;
+  try {
+    window.localStorage.setItem("fortalfy.reels.sound", enabled ? "on" : "off");
+  } catch (error) {
+    console.error("Não foi possível salvar a preferência de áudio dos Reels.", error);
+  }
+  window.dispatchEvent(new CustomEvent(REEL_SOUND_EVENT, { detail: enabled }));
+}
+
 const formatDate = value => {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -858,6 +879,13 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
 function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   const watchedMedia = useRef(new Set());
   const containerRef = useRef(null);
+  const [soundEnabled, setSoundEnabled] = useState(reelSoundEnabled);
+  const [isPlaying, setIsPlaying] = useState(false);
+  useEffect(() => {
+    const syncSoundPreference = event => setSoundEnabled(event.detail);
+    window.addEventListener(REEL_SOUND_EVENT, syncSoundPreference);
+    return () => window.removeEventListener(REEL_SOUND_EVENT, syncSoundPreference);
+  }, []);
   useEffect(() => {
     if (!reelMode || !containerRef.current || typeof IntersectionObserver === "undefined") return undefined;
     const video = containerRef.current.querySelector("video");
@@ -865,7 +893,17 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
     let intersects = false;
     const syncPlayback = () => {
       if (intersects && document.visibilityState === "visible") {
-        video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
+        video.muted = !soundEnabled;
+        video.play().catch(error => {
+          if (!soundEnabled || error.name !== "NotAllowedError") {
+            console.error("Não foi possível iniciar a reprodução do Reel.", error);
+            return;
+          }
+          saveReelSoundPreference(false);
+          setSoundEnabled(false);
+          video.muted = true;
+          video.play().catch(retryError => console.error("Não foi possível iniciar a reprodução do Reel.", retryError));
+        });
       } else {
         video.pause();
       }
@@ -881,13 +919,32 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
       document.removeEventListener("visibilitychange", syncPlayback);
       video.pause();
     };
-  }, [media, reelMode]);
+  }, [media, reelMode, soundEnabled]);
+  const toggleReelSound = event => {
+    const video = event.currentTarget.parentElement?.querySelector("video");
+    if (!video) return;
+    const next = video.muted;
+    video.muted = !next;
+    saveReelSoundPreference(next);
+    setSoundEnabled(next);
+    if (next && video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel com som.", error));
+  };
   if (!media?.length) return null;
   const hasVideo = media.some(item => item.media_type === "video");
   return <div ref={containerRef} className={`social-media-grid count-${Math.min(media.length, 4)}${hasVideo && !reelMode ? " has-landscape-video" : ""}`}>
     {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className={`social-media-item${item.media_type === "video" && !reelMode ? " is-landscape-video" : ""}`}>
       {item.media_type === "video"
-        ? <video src={item.url} controls playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode} muted={reelMode} onTimeUpdate={event => {
+        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode} muted={reelMode && !soundEnabled} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onPlay={reelMode ? () => setIsPlaying(true) : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
+          const video = event.currentTarget;
+          if (video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
+          else video.pause();
+        } : undefined} onKeyDown={reelMode ? event => {
+          if (event.key !== " " && event.key !== "Enter") return;
+          event.preventDefault();
+          const video = event.currentTarget;
+          if (video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
+          else video.pause();
+        } : undefined} onTimeUpdate={event => {
           if (!reelMode || !onReelWatch || watchedMedia.current.has(item.id || item.storage_path)) return;
           const video = event.currentTarget;
           const threshold = video.duration > 0 ? Math.min(3, video.duration / 2) : Infinity;
@@ -895,7 +952,14 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
           const mediaKey = item.id || item.storage_path;
           watchedMedia.current.add(mediaKey);
           void onReelWatch();
-        }} />
+        }} />{reelMode && <>
+          {!isPlaying && <button type="button" className="social-reel-play" onClick={event => {
+            event.stopPropagation();
+            const video = event.currentTarget.parentElement?.querySelector("video");
+            video?.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
+          }} aria-label="Reproduzir Reel"><Play size={27} fill="currentColor" /></button>}
+          <button type="button" className="social-reel-sound" onClick={toggleReelSound} aria-label={soundEnabled ? "Desativar som do Reel" : "Ativar som do Reel"}>{soundEnabled ? <Volume2 size={21} /> : <VolumeX size={21} />}</button>
+        </>}</>
         : <button type="button" onClick={() => onOpen(media, index)} aria-label={`Ampliar mídia ${index + 1}`}><img src={item.url} alt={`Mídia da publicação ${index + 1}`} loading="lazy" />{index === 3 && media.length > 4 && <span>+{media.length - 4}</span>}</button>}
     </div>)}
   </div>;
@@ -917,11 +981,6 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false })
       if (!selected.length) return;
       if (selected.length !== 1) {
         notify("Selecione um único vídeo para o FortalReels.");
-        event.target.value = "";
-        return;
-      }
-      if (selected[0].size > FORTALREEL_MAX_FILE_BYTES) {
-        notify("O vídeo selecionado ultrapassa o limite de 40 MB.");
         event.target.value = "";
         return;
       }
@@ -1675,7 +1734,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   if (!session) return <>{!reelMode && <CommunityNavigation active="feed" />}<SocialAuth client={client} configured={configured} notify={notify} /></>;
   if (profileError) return <div className="social-feed-error" role="alert">{reelMode && <Link to="/feed" className="social-reels-back" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link>}<CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
   if (!profile) return <div className="social-inline-status"><LoaderCircle className="spin" size={17} /> Preparando seu perfil…</div>;
-  return <div className={`social-feed${reelMode ? " social-reels-page" : ""}`}>
+  return <div className={`social-feed${reelMode ? ` social-reels-page${composerOpen ? " is-composing" : ""}` : ""}`}>
     {!reelMode && <><CommunityNavigation active="feed" /><section className="social-feed-hero"><div className="social-feed-hero-copy"><span className="eyebrow"><Activity size={13} /> COMUNIDADE FORTALFY</span><h1>Esporte, saúde e movimento em conversa.</h1><p>Acompanhe atualizações de academias, profissionais de nutrição e educação física, atletas e pessoas que vivem o esporte.</p></div><div className="social-feed-hero-art" aria-hidden="true"><Dumbbell size={44} /><span>SEU RITMO<br />EM MOVIMENTO</span></div></section><nav className="social-feed-topics" aria-label="Explorar a comunidade"><Link to="/partner/gym"><Dumbbell size={15} /> Academias</Link><Link to="/nutrition"><Activity size={15} /> Nutrição</Link><Link to="/workout"><Zap size={15} /> Treinos</Link><Link to="/reels"><Video size={15} /> Vídeos</Link></nav></>}
     {reelMode && <div className="social-reels-intro"><Link className="social-reels-back" to="/feed" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link><Clapperboard size={19} /><span><strong>FortalReels</strong><small>Vídeos verticais 9:16 · até {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos</small></span><button type="button" className="button primary small-button" onClick={() => {
       if (!canPublishReels) {
