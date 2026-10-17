@@ -1059,7 +1059,7 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   return <div ref={containerRef} className={`social-media-grid count-${Math.min(media.length, 4)}${hasVideo && !reelMode ? " has-landscape-video" : ""}`}>
     {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className={`social-media-item${item.media_type === "video" && !reelMode ? " is-landscape-video" : ""}`}>
       {item.media_type === "video"
-        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode} muted={reelMode && !soundEnabled} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onPlay={reelMode ? () => setIsPlaying(true) : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
+        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode} muted={reelMode ? true : undefined} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onPlay={reelMode ? () => setIsPlaying(true) : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
           const video = event.currentTarget;
           if (video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
           else video.pause();
