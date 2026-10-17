@@ -1685,6 +1685,11 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   useEffect(() => {
     if (!client || !userId) return undefined;
     let active = true;
+    const timeout = window.setTimeout(() => {
+      if (!active) return;
+      setLoading(false);
+      setError("A conexão com o serviço está demorando. Verifique sua conexão e tente novamente.");
+    }, 20000);
     setLoading(true);
     setError("");
     loadFeed(client, userId, { filter, offset: 0, mediaType })
@@ -1692,14 +1697,21 @@ export function SocialFeed({ client, configured, session, profile, profileError 
         if (!active) return;
         setPosts(result.posts);
         setHasMore(result.hasMore);
+        setError("");
       })
       .catch(failure => {
         if (!active) return;
         console.error("Falha ao carregar o Feed social.", failure);
         setError(getErrorMessage(failure, "Não foi possível carregar o Feed."));
       })
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
   }, [client, userId, filter, mediaType]);
 
   useEffect(() => {

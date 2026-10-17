@@ -7,11 +7,11 @@ import {
   setFollow,
 } from "../src/socialService.js";
 
-function query(result, onSelect = () => {}) {
+function query(result, onSelect = () => {}, onRange = () => {}) {
   return {
-    select(fields) { onSelect(fields); return this; },
+    select(fields, options) { onSelect(fields, options); return this; },
     order() { return this; },
-    range() { return this; },
+    range(start, end) { onRange(start, end); return this; },
     eq() { return this; },
     in() { return this; },
     then(resolve, reject) { return Promise.resolve(result).then(resolve, reject); },
@@ -400,6 +400,61 @@ test("feed loads mapped counts, the current user's like state, and pagination", 
   assert.equal(postSelections.some(fields => fields.includes("updated_at")), false);
   assert.equal(postSelections.some(fields => fields.includes("is_reel")), false);
   assert.equal(postSelections.some(fields => fields.includes("reel_validated")), false);
+});
+
+test("Reels load a small page without an exact count and batch signed media URLs", async () => {
+  const selections = [];
+  const ranges = [];
+  const signedBatches = [];
+  let postsQueries = 0;
+  const reel = {
+    id: "reel-1",
+    author_id: "author-1",
+    body: "Reel",
+    shared_post_id: null,
+    published_at: "2026-10-13T20:00:00Z",
+    author: { id: "author-1", display_name: "Ana", avatar_path: "author/avatar.webp" },
+    post_media: [{ id: "media-1", storage_path: "author/posts/reel.mp4", media_type: "video", sort_order: 0 }],
+    likes: [{ count: 1 }],
+    comments: [{ count: 0 }],
+  };
+  const client = {
+    from(table) {
+      if (table === "posts") {
+        postsQueries += 1;
+        const result = postsQueries === 1
+          ? { data: [reel], error: null, count: null }
+          : { data: [], error: null };
+        return query(result, (fields, options) => selections.push({ fields, options }), (start, end) => ranges.push([start, end]));
+      }
+      if (table === "post_likes" || table === "saved_posts") return query({ data: [], error: null });
+      throw new Error(`Unexpected table: ${table}`);
+    },
+    rpc: async () => ({ data: [], error: null }),
+    storage: {
+      from: bucket => {
+        assert.equal(bucket, "social-media");
+        return {
+          createSignedUrls: async (paths, expiresIn) => {
+            signedBatches.push({ paths, expiresIn });
+            return { data: paths.map(path => ({ path, signedUrl: `signed:${path}` })), error: null };
+          },
+        };
+      },
+    },
+  };
+  const result = await loadFeed(client, "viewer-1", { mediaType: "video" });
+
+  assert.equal(selections[0].options, undefined);
+  assert.deepEqual(ranges[0], [0, 5]);
+  assert.equal(result.posts.length, 1);
+  assert.equal(result.posts[0].author.avatar, "signed:author/avatar.webp");
+  assert.equal(result.posts[0].media[0].url, "signed:author/posts/reel.mp4");
+  assert.equal(result.hasMore, false);
+  assert.deepEqual(signedBatches, [{
+    paths: ["author/avatar.webp", "author/posts/reel.mp4"],
+    expiresIn: 3600,
+  }]);
 });
 
 test("feed loads shared posts and share counts without recursive PostgREST relationships", async () => {

@@ -160,15 +160,24 @@ export async function isUsernameAvailable(client, username, profileId = null) {
   return Boolean(data);
 }
 
-async function signPostMedia(client, post) {
-  const media = [...(post.post_media || [])].sort((a, b) => a.sort_order - b.sort_order);
-  if (post.media_path && !media.some(item => item.storage_path === post.media_path)) {
-    media.unshift({ id: post.media_path, storage_path: post.media_path, media_type: "image", sort_order: -1 });
+async function signMediaBatch(client, paths) {
+  const uniquePaths = [...new Set(paths.filter(path => path && !/^https?:\/\//i.test(path) && !path.startsWith("data:")))];
+  if (!uniquePaths.length) return new Map();
+  const signedUrls = new Map();
+  for (let offset = 0; offset < uniquePaths.length; offset += 100) {
+    const pathsBatch = uniquePaths.slice(offset, offset + 100);
+    const { data, error } = await client.storage.from(MEDIA_BUCKET).createSignedUrls(pathsBatch, 3600);
+    if (error) throw error;
+    for (const item of data || []) {
+      if (item.error) throw item.error;
+      if (!item.signedUrl) throw new Error("Não foi possível preparar as mídias do Feed.");
+      signedUrls.set(item.path, item.signedUrl);
+    }
   }
-  return Promise.all(media.map(async item => ({
-    ...item,
-    url: await signMedia(client, item.storage_path),
-  })));
+  if (signedUrls.size !== uniquePaths.length) {
+    throw new Error("O armazenamento não retornou todos os vídeos solicitados.");
+  }
+  return signedUrls;
 }
 
 export async function loadFeed(client, userId, { filter = "latest", offset = 0, limit = 15, authorId = "", mediaType = "" } = {}) {
@@ -184,6 +193,7 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
     if (!followedIds.length) return { posts: [], hasMore: false, total: 0 };
   }
 
+  const pageLimit = mediaType === "video" ? Math.min(limit, 5) : limit;
   const mediaRelation = mediaType ? "post_media!inner" : "post_media";
   let query = client.from("posts").select(`
     id,author_id,body,visibility,shared_post_id,published_at,
@@ -191,10 +201,10 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
     ${mediaRelation}(id,storage_path,media_type,sort_order),
     likes:post_likes(count),
     comments:post_comments(count)
-  `, { count: "exact" })
+  `, mediaType === "video" ? undefined : { count: "exact" })
     .order("published_at", { ascending: false })
     .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .range(offset, offset + pageLimit);
   if (followedIds) query = query.in("author_id", followedIds);
   if (authorId) query = query.eq("author_id", authorId);
   if (mediaType) query = query.eq("post_media.media_type", mediaType);
@@ -202,7 +212,11 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
 
   const { data, error, count } = await query;
   if (error) throw error;
-  const rows = data || [];
+  const fetchedRows = data || [];
+  const rows = fetchedRows.slice(0, pageLimit);
+  const hasMore = mediaType === "video" || count == null
+    ? fetchedRows.length > pageLimit
+    : offset + rows.length < count;
   const sharedPostIds = [...new Set(rows.map(post => post.shared_post_id).filter(Boolean))];
   const likedIds = new Set();
   const savedIds = new Set();
@@ -239,19 +253,38 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
     (reelViewsResult.data || []).forEach(view => reelViewCounts.set(view.post_id, Number(view.view_count) || 0));
     (originalsResult.data || []).forEach(original => originals.set(original.id, original));
   }
-  const posts = await Promise.all(rows.map(async post => {
+  const allMediaPosts = [...rows, ...originals.values()];
+  const signedUrls = await signMediaBatch(client, allMediaPosts.flatMap(post => [
+    post.author?.avatar_path,
+    post.media_path,
+    ...(post.post_media || []).map(item => item.storage_path),
+  ]));
+  const resolveMedia = path => {
+    if (!path || /^https?:\/\//i.test(path) || path.startsWith("data:")) return path || "";
+    const signedUrl = signedUrls.get(path);
+    if (!signedUrl) throw new Error("Não foi possível preparar uma mídia do Feed.");
+    return signedUrl;
+  };
+  const posts = rows.map(post => {
     const author = mapProfile(post.author);
-    if (author) author.avatar = await signMedia(client, author.avatar);
-    const media = await signPostMedia(client, post);
+    if (author) author.avatar = resolveMedia(author.avatar);
+    const media = [...(post.post_media || [])]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(item => ({ ...item, url: resolveMedia(item.storage_path) }));
+    if (post.media_path && !media.some(item => item.storage_path === post.media_path)) {
+      media.unshift({ id: post.media_path, storage_path: post.media_path, media_type: "image", sort_order: -1, url: resolveMedia(post.media_path) });
+    }
     let original = null;
     const originalPost = originals.get(post.shared_post_id);
     if (originalPost) {
       const originalAuthor = mapProfile(originalPost.author);
-      if (originalAuthor) originalAuthor.avatar = await signMedia(client, originalAuthor.avatar);
+      if (originalAuthor) originalAuthor.avatar = resolveMedia(originalAuthor.avatar);
       original = {
         ...originalPost,
         author: originalAuthor,
-        media: await signPostMedia(client, originalPost),
+        media: [...(originalPost.post_media || [])]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map(item => ({ ...item, url: resolveMedia(item.storage_path) })),
       };
     }
     return {
@@ -266,11 +299,11 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
       shareCount: shareCounts.get(post.id) || 0,
       reelViewCount: reelViewCounts.get(post.id) || 0,
     };
-  }));
+  });
   return {
     posts,
-    hasMore: count == null ? rows.length === limit : offset + rows.length < count,
-    total: count ?? offset + rows.length,
+    hasMore,
+    total: mediaType === "video" ? offset + rows.length + Number(hasMore) : count ?? offset + rows.length,
   };
 }
 
