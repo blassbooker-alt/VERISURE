@@ -10,7 +10,10 @@ import { fortalfyAsset } from "./assetPath.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
 import { createSecureId } from "./secureId.js";
-import { FORTALREEL_MAX_DURATION_SECONDS, inspectReelVideo, isFortalReelDurationAllowed, isFortalReelRatio } from "./reelMedia.js";
+import {
+  FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_SOUNDTRACK_URL, inspectMp4AudioTrackUrl, inspectReelVideo,
+  isFortalReelDurationAllowed, isFortalReelRatio,
+} from "./reelMedia.js";
 import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
@@ -879,10 +882,17 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
 function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   const watchedMedia = useRef(new Set());
   const containerRef = useRef(null);
+  const audioTrackCheckRef = useRef({ path: "", promise: null });
+  const soundtrackRef = useRef(null);
+  const soundEnabledRef = useRef(reelSoundEnabled);
+  const reelVisibleRef = useRef(false);
   const [soundEnabled, setSoundEnabled] = useState(reelSoundEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
-    const syncSoundPreference = event => setSoundEnabled(event.detail);
+    const syncSoundPreference = event => {
+      soundEnabledRef.current = event.detail;
+      setSoundEnabled(event.detail);
+    };
     window.addEventListener(REEL_SOUND_EVENT, syncSoundPreference);
     return () => window.removeEventListener(REEL_SOUND_EVENT, syncSoundPreference);
   }, []);
@@ -890,44 +900,139 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
     if (!reelMode || !containerRef.current || typeof IntersectionObserver === "undefined") return undefined;
     const video = containerRef.current.querySelector("video");
     if (!video) return undefined;
+    const reel = media.find(item => item.media_type === "video");
+    if (!reel) return undefined;
+    const soundtrack = new Audio(FORTALREEL_SOUNDTRACK_URL);
+    soundtrack.loop = true;
+    soundtrack.preload = "none";
+    soundtrack.volume = 0.4;
+    soundtrackRef.current = soundtrack;
     let intersects = false;
+    let active = true;
+    const stopSoundtrack = () => {
+      soundtrack.pause();
+      soundtrack.currentTime = 0;
+    };
+    const startSoundtrack = () => {
+      soundtrack.play().catch(error => {
+        if (error.name === "NotAllowedError") {
+          soundEnabledRef.current = false;
+          saveReelSoundPreference(false);
+          setSoundEnabled(false);
+          video.muted = true;
+          return;
+        }
+        if (error.name === "AbortError") return;
+        console.error("Não foi possível iniciar a trilha dos Reels.", error);
+      });
+    };
+    const syncSoundtrack = (fromUserGesture = false) => {
+      const enabled = soundEnabledRef.current;
+      if (!active || !intersects || document.visibilityState !== "visible" || !enabled) {
+        stopSoundtrack();
+        return;
+      }
+      if (fromUserGesture) {
+        video.muted = true;
+        startSoundtrack();
+      } else if (video.paused) {
+        stopSoundtrack();
+        return;
+      }
+      if (audioTrackCheckRef.current.path !== reel.storage_path) {
+        audioTrackCheckRef.current = {
+          path: reel.storage_path,
+          promise: inspectMp4AudioTrackUrl(reel.url),
+        };
+      }
+      audioTrackCheckRef.current.promise.then(hasAudio => {
+        if (!active || !intersects || document.visibilityState !== "visible" || !soundEnabledRef.current) return;
+        if (hasAudio === false) {
+          video.muted = true;
+          if (soundtrack.paused) startSoundtrack();
+        } else {
+          stopSoundtrack();
+          video.muted = false;
+        }
+      }).catch(error => console.error("Não foi possível verificar o áudio original do Reel.", error));
+    };
     const syncPlayback = () => {
+      reelVisibleRef.current = intersects && document.visibilityState === "visible";
       if (intersects && document.visibilityState === "visible") {
-        video.muted = !soundEnabled;
+        video.muted = !soundEnabledRef.current;
+        syncSoundtrack();
         video.play().catch(error => {
-          if (!soundEnabled || error.name !== "NotAllowedError") {
+          if (error.name === "AbortError") return;
+          if (!soundEnabledRef.current || error.name !== "NotAllowedError") {
             console.error("Não foi possível iniciar a reprodução do Reel.", error);
             return;
           }
+          soundEnabledRef.current = false;
           saveReelSoundPreference(false);
           setSoundEnabled(false);
+          stopSoundtrack();
           video.muted = true;
           video.play().catch(retryError => console.error("Não foi possível iniciar a reprodução do Reel.", retryError));
         });
       } else {
         video.pause();
+        stopSoundtrack();
       }
     };
+    const handleVideoPlay = () => syncSoundtrack();
+    const handleVideoPause = () => stopSoundtrack();
     const observer = new IntersectionObserver(entries => {
       intersects = entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= 0.65);
       syncPlayback();
     }, { threshold: [0, 0.65, 1] });
     observer.observe(containerRef.current);
     document.addEventListener("visibilitychange", syncPlayback);
+    video.addEventListener("play", handleVideoPlay);
+    video.addEventListener("pause", handleVideoPause);
     return () => {
+      active = false;
       observer.disconnect();
       document.removeEventListener("visibilitychange", syncPlayback);
+      video.removeEventListener("play", handleVideoPlay);
+      video.removeEventListener("pause", handleVideoPause);
+      reelVisibleRef.current = false;
       video.pause();
+      stopSoundtrack();
+      soundtrack.removeAttribute("src");
+      soundtrack.load();
+      if (soundtrackRef.current === soundtrack) soundtrackRef.current = null;
     };
-  }, [media, reelMode, soundEnabled]);
+  }, [media, reelMode]);
   const toggleReelSound = event => {
     const video = event.currentTarget.parentElement?.querySelector("video");
     if (!video) return;
-    const next = video.muted;
+    const next = !soundEnabledRef.current;
+    soundEnabledRef.current = next;
     video.muted = !next;
     saveReelSoundPreference(next);
     setSoundEnabled(next);
-    if (next && video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel com som.", error));
+    if (next) {
+      const soundtrack = soundtrackRef.current;
+      if (soundtrack && reelVisibleRef.current) {
+        video.muted = true;
+        soundtrack.play().catch(error => {
+          if (error.name === "NotAllowedError") {
+            soundEnabledRef.current = false;
+            saveReelSoundPreference(false);
+            setSoundEnabled(false);
+            video.muted = true;
+          } else if (error.name !== "AbortError") {
+            console.error("Não foi possível iniciar a trilha dos Reels.", error);
+          }
+        });
+      }
+      if (reelVisibleRef.current && video.paused) video.play().catch(error => {
+        if (error.name !== "AbortError") console.error("Não foi possível iniciar a reprodução do Reel com som.", error);
+      });
+    } else if (soundtrackRef.current) {
+      soundtrackRef.current.pause();
+      soundtrackRef.current.currentTime = 0;
+    }
   };
   if (!media?.length) return null;
   const hasVideo = media.some(item => item.media_type === "video");
@@ -1301,11 +1406,13 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
 
   return <article className={`social-post-card${reelMode ? " social-reel-card" : ""}`} id={`post-${post.id}`}>
     {post.shared_post_id && <div className="social-shared-label"><Share2 size={14} /> {post.author?.name || "Uma pessoa"} compartilhou</div>}
-    <header className="social-post-header">
+    <header className={`social-post-header${reelMode ? " social-reel-author-header" : ""}`}>
       <AuthorLink author={post.author} ownId={userId} />
       <div className="social-post-author">
         <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
-        <span>{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>
+        {reelMode
+          ? <span className="social-reel-author-meta">{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}</span>
+          : <span>{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
       </div>
       {!own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
       <div className="social-post-menu-wrap">

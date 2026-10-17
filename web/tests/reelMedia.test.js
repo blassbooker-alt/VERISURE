@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectMp4AudioTrack, isFortalReelDurationAllowed, isFortalReelRatio,
+  calculateReelCrop, FORTALREEL_MAX_DURATION_SECONDS, FORTALREEL_MAX_FILE_BYTES, inspectMp4AudioTrack, inspectMp4AudioTrackUrl, isFortalReelDurationAllowed, isFortalReelRatio,
 } from "../src/reelMedia.js";
 
 test("FortalReels accepts only vertical 9:16 dimensions within the metadata tolerance", () => {
@@ -49,6 +49,21 @@ test("FortalReels detects original MP4 audio tracks without treating silent vide
   assert.equal(await inspectMp4AudioTrack(withAudio), true);
   assert.equal(await inspectMp4AudioTrack(withoutAudio), false);
   assert.equal(await inspectMp4AudioTrack(unsupported), null);
+});
+
+test("FortalReels detects audio in remote MP4 files using byte-range requests", async () => {
+  const movieWithAudio = mp4Box("moov", Buffer.concat([mp4Track("vide"), mp4Track("soun")]));
+  const silentMovie = mp4Box("moov", mp4Track("vide"));
+  const makeFetcher = content => async (_url, options) => {
+    const [, start, end] = options.headers.Range.match(/bytes=(\d+)-(\d+)/);
+    return new Response(content.subarray(Number(start), Number(end) + 1), { status: 206 });
+  };
+  const withAudio = Buffer.concat([mp4Box("ftyp", Buffer.alloc(8)), movieWithAudio]);
+  const withoutAudio = Buffer.concat([mp4Box("ftyp", Buffer.alloc(8)), mp4Box("mdat", Buffer.alloc(4)), silentMovie]);
+
+  assert.equal(await inspectMp4AudioTrackUrl("https://storage.example/reel.mp4?token=signed", makeFetcher(withAudio)), true);
+  assert.equal(await inspectMp4AudioTrackUrl("https://storage.example/reel.mp4?token=signed", makeFetcher(withoutAudio)), false);
+  assert.equal(await inspectMp4AudioTrackUrl("https://storage.example/reel.webm?token=signed", makeFetcher(withAudio)), null);
 });
 
 test("9:16 crop preserves the source aspect without stretching portrait and landscape videos", () => {

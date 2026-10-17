@@ -4,7 +4,7 @@ export const FORTALREEL_WIDTH = 1080;
 export const FORTALREEL_HEIGHT = 1920;
 export const FORTALREEL_RATIO = FORTALREEL_WIDTH / FORTALREEL_HEIGHT;
 export const FORTALREEL_RATIO_TOLERANCE = 0.0025;
-const FORTALREEL_SOUNDTRACK_URL = new URL("./assets/fortalfy-reel-instrumental.wav", import.meta.url).href;
+export const FORTALREEL_SOUNDTRACK_URL = new URL("./assets/fortalfy-reel-instrumental.wav", import.meta.url).href;
 
 export function isFortalReelDurationAllowed(duration) {
   return Number.isFinite(duration) && duration > 0 && duration <= FORTALREEL_MAX_DURATION_SECONDS;
@@ -81,6 +81,50 @@ export async function inspectMp4AudioTrack(file) {
     offset += size;
   }
   throw new Error("O arquivo MP4 não contém os metadados necessários para validar o áudio.");
+}
+
+export async function inspectMp4AudioTrackUrl(url, fetcher = fetch) {
+  if (typeof url !== "string" || !/^https?:\/\//i.test(url) || !/\.mp4(?:$|[?#])|\.mov(?:$|[?#])/i.test(url)) return null;
+  let offset = 0;
+  for (let boxIndex = 0; boxIndex < 64; boxIndex += 1) {
+    const headerResponse = await fetcher(url, { headers: { Range: `bytes=${offset}-${offset + 15}` } });
+    if (!headerResponse.ok && headerResponse.status !== 416) {
+      throw new Error(`Não foi possível verificar o áudio do Reel (HTTP ${headerResponse.status}).`);
+    }
+    if (headerResponse.status === 416) break;
+    if (headerResponse.status !== 206) {
+      throw new Error("O armazenamento não permitiu verificar a faixa de áudio do Reel.");
+    }
+    const header = await headerResponse.arrayBuffer();
+    if (header.byteLength < 8) break;
+    const view = new DataView(header);
+    const size32 = view.getUint32(0);
+    const type = String.fromCharCode(view.getUint8(4), view.getUint8(5), view.getUint8(6), view.getUint8(7));
+    const headerSize = size32 === 1 ? 16 : 8;
+    if (size32 === 1 && header.byteLength < 16) {
+      throw new Error("Os metadados do arquivo MP4 estão incompletos.");
+    }
+    const size = size32 === 1 ? Number(view.getBigUint64(8)) : size32;
+    if (!Number.isSafeInteger(size) || size < headerSize) {
+      if (size32 === 0 && type === "mdat") return false;
+      throw new Error("Não foi possível validar os metadados do Reel.");
+    }
+    if (type === "moov") {
+      if (size > 16 * 1024 * 1024) throw new Error("Os metadados do Reel excedem o limite de análise.");
+      const movieResponse = await fetcher(url, {
+        headers: { Range: `bytes=${offset + headerSize}-${offset + size - 1}` },
+      });
+      if (!movieResponse.ok || movieResponse.status !== 206) {
+        throw new Error("Não foi possível carregar os metadados de áudio do Reel.");
+      }
+      const movie = await movieResponse.arrayBuffer();
+      if (movie.byteLength !== size - headerSize) throw new Error("Os metadados de áudio do Reel estão incompletos.");
+      return hasAudioTrackInMovie(movie);
+    }
+    if (size32 === 0) break;
+    offset += size;
+  }
+  throw new Error("Não foi possível localizar a faixa de áudio do Reel.");
 }
 
 export async function inspectReelVideo(file, { allowOversize = false } = {}) {
