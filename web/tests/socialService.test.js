@@ -168,6 +168,14 @@ test("following a Reel author persists public follows and private follow request
           calls.push({ table, operation: "upsert", row, options });
           return { error: null };
         },
+        delete: () => ({
+          eq: (column, value) => ({
+            eq: async (nextColumn, nextValue) => {
+              calls.push({ table, operation: "delete", column, value, nextColumn, nextValue });
+              return { error: null };
+            },
+          }),
+        }),
         select: () => ({
           eq: (column, value) => ({
             eq: (nextColumn, nextValue) => ({
@@ -187,6 +195,7 @@ test("following a Reel author persists public follows and private follow request
   };
 
   assert.equal(await setFollow(client, "viewer-1", "creator-1", true), "following");
+  assert.equal(await setFollow(client, "viewer-1", "creator-1", false), "not-following");
   assert.equal(await setFollow(client, "viewer-1", "private-creator-1", true, true), "requested");
   assert.deepEqual(calls, [
     {
@@ -194,6 +203,14 @@ test("following a Reel author persists public follows and private follow request
       operation: "upsert",
       row: { follower_id: "viewer-1", followed_id: "creator-1" },
       options: { onConflict: "follower_id,followed_id", ignoreDuplicates: true },
+    },
+    {
+      table: "profile_follows",
+      operation: "delete",
+      column: "follower_id",
+      value: "viewer-1",
+      nextColumn: "followed_id",
+      nextValue: "creator-1",
     },
     {
       table: "follow_requests",

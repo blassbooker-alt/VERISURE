@@ -20,7 +20,7 @@ import {
   isUsernameAvailable, loadConversations, loadDirectMessages, loadMutualFollowState, loadProfileConnections, mapProfile, markConversationRead, publishPost,
   prepareProfileImage, recordReelView,
   reportComment, reportPost, respondFollowRequest, searchProfiles, sendDirectMessage,
-  setBookmark, removeProfileImage, setCommentLike, setFollow, setPostLike, sharePost, startConversation, normalizeSocialCount,
+  setBookmark, removeProfileImage, setCommentLike, setFollow as persistFollow, setPostLike, sharePost, startConversation, normalizeSocialCount,
   updateComment, updatePost, uploadProfileImage,
 } from "./socialService.js";
 import {
@@ -2187,7 +2187,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         return;
       }
       const wasFollowing = follow.isFollowing;
-      const result = await setFollow(client, userId, targetId, !follow.isFollowing, person?.isPrivate);
+      const result = await persistFollow(client, userId, targetId, !follow.isFollowing, person?.isPrivate);
       if (result === "requested") {
         setFollow(current => ({ ...current, requestStatus: "pending" }));
         notify("Solicitação de seguimento enviada.");
