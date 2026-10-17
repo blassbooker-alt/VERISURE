@@ -1767,7 +1767,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
       }
       setComposerOpen(value => !value);
     }}><Video size={15} />{composerOpen ? "Fechar criação" : "Criar Reel"}</button></div>}
-    <div className="social-feed-toolbar"><div className="social-filter-tabs">{filters.map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}</div><button className="social-refresh" onClick={refresh} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={15} /> : "Atualizar"}</button></div>
+    {!reelMode && <div className="social-feed-toolbar"><div className="social-filter-tabs">{filters.map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}</div><button className="social-refresh" onClick={refresh} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={15} /> : "Atualizar"}</button></div>}
     {(!reelMode || composerOpen) && <CreatePost client={client} userId={userId} onPublished={async () => { setComposerOpen(false); await refresh(); }} notify={notify} videosOnly={reelMode} soundtrackByDefault={reelMode && profile.username?.toLowerCase() === "fortalfy"} />}
     {!reelMode && feedArts.length > 0 && <section className="social-local-creations"><h3>Criações deste aparelho</h3><p>Essas peças ainda não foram publicadas para outras contas.</p><div>{feedArts.map(art => <article key={art.id}><img src={art.dataUrl} alt={`Criação local: ${art.title}`} /><span>SOMENTE NESTE APARELHO</span><strong>{art.title}</strong></article>)}</div></section>}
     {reelMode
