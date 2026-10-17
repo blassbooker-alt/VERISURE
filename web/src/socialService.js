@@ -8,6 +8,11 @@ export function isDemoUser(userId) {
   return userId === "demo-user-fortalfy" || userId.startsWith("demo-") || userId.startsWith("local-");
 }
 
+export function normalizeSocialCount(value) {
+  const count = Number(value);
+  return Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
+}
+
 function requireRealUser(userId) {
   if (!userId || isDemoUser(userId)) throw new Error("Entre com uma conta real para acessar este recurso.");
 }
@@ -810,8 +815,8 @@ export async function loadFollowState(client, userId, profileId) {
     if (relationship.error) throw relationship.error;
     if (request.error) throw request.error;
     return {
-      followers,
-      following,
+      followers: normalizeSocialCount(followers),
+      following: normalizeSocialCount(following),
       isFollowing: Boolean(relationship.data),
       requestStatus: request.data?.status || "",
     };
@@ -819,8 +824,8 @@ export async function loadFollowState(client, userId, profileId) {
   const stats = Array.isArray(data) ? data[0] : data;
   if (!stats) throw new Error("Este perfil não está disponível para sua conta.");
   return {
-    followers: Number(stats.followers_count) || 0,
-    following: Number(stats.following_count) || 0,
+    followers: normalizeSocialCount(stats.followers_count),
+    following: normalizeSocialCount(stats.following_count),
     isFollowing: Boolean(stats.is_following),
     requestStatus: stats.request_status || "",
   };

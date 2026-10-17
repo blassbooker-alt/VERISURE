@@ -20,7 +20,7 @@ import {
   isUsernameAvailable, loadConversations, loadDirectMessages, loadMutualFollowState, loadProfileConnections, mapProfile, markConversationRead, publishPost,
   prepareProfileImage, recordReelView,
   reportComment, reportPost, respondFollowRequest, searchProfiles, sendDirectMessage,
-  setBookmark, removeProfileImage, setCommentLike, setFollow, setPostLike, sharePost, startConversation,
+  setBookmark, removeProfileImage, setCommentLike, setFollow, setPostLike, sharePost, startConversation, normalizeSocialCount,
   updateComment, updatePost, uploadProfileImage,
 } from "./socialService.js";
 import {
@@ -2192,7 +2192,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         setFollow(current => ({ ...current, requestStatus: "pending" }));
         notify("Solicitação de seguimento enviada.");
       } else {
-        setFollow(current => ({ ...current, isFollowing: result === "following", requestStatus: "", followers: current.followers + (result === "following" ? 1 : wasFollowing ? -1 : 0) }));
+        setFollow(current => ({ ...current, isFollowing: result === "following", requestStatus: "", followers: Math.max(0, normalizeSocialCount(current.followers) + (result === "following" ? 1 : wasFollowing ? -1 : 0)) }));
         notify(result === "following" ? "Perfil seguido." : "Você deixou de seguir este perfil.");
       }
     } catch (failure) {
@@ -2207,7 +2207,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     try {
       await respondFollowRequest(client, request.follower_id, userId, accepted);
       setRequests(current => current.filter(item => item.follower_id !== request.follower_id));
-      if (accepted) setFollow(current => ({ ...current, followers: current.followers + 1 }));
+      if (accepted) setFollow(current => ({ ...current, followers: normalizeSocialCount(current.followers) + 1 }));
       notify(accepted ? "Solicitação aprovada." : "Solicitação recusada.");
     } catch (failure) {
       console.error("Falha ao responder à solicitação de seguimento.", failure);

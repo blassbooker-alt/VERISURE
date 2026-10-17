@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   deletePost, getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState,
   loadMutualFollowState, loadProfileConnections, mapProfile, recordReelView,
-  prepareProfileImage, publishPost, respondFollowRequest, startConversation,
+  normalizeSocialCount, prepareProfileImage, publishPost, respondFollowRequest, startConversation,
   setFollow,
 } from "../src/socialService.js";
 
@@ -104,6 +104,15 @@ test("follow state uses the privacy-aware aggregate RPC and normalizes counts", 
     name: "get_fortalfy_profile_social_stats",
     params: { p_profile_id: "profile-1" },
   }]);
+});
+
+test("social counts normalize missing, invalid, and negative values to finite nonnegative integers", () => {
+  assert.equal(normalizeSocialCount("12"), 12);
+  assert.equal(normalizeSocialCount(3.8), 3);
+  assert.equal(normalizeSocialCount(undefined), 0);
+  assert.equal(normalizeSocialCount("NaN"), 0);
+  assert.equal(normalizeSocialCount(Number.POSITIVE_INFINITY), 0);
+  assert.equal(normalizeSocialCount(-2), 0);
 });
 
 test("follow state uses existing follow tables when the aggregate RPC is not installed", async () => {
