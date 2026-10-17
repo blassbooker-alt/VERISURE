@@ -1692,7 +1692,19 @@ export function SocialFeed({ client, configured, session, profile, profileError 
     }, 20000);
     setLoading(true);
     setError("");
-    loadFeed(client, userId, { filter, offset: 0, mediaType })
+    loadFeed(client, userId, {
+      filter,
+      offset: 0,
+      mediaType,
+      onPostsReady: mediaType === "video" ? result => {
+        if (!active) return;
+        window.clearTimeout(timeout);
+        setPosts(result.posts);
+        setHasMore(result.hasMore);
+        setError("");
+        setLoading(false);
+      } : undefined,
+    })
       .then(result => {
         if (!active) return;
         setPosts(result.posts);

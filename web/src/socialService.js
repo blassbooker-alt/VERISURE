@@ -180,7 +180,14 @@ async function signMediaBatch(client, paths) {
   return signedUrls;
 }
 
-export async function loadFeed(client, userId, { filter = "latest", offset = 0, limit = 15, authorId = "", mediaType = "" } = {}) {
+export async function loadFeed(client, userId, {
+  filter = "latest",
+  offset = 0,
+  limit = 15,
+  authorId = "",
+  mediaType = "",
+  onPostsReady,
+} = {}) {
   requireRealUser(userId);
   if (!client) throw new Error("A conexão com o Supabase não está configurada.");
   let followedIds = null;
@@ -195,12 +202,14 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
 
   const pageLimit = mediaType === "video" ? Math.min(limit, 5) : limit;
   const mediaRelation = mediaType ? "post_media!inner" : "post_media";
+  const engagementRelations = mediaType === "video"
+    ? ""
+    : ",\n    likes:post_likes(count),\n    comments:post_comments(count)";
   let query = client.from("posts").select(`
     id,author_id,body,visibility,shared_post_id,published_at,
     author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
-    ${mediaRelation}(id,storage_path,media_type,sort_order),
-    likes:post_likes(count),
-    comments:post_comments(count)
+    ${mediaRelation}(id,storage_path,media_type,sort_order)
+    ${engagementRelations}
   `, mediaType === "video" ? undefined : { count: "exact" })
     .order("published_at", { ascending: false })
     .order("id", { ascending: false })
@@ -223,13 +232,16 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
   const shareCounts = new Map();
   const originals = new Map();
   const reelViewCounts = new Map();
+  const engagementCounts = new Map();
+  let posts = [];
+  let relatedPromise = Promise.resolve({ results: [] });
   if (rows.length) {
     const originalFields = `
       id,author_id,body,published_at,media_path,
       author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
       post_media(id,storage_path,media_type,sort_order)
     `;
-    const [{ data: likes, error: likesError }, { data: saved, error: savedError }, sharesResult, originalsResult, reelViewsResult] = await Promise.all([
+    relatedPromise = Promise.all([
       client.from("post_likes").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("saved_posts").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("posts").select("shared_post_id").in("shared_post_id", rows.map(post => post.id)),
@@ -239,12 +251,64 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
       mediaType === "video"
         ? client.rpc("get_fortalfy_reel_view_counts", { p_post_ids: rows.map(post => post.id) })
         : Promise.resolve({ data: [], error: null }),
-    ]);
+      mediaType === "video"
+        ? client.from("posts").select("id,likes:post_likes(count),comments:post_comments(count)").in("id", rows.map(post => post.id))
+        : Promise.resolve({ data: rows, error: null }),
+    ]).then(results => ({ results }), error => ({ error }));
+    const signedUrls = await signMediaBatch(client, rows.flatMap(post => [
+      post.author?.avatar_path,
+      post.media_path,
+      ...(post.post_media || []).map(item => item.storage_path),
+    ]));
+    const resolveMedia = path => {
+      if (!path || /^https?:\/\//i.test(path) || path.startsWith("data:")) return path || "";
+      const signedUrl = signedUrls.get(path);
+      if (!signedUrl) throw new Error("Não foi possível preparar uma mídia do Feed.");
+      return signedUrl;
+    };
+    posts = rows.map(post => {
+      const author = mapProfile(post.author);
+      if (author) author.avatar = resolveMedia(author.avatar);
+      const media = [...(post.post_media || [])]
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(item => ({ ...item, url: resolveMedia(item.storage_path) }));
+      if (post.media_path && !media.some(item => item.storage_path === post.media_path)) {
+        media.unshift({ id: post.media_path, storage_path: post.media_path, media_type: "image", sort_order: -1, url: resolveMedia(post.media_path) });
+      }
+      return {
+        ...post,
+        author,
+        media,
+        original: null,
+        likedByMe: false,
+        savedByMe: false,
+        likeCount: post.likes?.[0]?.count || 0,
+        commentCount: post.comments?.[0]?.count || 0,
+        shareCount: 0,
+        reelViewCount: 0,
+      };
+    });
+  }
+  const total = mediaType === "video" ? offset + rows.length + Number(hasMore) : count ?? offset + rows.length;
+  onPostsReady?.({ posts, hasMore, total });
+
+  if (rows.length) {
+    const related = await relatedPromise;
+    if (related.error) throw related.error;
+    const [
+      { data: likes, error: likesError },
+      { data: saved, error: savedError },
+      sharesResult,
+      originalsResult,
+      reelViewsResult,
+      engagementResult,
+    ] = related.results;
     if (likesError) throw likesError;
     if (savedError) throw savedError;
     if (sharesResult.error) throw sharesResult.error;
     if (originalsResult.error) throw originalsResult.error;
     if (reelViewsResult.error) throw reelViewsResult.error;
+    if (engagementResult.error) throw engagementResult.error;
     (likes || []).forEach(like => likedIds.add(like.post_id));
     (saved || []).forEach(item => savedIds.add(item.post_id));
     (sharesResult.data || []).forEach(share => {
@@ -252,56 +316,49 @@ export async function loadFeed(client, userId, { filter = "latest", offset = 0, 
     });
     (reelViewsResult.data || []).forEach(view => reelViewCounts.set(view.post_id, Number(view.view_count) || 0));
     (originalsResult.data || []).forEach(original => originals.set(original.id, original));
+    (engagementResult.data || []).forEach(item => engagementCounts.set(item.id, {
+      likeCount: item.likes?.[0]?.count || 0,
+      commentCount: item.comments?.[0]?.count || 0,
+    }));
+    for (const post of posts) {
+      post.likedByMe = likedIds.has(post.id);
+      post.savedByMe = savedIds.has(post.id);
+      post.likeCount = engagementCounts.get(post.id)?.likeCount ?? post.likeCount;
+      post.commentCount = engagementCounts.get(post.id)?.commentCount ?? post.commentCount;
+      post.shareCount = shareCounts.get(post.id) || 0;
+      post.reelViewCount = reelViewCounts.get(post.id) || 0;
+    }
   }
-  const allMediaPosts = [...rows, ...originals.values()];
-  const signedUrls = await signMediaBatch(client, allMediaPosts.flatMap(post => [
+
+  const originalSignedUrls = await signMediaBatch(client, [...originals.values()].flatMap(post => [
     post.author?.avatar_path,
     post.media_path,
     ...(post.post_media || []).map(item => item.storage_path),
   ]));
-  const resolveMedia = path => {
+  const resolveOriginalMedia = path => {
     if (!path || /^https?:\/\//i.test(path) || path.startsWith("data:")) return path || "";
-    const signedUrl = signedUrls.get(path);
-    if (!signedUrl) throw new Error("Não foi possível preparar uma mídia do Feed.");
+    const signedUrl = originalSignedUrls.get(path);
+    if (!signedUrl) throw new Error("Não foi possível preparar uma mídia compartilhada do Feed.");
     return signedUrl;
   };
-  const posts = rows.map(post => {
-    const author = mapProfile(post.author);
-    if (author) author.avatar = resolveMedia(author.avatar);
-    const media = [...(post.post_media || [])]
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(item => ({ ...item, url: resolveMedia(item.storage_path) }));
-    if (post.media_path && !media.some(item => item.storage_path === post.media_path)) {
-      media.unshift({ id: post.media_path, storage_path: post.media_path, media_type: "image", sort_order: -1, url: resolveMedia(post.media_path) });
-    }
+  for (const post of posts) {
     let original = null;
     const originalPost = originals.get(post.shared_post_id);
     if (originalPost) {
       const originalAuthor = mapProfile(originalPost.author);
-      if (originalAuthor) originalAuthor.avatar = resolveMedia(originalAuthor.avatar);
+      if (originalAuthor) originalAuthor.avatar = resolveOriginalMedia(originalAuthor.avatar);
       original = {
         ...originalPost,
         author: originalAuthor,
         media: [...(originalPost.post_media || [])]
           .sort((a, b) => a.sort_order - b.sort_order)
-          .map(item => ({ ...item, url: resolveMedia(item.storage_path) })),
+          .map(item => ({ ...item, url: resolveOriginalMedia(item.storage_path) })),
       };
     }
-    return {
-      ...post,
-      author,
-      media,
-      original,
-      likedByMe: likedIds.has(post.id),
-      savedByMe: savedIds.has(post.id),
-      likeCount: post.likes?.[0]?.count || 0,
-      commentCount: post.comments?.[0]?.count || 0,
-      shareCount: shareCounts.get(post.id) || 0,
-      reelViewCount: reelViewCounts.get(post.id) || 0,
-    };
-  });
+    post.original = original;
+  }
   return {
-    posts,
+    posts: posts.map(post => ({ ...post })),
     hasMore,
     total: mediaType === "video" ? offset + rows.length + Number(hasMore) : count ?? offset + rows.length,
   };

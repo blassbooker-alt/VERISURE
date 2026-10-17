@@ -407,6 +407,7 @@ test("Reels load a small page without an exact count and batch signed media URLs
   const ranges = [];
   const signedBatches = [];
   let postsQueries = 0;
+  let finishViewCountRequest;
   const reel = {
     id: "reel-1",
     author_id: "author-1",
@@ -415,8 +416,6 @@ test("Reels load a small page without an exact count and batch signed media URLs
     published_at: "2026-10-13T20:00:00Z",
     author: { id: "author-1", display_name: "Ana", avatar_path: "author/avatar.webp" },
     post_media: [{ id: "media-1", storage_path: "author/posts/reel.mp4", media_type: "video", sort_order: 0 }],
-    likes: [{ count: 1 }],
-    comments: [{ count: 0 }],
   };
   const client = {
     from(table) {
@@ -424,13 +423,15 @@ test("Reels load a small page without an exact count and batch signed media URLs
         postsQueries += 1;
         const result = postsQueries === 1
           ? { data: [reel], error: null, count: null }
-          : { data: [], error: null };
+          : postsQueries === 2
+            ? { data: [], error: null }
+            : { data: [{ id: "reel-1", likes: [{ count: 7 }], comments: [{ count: 3 }] }], error: null };
         return query(result, (fields, options) => selections.push({ fields, options }), (start, end) => ranges.push([start, end]));
       }
       if (table === "post_likes" || table === "saved_posts") return query({ data: [], error: null });
       throw new Error(`Unexpected table: ${table}`);
     },
-    rpc: async () => ({ data: [], error: null }),
+    rpc: async () => new Promise(resolve => { finishViewCountRequest = resolve; }),
     storage: {
       from: bucket => {
         assert.equal(bucket, "social-media");
@@ -443,11 +444,24 @@ test("Reels load a small page without an exact count and batch signed media URLs
       },
     },
   };
-  const result = await loadFeed(client, "viewer-1", { mediaType: "video" });
+  let firstPage;
+  const pendingFeed = loadFeed(client, "viewer-1", {
+    mediaType: "video",
+    onPostsReady: page => { firstPage = page; },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(firstPage.posts[0].media[0].url, "signed:author/posts/reel.mp4");
+  assert.equal(firstPage.posts[0].likeCount, 0);
+  finishViewCountRequest({ data: [], error: null });
+  const result = await pendingFeed;
 
   assert.equal(selections[0].options, undefined);
   assert.deepEqual(ranges[0], [0, 5]);
   assert.equal(result.posts.length, 1);
+  assert.equal(firstPage.posts.length, 1);
+  assert.notEqual(result.posts, firstPage.posts);
+  assert.equal(result.posts[0].likeCount, 7);
+  assert.equal(result.posts[0].commentCount, 3);
   assert.equal(result.posts[0].author.avatar, "signed:author/avatar.webp");
   assert.equal(result.posts[0].media[0].url, "signed:author/posts/reel.mp4");
   assert.equal(result.hasMore, false);
