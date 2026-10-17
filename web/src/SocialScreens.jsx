@@ -1232,6 +1232,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [reelViewCount, setReelViewCount] = useState(Number(post.reelViewCount) || 0);
   const reportedReelViews = useRef(new Set());
+  const commentsPanelRef = useRef(null);
   const own = post.author_id === userId;
   const longBody = post.body.length > 500;
   const displayBody = expanded || !longBody ? post.body : `${post.body.slice(0, 500)}…`;
@@ -1249,6 +1250,17 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   useEffect(() => {
     setReelViewCount(Number(post.reelViewCount) || 0);
   }, [post.id, post.reelViewCount]);
+  useEffect(() => {
+    if (!reelMode || !commentsOpen) return undefined;
+    const closeOnOutsidePointer = event => {
+      if (!(event.target instanceof Element)) return;
+      if (commentsPanelRef.current?.contains(event.target)) return;
+      if (event.target.closest('.social-reel-actions button[aria-label^="Comentar"]')) return;
+      setCommentsOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [commentsOpen, reelMode]);
   useEffect(() => {
     if (own) return undefined;
     let active = true;
@@ -1478,7 +1490,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
         {postActions}
       </div>
       : postActions}
-    {commentsOpen && <section className="social-comments">
+    {commentsOpen && <section className="social-comments" ref={commentsPanelRef}>
       {commentsLoading ? <p className="social-inline-status"><LoaderCircle className="spin" size={16} /> Carregando comentários…</p>
         : commentsError ? <p className="social-inline-error">{commentsError}<button onClick={async () => { setCommentsLoading(true); await refreshComments(); setCommentsLoading(false); }}>Tentar novamente</button></p>
           : !childComments.length ? <p className="social-empty-comments">Seja a primeira pessoa a comentar.</p>
