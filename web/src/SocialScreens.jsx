@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  Activity, ArrowLeft, ArrowRight, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, Heart,
-  ImagePlus, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal,
-  Play, Search, Send, Share2, ShieldCheck, Sparkles, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
+  Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, ExternalLink, Heart,
+  ImagePlus, Link as LinkIcon, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal, Plus,
+  Play, Search, Send, Share2, ShieldCheck, Sparkles, Trash2, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
 import { fortalfyAsset } from "./assetPath.js";
@@ -27,6 +27,10 @@ import {
   createAccount, isExistingEmailSignup, isUsernameAvailabilityFunctionMissing, loadUserPreferences, saveOnboarding, signInWithGoogle,
   validateOnboarding, validateSignup,
 } from "./authService.js";
+import {
+  loadApprovedProfessionalProfiles, loadProfessionalApplications, loadProfileLinks, PROFESSIONAL_CATEGORIES,
+  saveSocialProfile, validateProfileLinks,
+} from "./professionalService.js";
 
 const mediaUrl = path => path || "";
 const REEL_SOUND_EVENT = "fortalfy:reel-sound";
@@ -69,12 +73,16 @@ const formatCompactCount = value => new Intl.NumberFormat("pt-BR", {
 }).format(Math.max(0, Number(value) || 0));
 
 function SocialAuth({ client, configured, notify, recovery = false, onRecovered }) {
-  const [mode, setMode] = useState(recovery ? "update" : "login");
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedKind = searchParams.get("professionalKind") || "";
+  const professionalKind = PROFESSIONAL_CATEGORIES.some(category => category.id === requestedKind) ? requestedKind : "";
+  const [mode, setMode] = useState(recovery ? "update" : professionalKind ? "signup" : "login");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [googleHelpOpen, setGoogleHelpOpen] = useState(false);
   const [fields, setFields] = useState({
-    name: "", username: "", email: "", password: "", birthDate: "", city: "", kind: "cliente",
+    name: "", username: "", email: "", password: "", birthDate: "", city: "", kind: professionalKind || "cliente",
     goals: ["emagrecimento", "forca"], interests: ["feed", "treinos"], acceptedTerms: false,
   });
   const [message, setMessage] = useState("");
@@ -172,7 +180,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
           if (!isUsernameAvailabilityFunctionMissing(error)) throw error;
           console.warn("A verificação de username não está instalada no Supabase; a restrição única do banco validará o cadastro.");
         }
-        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const redirectTo = fields.kind === "cliente"
+          ? `${window.location.origin}${window.location.pathname}`
+          : `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(fields.kind)}`;
         const data = await createAccount(client, fields, redirectTo);
         if (isExistingEmailSignup(data)) {
           setMessage("Este e-mail já está cadastrado. Se você acabou de solicitar a criação da conta, confira se há uma mensagem de confirmação na caixa de entrada ou no spam. Se já confirmou, entre ou use “Esqueceu a senha?”.");
@@ -184,6 +194,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
           setMessage("Conta criada com sucesso! Bem-vindo(a) ao Fortalfy.");
           setMessageType("success");
           notify?.("Conta criada com sucesso!");
+          if (fields.kind !== "cliente") navigate(`/professional/manage?category=${encodeURIComponent(fields.kind)}`);
           return;
         }
         if (data?.user) {
@@ -197,7 +208,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         setMode("login");
       } else if (mode === "reset") {
         if (!configured || !client) throw new Error("Supabase não configurado.");
-        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const redirectTo = professionalKind
+          ? `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(professionalKind)}`
+          : `${window.location.origin}${window.location.pathname}`;
         const { error } = await client.auth.resetPasswordForEmail(fields.email.trim(), { redirectTo });
         if (error) throw error;
         setMessage("Se o e-mail estiver cadastrado, você receberá um link seguro para redefinir sua senha.");
@@ -223,6 +236,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         }
         if (data?.session) {
           notify?.("Bem-vindo(a) de volta!");
+          if (professionalKind) navigate(`/professional/manage?category=${encodeURIComponent(professionalKind)}`);
         }
       }
     } catch (error) {
@@ -259,10 +273,17 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
       setMessageType("error");
       return;
     }
+    if (mode === "signup" && fields.kind !== "cliente") {
+      setMessage("Para vincular a categoria profissional à conta, conclua o cadastro com e-mail e senha.");
+      setMessageType("error");
+      return;
+    }
     setBusy(true);
     setMessage("");
     try {
-      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const redirectTo = professionalKind
+        ? `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(professionalKind)}`
+        : `${window.location.origin}${window.location.pathname}`;
       await signInWithGoogle(client, redirectTo);
     } catch (error) {
       console.error("Falha ao iniciar autenticação com Google.", error);
@@ -397,7 +418,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                 className="social-google-button"
                 type="button"
                 onClick={startGoogleLogin}
-                disabled={busy || !configured}
+                disabled={busy || !configured || (mode === "signup" && fields.kind !== "cliente")}
               >
                 {busy ? (
                   <LoaderCircle className="spin" size={18} />
@@ -411,6 +432,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                 )}
                 <span>Continuar com Google</span>
               </button>
+              {mode === "signup" && fields.kind !== "cliente" && <p className="auth-hint-text">Para garantir que a categoria profissional fique vinculada corretamente, use o cadastro por e-mail.</p>}
 
               {/* Google OAuth Helper Modal / Card */}
               {googleHelpOpen && (
@@ -492,8 +514,14 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                   <option value="nutricionista">Nutricionista</option>
                   <option value="academia">Academia</option>
                   <option value="marca">Loja / marca</option>
+                  <option value="empresa">Empresa</option>
+                  <option value="vendedor">Vendedor Fortalfy Shop</option>
+                  <option value="restaurante">Restaurante</option>
+                  <option value="influenciador">Influenciador fitness</option>
                 </select>
-                <small className="auth-hint-text">Perfis de parceiros só aparecem na descoberta após aprovação da equipe.</small>
+                <small className="auth-hint-text">{fields.kind === "cliente"
+                  ? "Contas profissionais devem enviar o cadastro para análise antes de receber selo ou recursos comerciais."
+                  : "Seu perfil profissional só será publicado após análise. A criação da conta não valida credenciais automaticamente."}</small>
               </div>
             )}
 
@@ -851,6 +879,10 @@ function communityRole(kind) {
     marca: "Marca esportiva",
     nutricionista: "Nutricionista",
     personal: "Profissional de educação física",
+    empresa: "Empresa",
+    vendedor: "Vendedor Fortalfy Shop",
+    restaurante: "Restaurante",
+    influenciador: "Criador de conteúdo fitness",
   })[kind] || "";
 }
 
@@ -2010,8 +2042,14 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   const [error, setError] = useState("");
   const [postsError, setPostsError] = useState("");
   const [detailsError, setDetailsError] = useState("");
+  const [links, setLinks] = useState([]);
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linksError, setLinksError] = useState("");
+  const [approvedProfessionalProfiles, setApprovedProfessionalProfiles] = useState([]);
+  const [hasProfessionalApplication, setHasProfessionalApplication] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [draft, setDraft] = useState({ name: "", username: "", bio: "", city: "", isPrivate: false });
+  const [draftLinks, setDraftLinks] = useState([]);
   const [connectionsDialog, setConnectionsDialog] = useState(null);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [connectionsError, setConnectionsError] = useState("");
@@ -2020,6 +2058,9 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   const profileUsername = draft.username.trim().replace(/^@/, "").toLowerCase();
   const [profileUsernameCheck, setProfileUsernameCheck] = useState({ username: "", checking: false, available: null, error: "" });
   const followStateRevision = useRef(0);
+  const professionalProfile = Boolean(person && (
+    person.kind !== "cliente" || approvedProfessionalProfiles.length || hasProfessionalApplication
+  ));
 
   useEffect(() => {
     const syncFollowState = event => {
@@ -2031,6 +2072,45 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     window.addEventListener(FOLLOW_STATE_EVENT, syncFollowState);
     return () => window.removeEventListener(FOLLOW_STATE_EVENT, syncFollowState);
   }, [userId, targetId]);
+
+  useEffect(() => {
+    if (!client || !userId || !targetId) {
+      setLinks([]);
+      setApprovedProfessionalProfiles([]);
+      setHasProfessionalApplication(false);
+      setLinksError("");
+      setLinksLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setLinks([]);
+    setApprovedProfessionalProfiles([]);
+    setHasProfessionalApplication(false);
+    setLinksLoading(true);
+    setLinksError("");
+    Promise.all([
+      loadProfileLinks(client, targetId, { owner: isOwn }),
+      loadApprovedProfessionalProfiles(client, targetId),
+      isOwn ? loadProfessionalApplications(client, targetId) : Promise.resolve([]),
+    ]).then(([nextLinks, nextApplications, ownerApplications]) => {
+      if (!active) return;
+      setLinks(nextLinks.map(link => ({
+        id: link.id,
+        label: link.label,
+        url: link.url,
+        type: link.link_type,
+        isPublic: link.is_public,
+        validationStatus: link.validation_status,
+      })));
+      setApprovedProfessionalProfiles(nextApplications);
+      setHasProfessionalApplication(ownerApplications.length > 0);
+    }).catch(failure => {
+      if (!active) return;
+      console.error("Falha ao carregar bio, links e perfis profissionais aprovados.", failure);
+      setLinksError(getErrorMessage(failure, "Não foi possível carregar os links deste perfil."));
+    }).finally(() => { if (active) setLinksLoading(false); });
+    return () => { active = false; };
+  }, [client, isOwn, targetId, userId]);
 
   useEffect(() => {
     if (!imageDraft?.previewUrl) return undefined;
@@ -2179,8 +2259,14 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     const username = draft.username.trim().replace(/^@/, "").toLowerCase();
     const bio = draft.bio.trim();
     const city = draft.city.trim();
-    if (name.length < 2 || name.length > 120 || bio.length > 2000 || (username && !/^[a-z0-9._]{3,30}$/.test(username))) {
-      notify("Confira o nome, a biografia (até 2.000 caracteres) e o nome de usuário.");
+    const bioLimit = professionalProfile ? 150 : 2000;
+    if (name.length < 2 || name.length > 120 || bio.length > bioLimit || (username && !/^[a-z0-9._]{3,30}$/.test(username))) {
+      notify(`Confira o nome, a biografia (até ${bioLimit} caracteres) e o nome de usuário.`);
+      return;
+    }
+    const linkError = validateProfileLinks(draftLinks);
+    if (linkError) {
+      notify(linkError);
       return;
     }
     setBusy(true);
@@ -2189,15 +2275,16 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         notify("Esse nome de usuário já está em uso ou reservado.");
         return;
       }
-      const { error: saveError } = await client.from("profiles").update({
-        display_name: name,
-        username: username || null,
+      await saveSocialProfile(client, {
+        id: userId,
+        name,
+        username,
         bio,
-        city: city || null,
-        is_private: draft.isPrivate,
-      }).eq("id", userId);
-      if (saveError) throw saveError;
+        city,
+        isPrivate: draft.isPrivate,
+      }, draftLinks);
       await onProfileUpdated();
+      setLinks(draftLinks.map((link, sortOrder) => ({ ...link, sort_order: sortOrder })));
       setEditOpen(false);
       notify("Perfil atualizado.");
     } catch (failure) {
@@ -2213,6 +2300,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   };
   const beginEdit = () => {
     setDraft({ name: person?.name || "", username: person?.username || "", bio: person?.bio || "", city: person?.city || "", isPrivate: Boolean(person?.isPrivate) });
+    setDraftLinks(links.map(link => ({ ...link })));
     setEditOpen(true);
   };
   const toggleFollow = async () => {
@@ -2346,6 +2434,9 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     is_private: person.isPrivate,
   });
   author.avatar = person.avatar;
+  const visibleProfileLinks = links.filter(link => (
+    link.isPublic && link.validationStatus !== "blocked"
+  ));
   return <div className="social-profile">
     <CommunityNavigation active="" />
     <section className="social-profile-card">
@@ -2356,9 +2447,32 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         <div className="social-profile-avatar-wrap"><AuthorLink author={author} ownId={userId} />
           {isOwn && <label className="social-profile-avatar-edit" title="Alterar foto do perfil"><Camera size={14} /><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Escolher foto do perfil" onChange={event => updateProfileImage(event, "avatar_path")} disabled={busy} /></label>}
         </div>
-        <div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}</div>
-        {isOwn ? <button className="button subtle small-button" onClick={beginEdit}>Editar informações</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
+        <div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}
+          {linksLoading && <small className="profile-links-loading">Carregando links…</small>}
+          {!linksLoading && linksError && isOwn && <small className="profile-links-error" role="alert">{linksError}</small>}
+          {!linksLoading && !linksError && visibleProfileLinks.length > 0 && <div className="social-profile-links" aria-label="Links externos">
+            {visibleProfileLinks.map(link => <a key={link.id || `${link.label}-${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer" title={`${link.label} — você está saindo da Fortalfy`} onClick={event => {
+              const host = new URL(link.url).hostname;
+              if (!window.confirm(`Você está saindo da Fortalfy para ${host}. Deseja continuar?`)) event.preventDefault();
+            }}><ExternalLink size={13} /><span>{link.label}</span></a>)}
+          </div>}
+        </div>
+        {isOwn ? <button className="button subtle small-button" onClick={beginEdit} disabled={linksLoading}>Editar informações</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
       </div>
+      {approvedProfessionalProfiles.map(application => {
+        const title = PROFESSIONAL_CATEGORIES.find(item => item.id === application.kind)?.label || "Perfil profissional";
+        const data = application.public_data || {};
+        return <section className="social-professional-public-card" key={application.application_id}>
+          <span className="eyebrow">{title.toUpperCase()} · APROVADO</span>
+          <h3>{data.displayName || person.name}</h3>
+          {data.description && <p>{data.description}</p>}
+          {data.city && <small>{data.city}</small>}
+          {data.website && <a href={data.website} target="_blank" rel="noopener noreferrer" onClick={event => {
+            const host = new URL(data.website).hostname;
+            if (!window.confirm(`Você está saindo da Fortalfy para ${host}. Deseja continuar?`)) event.preventDefault();
+          }}><ExternalLink size={14} /> Site oficial</a>}
+        </section>;
+      })}
       <div className="social-profile-metrics"><span><strong>{postCount}</strong> publicações</span><button type="button" onClick={() => openConnections("followers")}><strong>{follow.followers}</strong> seguidores</button><button type="button" onClick={() => openConnections("following")}><strong>{follow.following}</strong> seguindo</button><button onClick={handleProfileShare}><Share2 size={15} /> Compartilhar perfil</button></div>
       {isOwn && <button className="social-signout" onClick={async () => {
         if (onSignOut) {
@@ -2371,7 +2485,13 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     </section>
     {detailsError && <p className="social-inline-error" role="alert">{detailsError}</p>}
     {isOwn && requests.length > 0 && <section className="social-follow-requests"><h3>Solicitações para seguir <span>{requests.length}</span></h3>{requests.map(request => <div className="social-follow-request" key={request.follower_id}><AuthorLink author={request.follower} ownId={userId} /><Link to={`/profile/${request.follower_id}`}><strong>{request.follower?.name || "Pessoa Fortalfy"}</strong><small>{formatDate(request.created_at)}</small></Link><button className="button primary small-button" disabled={busy} onClick={() => handleFollowRequest(request, true)}>Aceitar</button><button className="button subtle small-button" disabled={busy} onClick={() => handleFollowRequest(request, false)}>Recusar</button></div>)}</section>}
-    {(person.kind === "marca" || person.kind === "academia") && <PartnerStorefront client={client} profile={person} userId={userId} isOwn={isOwn} notify={notify} />}
+    {(person.kind === "marca" || person.kind === "academia" || approvedProfessionalProfiles.some(application => application.kind === "vendedor")) && <PartnerStorefront
+      client={client}
+      profile={approvedProfessionalProfiles.some(application => application.kind === "vendedor") ? { ...person, kind: "vendedor" } : person}
+      userId={userId}
+      isOwn={isOwn}
+      notify={notify}
+    />}
     <h3 className="social-profile-posts-title">Publicações</h3>
     {postsError && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{postsError}</span><button onClick={retryProfilePosts} disabled={postsLoading}>{postsLoading ? "Tentando…" : "Tentar novamente"}</button></div>}
     {person.isPrivate && !isOwn && !follow.isFollowing ? <div className="social-empty-feed"><ShieldCheck size={23} /><h3>Este perfil é privado</h3><p>Envie uma solicitação para ver suas publicações.</p></div>
@@ -2391,8 +2511,27 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         <form onSubmit={saveProfile} className="social-profile-edit-form">
           <label>Nome<input value={draft.name} onChange={event => setDraft(current => ({ ...current, name: event.target.value }))} required maxLength={120} /></label>
           <label>Nome de usuário<input value={draft.username} onChange={event => setDraft(current => ({ ...current, username: event.target.value.toLowerCase() }))} maxLength={30} pattern="[A-Za-z0-9._]{3,30}" /><small>De 3 a 30 caracteres: letras, números, ponto e sublinhado.</small>{profileUsername.length >= 3 && /^[a-z0-9._]{3,30}$/.test(profileUsername) && <small className={`auth-username-availability ${profileUsernameCheck.error ? "is-error" : profileUsernameCheck.available ? "is-available" : profileUsernameCheck.available === false ? "is-unavailable" : ""}`}>{profileUsernameCheck.username !== profileUsername || profileUsernameCheck.checking ? "Verificando disponibilidade…" : profileUsernameCheck.error ? "Não foi possível verificar agora; a disponibilidade será validada ao salvar." : profileUsernameCheck.available ? "Nome de usuário disponível." : "Nome de usuário em uso ou reservado."}</small>}</label>
-          <label>Biografia<textarea value={draft.bio} onChange={event => setDraft(current => ({ ...current, bio: event.target.value }))} maxLength={2000} /></label>
+          <label>Biografia<textarea value={draft.bio} onChange={event => setDraft(current => ({ ...current, bio: event.target.value }))} maxLength={professionalProfile ? 150 : 2000} rows={4} /><small>{Math.max(0, (professionalProfile ? 150 : 2000) - draft.bio.length)} caracteres restantes</small></label>
           <label>Cidade<input value={draft.city} onChange={event => setDraft(current => ({ ...current, city: event.target.value }))} maxLength={120} /></label>
+          <fieldset className="profile-link-editor">
+            <legend>Links e redes sociais</legend>
+            <p>Adicione até oito links HTTPS. Um link cadastrado não significa que o site ou a conta foi verificado pela Fortalfy.</p>
+            {draftLinks.map((link, index) => <div className="profile-link-editor-row" key={link.id || `draft-link-${index}`}>
+              <label>Nome de exibição<input value={link.label} maxLength={80} placeholder="Ex.: Instagram profissional" onChange={event => setDraftLinks(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))} /></label>
+              <label>URL HTTPS<input type="url" value={link.url} maxLength={2048} placeholder="https://..." onChange={event => setDraftLinks(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, url: event.target.value } : item))} /></label>
+              <label>Tipo<select value={link.type} onChange={event => setDraftLinks(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value } : item))}>
+                <option value="social">Rede social</option><option value="official">Site oficial declarado</option><option value="booking">Agendamento</option><option value="menu">Cardápio</option><option value="portfolio">Portfólio</option><option value="catalog">Catálogo / loja</option><option value="contact">Contato</option><option value="other">Outro</option>
+              </select></label>
+              <label className="profile-link-visibility"><input type="checkbox" checked={link.isPublic !== false} onChange={event => setDraftLinks(current => current.map((item, itemIndex) => itemIndex === index ? { ...item, isPublic: event.target.checked } : item))} /> Exibir publicamente</label>
+              <div className="profile-link-order">
+                <button type="button" aria-label={`Mover ${link.label || "link"} para cima`} disabled={index === 0} onClick={() => setDraftLinks(current => current.map((item, itemIndex) => itemIndex === index ? current[index - 1] : itemIndex === index - 1 ? current[index] : item))}><ArrowUp size={15} /></button>
+                <button type="button" aria-label={`Mover ${link.label || "link"} para baixo`} disabled={index === draftLinks.length - 1} onClick={() => setDraftLinks(current => current.map((item, itemIndex) => itemIndex === index ? current[index + 1] : itemIndex === index + 1 ? current[index] : item))}><ArrowDown size={15} /></button>
+                <button type="button" aria-label={`Remover ${link.label || "link"}`} onClick={() => setDraftLinks(current => current.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button>
+              </div>
+            </div>)}
+            <button type="button" className="button subtle small-button" disabled={draftLinks.length >= 8} onClick={() => setDraftLinks(current => [...current, { label: "", url: "", type: "social", isPublic: true }])}><Plus size={15} /> Adicionar link</button>
+            {draftLinks.length > 0 && <div className="profile-link-preview"><strong>Prévia pública</strong>{draftLinks.filter(link => link.isPublic !== false && link.label.trim() && link.url.trim()).map((link, index) => <span key={`${link.label}-${index}`}><LinkIcon size={13} /> {link.label}</span>)}</div>}
+          </fieldset>
           {(person.avatar || person.cover) && <div className="social-remove-image-actions">{person.avatar && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("avatar_path")}>Remover foto do perfil</button>}{person.cover && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("cover_path")}>Remover foto de capa</button>}</div>}
           <label className="social-private-toggle"><input type="checkbox" checked={draft.isPrivate} onChange={event => setDraft(current => ({ ...current, isPrivate: event.target.checked }))} /> Perfil privado — aprovo quem pode me seguir</label>
           <button className="button primary wide-button" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button>

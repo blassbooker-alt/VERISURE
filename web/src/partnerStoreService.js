@@ -1,7 +1,7 @@
 import { createSecureId } from "./secureId.js";
 import { signMedia } from "./socialService.js";
 
-const STORE_KINDS = new Set(["marca", "academia"]);
+const STORE_KINDS = new Set(["marca", "academia", "vendedor"]);
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 

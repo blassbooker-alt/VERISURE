@@ -1,6 +1,9 @@
 const GOALS = new Set(["emagrecimento", "forca", "cardio", "mobilidade", "alimentacao", "bem-estar", "comunidade"]);
 const INTERESTS = new Set(["feed", "food", "shop", "treinos", "pass"]);
-const ACCOUNT_KINDS = new Set(["cliente", "personal", "nutricionista", "academia", "marca"]);
+const ACCOUNT_KINDS = new Set([
+  "cliente", "personal", "nutricionista", "academia", "marca",
+  "restaurante", "empresa", "vendedor", "influenciador",
+]);
 const USERNAME_PATTERN = /^[a-z0-9._]{3,30}$/;
 
 function validBirthDate(value) {
