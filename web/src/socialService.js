@@ -831,6 +831,28 @@ export async function loadFollowState(client, userId, profileId) {
   };
 }
 
+export async function loadFollowStates(client, userId, profileIds) {
+  requireRealUser(userId);
+  const ids = [...new Set((profileIds || []).filter(id => typeof id === "string" && id && id !== userId))];
+  if (!ids.length) return {};
+
+  const [follows, requests] = await Promise.all([
+    client.from("profile_follows").select("followed_id").eq("follower_id", userId).in("followed_id", ids),
+    client.from("follow_requests").select("followed_id,status").eq("follower_id", userId).in("followed_id", ids),
+  ]);
+  if (follows.error) throw follows.error;
+  if (requests.error) throw requests.error;
+
+  const followingIds = new Set((follows.data || []).map(row => row.followed_id));
+  const pendingIds = new Set((requests.data || [])
+    .filter(row => row.status === "pending")
+    .map(row => row.followed_id));
+  return Object.fromEntries(ids.map(id => [id, {
+    isFollowing: followingIds.has(id),
+    requestStatus: pendingIds.has(id) ? "pending" : "",
+  }]));
+}
+
 export async function loadProfileConnections(client, userId, profileId, direction, { offset = 0, limit = 50 } = {}) {
   requireRealUser(userId);
   requireRealUser(profileId);

@@ -56,6 +56,36 @@ test("approved discovery filters unapproved and non-partner profiles from backen
   assert.equal(result[0].verified, true);
 });
 
+test("partners without coordinates do not resolve to the Null Island map location", async () => {
+  const client = {
+    from() {
+      const builder = {
+        select() { return this; },
+        order() { return this; },
+        limit() { return this; },
+        then(resolve, reject) {
+          return Promise.resolve({
+            data: [{
+              id: "listing-no-location",
+              profile_id: "user-no-location",
+              latitude: null,
+              longitude: null,
+              profile: { display_name: "Parceiro sem localização", kind: "academia", partner_approved_at: "2026-10-01" },
+            }],
+            error: null,
+          }).then(resolve, reject);
+        },
+      };
+      return builder;
+    },
+  };
+
+  const [partner] = await loadApprovedPartners(client);
+  assert.equal(partner.latitude, null);
+  assert.equal(partner.longitude, null);
+  assert.equal(openStreetMapUrl(partner), "");
+});
+
 test("partner listing validation rejects invented or malformed location input before write", async () => {
   const client = { from() { throw new Error("Invalid listing must not reach the backend"); } };
   await assert.rejects(savePartnerListing(client, "user-1", {

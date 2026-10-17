@@ -4,6 +4,8 @@ const PARTNER_KINDS = new Set(["personal", "nutricionista", "academia"]);
 
 function mapListing(row) {
   if (!row?.profile) return null;
+  const latitude = row.latitude == null || row.latitude === "" ? null : Number(row.latitude);
+  const longitude = row.longitude == null || row.longitude === "" ? null : Number(row.longitude);
   return {
     id: row.id,
     profileId: row.profile_id,
@@ -13,10 +15,11 @@ function mapListing(row) {
     city: row.profile.city || "",
     bio: row.profile.bio || "",
     avatar: row.profile.avatar_path || "",
+    isPrivate: Boolean(row.profile.is_private),
     verified: Boolean(row.profile.partner_approved_at),
     address: row.address,
-    latitude: Number(row.latitude),
-    longitude: Number(row.longitude),
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
     modalities: Array.isArray(row.modalities) ? row.modalities : [],
     openingHours: row.opening_hours || {},
     websiteUrl: row.website_url || "",
@@ -48,7 +51,7 @@ export async function loadApprovedPartners(client, { kind = "" } = {}) {
 
   let query = client.from("partner_listings").select(`
     id,profile_id,address,latitude,longitude,modalities,opening_hours,website_url,contact_phone,
-    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,partner_approved_at)
+    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,is_private,partner_approved_at)
   `).order("created_at", { ascending: false }).limit(100);
   if (kind) query = query.eq("profile.kind", kind);
 
@@ -67,7 +70,7 @@ export async function loadOwnPartnerListing(client, userId) {
   if (!client || !userId) throw new Error("Entre na sua conta para gerenciar seu perfil de parceiro.");
   const { data, error } = await client.from("partner_listings").select(`
     id,profile_id,address,latitude,longitude,modalities,opening_hours,website_url,contact_phone,
-    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,partner_approved_at)
+    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,is_private,partner_approved_at)
   `).eq("profile_id", userId).maybeSingle();
   if (error) throw error;
   return mapListing(data);

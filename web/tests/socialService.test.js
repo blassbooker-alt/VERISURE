@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  deletePost, getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState,
+  deletePost, getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState, loadFollowStates,
   loadMutualFollowState, loadProfileConnections, mapProfile, recordReelView,
   normalizeSocialCount, prepareProfileImage, publishPost, respondFollowRequest, startConversation,
   setFollow,
@@ -157,6 +157,34 @@ test("follow state uses existing follow tables when the aggregate RPC is not ins
     isFollowing: true,
     requestStatus: "",
   });
+});
+
+test("follow states load in batches for approved partner listings", async () => {
+  const calls = [];
+  const client = {
+    from(table) {
+      return {
+        select: fields => ({
+          eq: (column, value) => ({
+            in: async (targetColumn, ids) => {
+              calls.push({ table, fields, column, value, targetColumn, ids });
+              return table === "profile_follows"
+                ? { data: [{ followed_id: "partner-1" }], error: null }
+                : { data: [{ followed_id: "partner-2", status: "pending" }, { followed_id: "partner-3", status: "rejected" }], error: null };
+            },
+          }),
+        }),
+      };
+    },
+  };
+
+  assert.deepEqual(await loadFollowStates(client, "viewer-1", ["partner-1", "partner-2", "partner-3", "partner-1"]), {
+    "partner-1": { isFollowing: true, requestStatus: "" },
+    "partner-2": { isFollowing: false, requestStatus: "pending" },
+    "partner-3": { isFollowing: false, requestStatus: "" },
+  });
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every(call => call.column === "follower_id" && call.value === "viewer-1"));
 });
 
 test("following a Reel author persists public follows and private follow requests", async () => {

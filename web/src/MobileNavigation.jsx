@@ -65,10 +65,18 @@ export default function BottomNav() {
     : ["/pass", "/workout", "/nutrition", "/progress", "/earnings"].includes(location.pathname)
     ? "/home"
     : primaryTabs.find(tab => location.pathname === tab.to)?.to;
+  const activeIndex = primaryTabs.findIndex(tab => tab.to === active);
   if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
   if (location.pathname === "/reels") return null;
-  return <nav className="bottom-nav" aria-label="Navegação principal">{primaryTabs.map(({ to, label, icon: Icon }) =>
-    <Link key={to} to={to} className={`bottom-nav-item ${active === to ? "active" : ""}`} aria-current={active === to ? "page" : undefined}>
-      <Icon size={21} strokeWidth={active === to ? 2.5 : 1.8} /><span>{label}</span>
-    </Link>)}</nav>;
+  return <nav className="bottom-nav" aria-label="Navegação principal">
+    {activeIndex >= 0 && <span
+      className="bottom-nav-indicator"
+      aria-hidden="true"
+      style={{ "--nav-active-offset": `calc(${10 + activeIndex * 20}% - 22px)` }}
+    ><span /></span>}
+    {primaryTabs.map(({ to, label, icon: Icon }) =>
+      <Link key={to} to={to} className={`bottom-nav-item ${active === to ? "active" : ""}`} aria-current={active === to ? "page" : undefined}>
+        <span className="bottom-nav-icon"><Icon size={21} strokeWidth={active === to ? 2.5 : 1.8} /></span><span>{label}</span>
+      </Link>)}
+  </nav>;
 }

@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
-  Bell, Bookmark, Check, ChevronDown, ChevronRight, CircleAlert,
+  Bell, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleAlert,
   CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Info, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
-  ShoppingBag, Sparkles, Star, Target, Timer, Trash2, Users, Utensils, Wallet, X,
+  Globe2, Phone, ShoppingBag, Sparkles, Star, Target, Ticket, Timer, Trash2, UserMinus, UserPlus, Users, Utensils, Wallet, X,
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
 import Brand from "./Brand.jsx";
@@ -15,7 +15,11 @@ import FortalfyStudio from "./FortalfyStudio.jsx";
 import StoryExperience from "./Stories.jsx";
 import { WeeklyClientPlan } from "./WeeklyPlans.jsx";
 import { OnboardingGate, SocialFeed, SocialMessages, SocialPeople, SocialProfile } from "./SocialScreens.jsx";
-import { getErrorMessage, isDemoUser, loadProfile } from "./socialService.js";
+import {
+  cancelFollowRequest, getErrorMessage, isDemoUser, loadFollowStates, loadProfile,
+  setFollow as persistFollow,
+} from "./socialService.js";
+import { loadAccountActivity, recordAccountActivity } from "./activityService.js";
 import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
@@ -139,7 +143,7 @@ function PhotoCard({ image, alt, className = "" }) {
   return <img className={`photo-card ${className}`} src={image} alt={alt} loading="lazy" />;
 }
 
-function HomeScreen({ activity, onActivity, session, profile: accountProfile }) {
+function HomeScreen({ activity, onActivity, session, profile: accountProfile, activityStatus, activityError, notify }) {
   const metadata = session?.user?.user_metadata || {};
   const displayName = accountProfile?.display_name || metadata.display_name || metadata.full_name || metadata.name || "";
   const firstName = displayName.trim().split(/\s+/)[0];
@@ -150,25 +154,27 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile }) 
       <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Acesse sua comunidade, seus registros e parceiros.</span></div>
       <div className="hero-activity">
         <div className="activity-icon"><Dumbbell size={20} /></div>
-        <div className="activity-text"><span>SEUS REGISTROS NESTE APARELHO</span><strong>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</strong><small>Os registros de rotina não são sincronizados com uma conta.</small></div>
+        <div className="activity-text"><span>SEUS REGISTROS</span><strong>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</strong><small>{activityError || activityStatus}</small></div>
         <Link to="/workout" className="circle-arrow" aria-label="Abrir registros de treino"><ArrowRight size={19} /></Link>
       </div>
     </section>
     <div className="screen-inner home-inner">
       <SectionTitle title="Acesso rápido" />
       <div className="quick-grid">
-        <Link to="/feed" className="quick-tile"><span className="quick-icon mint"><Users size={19} /></span><strong>Comunidade</strong><small>Publicações e perfis reais</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/pass" className="quick-tile"><span className="quick-icon pink"><MapPin size={19} /></span><strong>Parceiros</strong><small>Locais e profissionais aprovados</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/food" className="quick-tile"><span className="quick-icon yellow"><Utensils size={19} /></span><strong>FortalFood</strong><small>Cardápios publicados por restaurantes</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/shop" className="quick-tile"><span className="quick-icon blue"><ShoppingBag size={19} /></span><strong>Loja</strong><small>Catálogo oficial quando disponível</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/feed" className="quick-tile quick-tile-community"><span className="quick-icon mint"><Users size={19} /></span><strong>Comunidade</strong><small>Publicações e perfis reais</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/pass" className="quick-tile quick-tile-partners"><span className="quick-icon pink"><MapPin size={19} /></span><strong>Parceiros</strong><small>Locais e profissionais aprovados</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/food" className="quick-tile quick-tile-food"><span className="quick-icon yellow"><Utensils size={19} /></span><strong>FortalFood</strong><small>Cardápios publicados por restaurantes</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+        <Link to="/shop" className="quick-tile quick-tile-shop"><span className="quick-icon blue"><ShoppingBag size={19} /></span><strong>Loja</strong><small>Catálogo oficial quando disponível</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
       </div>
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
         <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span></div>
         <div className="home-local-actions"><Link to="/workout" className="performance-link">Abrir treinos <ArrowRight size={16} /></Link><Link to="/nutrition" className="performance-link">Abrir diário alimentar <ArrowRight size={16} /></Link></div>
       </section>
-      <p className="reference-disclosure">Treinos e refeições são armazenados somente neste aparelho; ainda não há sincronização desses registros com sua conta.</p>
-      <div className="home-water-action"><button className="button subtle" onClick={() => onActivity("water")}><HeartPulse size={18} /> Registrar 250 ml de água</button><span>{(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L registrados neste aparelho</span></div>
+      <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
+      <div className="home-water-action"><button className="button subtle" onClick={async () => {
+        if (await onActivity("water")) notify("250 ml de água registrados.");
+      }} disabled={Boolean(activityError)}><HeartPulse size={18} /> Registrar 250 ml de água</button><span>{(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L registrados</span></div>
     </div>
   </Screen>;
 }
@@ -710,11 +716,11 @@ function ProfileScreen({ notify, user, setUser, posts, savePosts }) {
   </Screen>;
 }
 
-function WorkoutScreen({ notify, onActivity, activity, client, session }) {
+function WorkoutScreen({ notify, onActivity, activity, client, session, activityStatus, activityError }) {
   const [name, setName] = useState("");
   const [minutes, setMinutes] = useState("");
   const [error, setError] = useState("");
-  const saveWorkout = event => {
+  const saveWorkout = async event => {
     event.preventDefault();
     const workoutName = name.trim();
     const duration = Number(minutes);
@@ -722,29 +728,31 @@ function WorkoutScreen({ notify, onActivity, activity, client, session }) {
       setError("Informe o tipo de treino e uma duração entre 1 e 600 minutos.");
       return;
     }
-    onActivity("workout", {
+    const saved = await onActivity("workout", {
       id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
       name: workoutName,
       minutes: duration,
       date: localDateKey(),
     });
+    if (!saved) return;
     setName("");
     setMinutes("");
     setError("");
-    notify("Treino registrado neste aparelho.");
+    notify("Treino registrado.");
   };
   return <Screen title="Personal" subtitle="TREINO DA SEMANA E SEUS REGISTROS" className="workout-screen">
     <Link to="/home" className="back-link"><ArrowLeft size={17} /> Voltar</Link>
+    <PartnerDiscoverySection client={client} session={session} kind="personal" notify={notify} />
     <WeeklyClientPlan client={client} session={session} kind="personal" notify={notify} />
-    <section className="workout-progress-card"><div><span className="eyebrow">REGISTROS NESTE APARELHO</span><h2>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</h2><p>O Fortalfy não prescreve treinos nem lê sensores nesta tela.</p></div></section>
-    <p className="reference-disclosure">Seus registros ficam neste navegador e não são sincronizados com sua conta ou com dispositivos.</p>
+    <section className="workout-progress-card"><div><span className="eyebrow">SEUS REGISTROS</span><h2>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</h2><p>O Fortalfy não prescreve treinos nem lê sensores nesta tela.</p></div></section>
+    <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
     <form className="meal-entry-form" onSubmit={saveWorkout}><h2>Registrar treino realizado</h2><label>Tipo ou nome do treino<input required maxLength={60} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: musculação, caminhada" /></label><label>Duração em minutos<input required type="number" min="1" max="600" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} placeholder="Ex.: 45" /></label>{error && <p className="social-inline-error" role="alert">{error}</p>}<button className="button primary wide-button" type="submit">Salvar registro</button></form>
     <SectionTitle title="Histórico registrado" />
     {activity.workoutEntries.length ? <div className="exercise-list">{[...activity.workoutEntries].reverse().map(entry => <article className="exercise-card" key={entry.id}><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><h3>{entry.name}</h3><p>{entry.minutes} min · {entry.date}</p></div></article>)}</div> : <div className="empty-state"><Dumbbell size={24} /><h3>Nenhum treino registrado</h3><p>Seus treinos aparecerão aqui depois que você os registrar.</p></div>}
   </Screen>;
 }
 
-function NutritionScreen({ notify, onActivity, activity, client, session }) {
+function NutritionScreen({ notify, onActivity, activity, client, session, activityStatus, activityError }) {
   const [addingMeal, setAddingMeal] = useState(false);
   const [mealName, setMealName] = useState("");
   const [mealCalories, setMealCalories] = useState("");
@@ -752,24 +760,27 @@ function NutritionScreen({ notify, onActivity, activity, client, session }) {
   const todaysMeals = mealsForDate(activity.mealEntries, todayKey);
   const calories = sumMealCalories(todaysMeals);
   const today = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
-  const registerMeal = event => {
+  const registerMeal = async event => {
     event.preventDefault();
     const name = mealName.trim();
     const parsedCalories = Number(mealCalories);
     if (!name || mealCalories === "" || !Number.isInteger(parsedCalories) || parsedCalories < 0 || parsedCalories > 10000) return;
-    onActivity("meal", { id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, calories: parsedCalories, date: todayKey });
+    const saved = await onActivity("meal", { id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, calories: parsedCalories, date: todayKey });
+    if (!saved) return;
     setMealName("");
     setMealCalories("");
     setAddingMeal(false);
-    notify("Refeição adicionada ao diário neste dispositivo.");
+    notify("Refeição adicionada ao diário.");
   };
   return <Screen title="Nutricionista" subtitle={`${today.toLocaleUpperCase()} · PLANO SEMANAL E SEU DIARIO`} className="nutrition-screen">
+    <PartnerDiscoverySection client={client} session={session} kind="nutricionista" notify={notify} />
     <WeeklyClientPlan client={client} session={session} kind="nutrition" notify={notify} />
-    <div className="nutrition-summary"><div className="nutrition-donut"><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>kcal informadas</span><small>hoje neste aparelho</small></div></div><div className="macro-details"><span className="eyebrow">METAS NUTRICIONAIS</span><p className="nutrition-unset">Nenhuma meta ou macro foi configurado. Dados nutricionais só aparecerão quando forem informados por você ou por um profissional.</p><Link to="/progress" className="text-link">Ver registros de evolução <ArrowRight size={15} /></Link></div></div>
+    <div className="nutrition-summary"><div className="nutrition-donut"><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>kcal informadas</span><small>hoje</small></div></div><div className="macro-details"><span className="eyebrow">METAS NUTRICIONAIS</span><p className="nutrition-unset">Nenhuma meta ou macro foi configurado. Dados nutricionais só aparecerão quando forem informados por você ou por um profissional.</p><Link to="/progress" className="text-link">Ver registros de evolução <ArrowRight size={15} /></Link></div></div>
     <p className="reference-disclosure">O total soma apenas as calorias digitadas por você; o app não estima calorias nem recomenda metas clínicas.</p>
-    <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Seus registros ficam neste dispositivo e podem ser apagados ao limpar os dados do navegador.</small></span></div>
+    <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
+    <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Os registros ficam associados à sua conta quando você entra; sem login, permanecem neste navegador.</small></span></div>
     <SectionTitle title="Seu diário" />
-    <div className="meal-list">{todaysMeals.length ? todaysMeals.map((meal, index) => <div className="meal-row" key={meal.id}><span className={`meal-icon meal-${index % 4}`}>{["☀", "◒", "✳", "☾"][index % 4]}</span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · Registrado neste dispositivo</small></div><button className="meal-remove-button" aria-label={`Remover ${meal.name} do diário`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={16} /></button></div>) : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><p>Adicione o que você consumiu para acompanhar suas calorias.</p></div>}</div>
+    <div className="meal-list">{todaysMeals.length ? todaysMeals.map((meal, index) => <div className="meal-row" key={meal.id}><span className={`meal-icon meal-${index % 4}`}>{["☀", "◒", "✳", "☾"][index % 4]}</span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · {activityStatus}</small></div><button className="meal-remove-button" aria-label={`Remover ${meal.name} do diário`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={16} /></button></div>) : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><p>Adicione o que você consumiu para acompanhar suas calorias.</p></div>}</div>
     <Link to="/food" className="nutrition-curation"><span className="quick-icon mint"><Utensils size={18} /></span><span><small>FORTALFOOD</small><strong>Consulte cardápios publicados por restaurantes aprovados.</strong><small>Informações e disponibilidade são cadastradas pelos parceiros.</small></span><ArrowRight size={18} /></Link>
     <button className="button primary wide-button mt-5" onClick={() => setAddingMeal(value => !value)}><Plus size={18} /> {addingMeal ? "Cancelar registro" : "Registrar refeição"}</button>
     {addingMeal && <form className="meal-entry-form" onSubmit={registerMeal}><label>Nome da refeição<input required maxLength={60} value={mealName} onChange={event => setMealName(event.target.value)} placeholder="Ex.: almoço" /></label><label>Calorias (kcal)<input required type="number" min="0" max="10000" step="1" value={mealCalories} onChange={event => setMealCalories(event.target.value)} placeholder="Ex.: 520" /></label><button className="button primary wide-button" type="submit">Salvar refeição</button></form>}
@@ -777,15 +788,16 @@ function NutritionScreen({ notify, onActivity, activity, client, session }) {
   </Screen>;
 }
 
-function ProgressScreen({ activity }) {
+function ProgressScreen({ activity, activityStatus, activityError }) {
   const meals = [...activity.mealEntries].sort((left, right) => right.date.localeCompare(left.date)).slice(0, 5);
   const workouts = [...activity.workoutEntries].reverse().slice(0, 5);
   return <Screen title="Meus registros" subtitle="DADOS INFORMADOS POR VOCÊ" className="progress-screen">
     <section className="performance-card progress-summary">
-      <div className="section-title-row"><div><span className="eyebrow">NESTE APARELHO</span><h2>Resumo da rotina</h2></div></div>
+      <div className="section-title-row"><div><span className="eyebrow">SUA ROTINA</span><h2>Resumo da rotina</h2></div></div>
       <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span><span><strong>{activity.waterMl.toLocaleString("pt-BR")} ml</strong> de água registrados</span></div>
     </section>
-    <p className="reference-disclosure">Esses dados ficam neste navegador e não são sincronizados com sua conta. Peso, medidas, sono e atividade de sensores não estão conectados.</p>
+    <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
+    <p className="reference-disclosure">Peso, medidas, sono e atividade de sensores não estão conectados.</p>
     <SectionTitle title="Treinos recentes" action="Registrar treino" to="/workout" />
     {workouts.length ? <div className="exercise-list">{workouts.map(entry => <article className="exercise-card" key={entry.id}><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><h3>{entry.name}</h3><p>{entry.minutes} min · {entry.date}</p></div></article>)}</div> : <div className="empty-state"><Dumbbell size={24} /><h3>Nenhum treino registrado</h3><Link className="button subtle" to="/workout">Registrar treino</Link></div>}
     <SectionTitle title="Refeições recentes" action="Abrir diário" to="/nutrition" />
@@ -825,39 +837,187 @@ function PartnerScreen({ notify }) {
   </Screen>;
 }
 
-function LivePartnerCard({ partner, appointment = false }) {
+function LivePartnerCard({
+  partner, appointment = false, session, followState, followBusy = false,
+  followStateLoaded = false, followStateError = false, onToggleFollow,
+}) {
   const mapUrl = openStreetMapUrl(partner);
+  const phoneCandidate = partner.contactPhone?.replace(/[^\d+]/g, "") || "";
+  const phoneLink = /\d/.test(phoneCandidate) ? phoneCandidate : "";
+  const websiteUrl = /^https?:\/\//i.test(partner.websiteUrl || "") ? partner.websiteUrl : "";
+  const openingHours = partner.openingHours && typeof partner.openingHours === "object" && !Array.isArray(partner.openingHours)
+    ? Object.entries(partner.openingHours).filter(([, value]) => typeof value === "string" && value.trim()).slice(0, 2)
+      .map(([day, value]) => `${day}: ${value}`)
+    : [];
   const role = partner.kind === "personal" ? "personal" : partner.kind === "nutricionista" ? "nutritionist" : "";
-  return <article className="gym-card">
-    <Link to={`/partner/${partner.profileId}`} className="gym-card-image">
-      {partner.avatar ? <img className="photo-card" src={partner.avatar} alt="" loading="lazy" /> : <div className="photo-card partner-image-placeholder">{partner.name.slice(0, 1).toUpperCase()}</div>}
-      <span>APROVADO</span>
+  const kindLabel = partner.kind === "personal" ? "Personal trainer"
+    : partner.kind === "nutricionista" ? "Nutricionista" : "Academia";
+  const isOwn = session?.user?.id === partner.profileId;
+  const isFollowing = Boolean(followState?.isFollowing);
+  const requestPending = followState?.requestStatus === "pending";
+  return <article className="gym-card partner-live-card">
+    <Link to={`/profile/${partner.profileId}`} className="gym-card-image">
+      {partner.avatar ? <img className="photo-card" src={partner.avatar} alt={`Perfil de ${partner.name}`} loading="lazy" /> : <div className="photo-card partner-image-placeholder" aria-hidden="true">{partner.name.slice(0, 1).toUpperCase()}</div>}
+      <span>APROVADO PELA EQUIPE</span>
       <span className="gym-card-arrow" aria-hidden="true"><ArrowUpRight size={16} /></span>
     </Link>
     <div className="gym-card-body">
-      <div className="gym-card-title"><h3>{partner.name}</h3><span className="rating">{partner.kind}</span></div>
-      <p>{partner.address}{partner.city ? ` · ${partner.city}` : ""}</p>
-      {partner.distanceKm != null && <p>{partner.distanceKm.toFixed(1)} km de você</p>}
-      {!!partner.modalities.length && <div className="gym-tags">{partner.modalities.slice(0, 3).map(item => <span key={item}>{item}</span>)}</div>}
+      <div className="gym-card-title"><h3>{partner.name}</h3><span className="rating">{kindLabel}</span></div>
+      <p>{[partner.address, partner.city].filter(Boolean).join(" · ") || "Localização não informada"}{partner.distanceKm != null && ` · ${partner.distanceKm.toFixed(1)} km`}</p>
+      {partner.bio && <p className="partner-live-bio">{partner.bio}</p>}
+      {!!partner.modalities.length && <div className="gym-tags">{partner.modalities.slice(0, 4).map(item => <span key={item}>{item}</span>)}</div>}
+      {!!openingHours.length && <p className="partner-live-hours"><Clock3 size={13} /> {openingHours.join(" · ")}</p>}
+      <small className="partner-live-disclosure">Valores e horários são informados pelo parceiro quando disponíveis. O selo indica aprovação do cadastro pela equipe Fortalfy.</small>
       <div className="partner-card-actions">
-        {mapUrl && <a className="button subtle small-button" href={mapUrl} target="_blank" rel="noreferrer">Abrir no OpenStreetMap <ArrowUpRight size={15} /></a>}
-        {appointment && role && <Link className="button primary small-button" to={`/hire/${role}?partner=${partner.profileId}`}>Solicitar horário <ArrowRight size={15} /></Link>}
+        {session?.user?.id && !isDemoUser(session.user.id) && !isOwn && onToggleFollow && !followStateError && <button type="button" className={`button small-button ${isFollowing ? "subtle" : "primary"}`} onClick={() => onToggleFollow(partner)} disabled={followBusy || !followStateLoaded}>
+          {!followStateLoaded ? "Carregando…" : requestPending ? "Cancelar solicitação" : isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}
+        </button>}
+        {!session?.user?.id && <Link className="button subtle small-button" to="/profile">Entrar para seguir <ArrowRight size={15} /></Link>}
+        <Link className="button subtle small-button" to={`/profile/${partner.profileId}`}>Ver perfil <ArrowRight size={15} /></Link>
+        <Link className="button subtle small-button" to={`/messages?to=${encodeURIComponent(partner.profileId)}`}><MessageCircle size={15} /> Mensagem</Link>
+        {phoneLink && <a className="button subtle small-button" href={`tel:${phoneLink}`}><Phone size={15} /> Ligar</a>}
+        {websiteUrl && <a className="button subtle small-button" href={websiteUrl} target="_blank" rel="noreferrer"><Globe2 size={15} /> Site</a>}
+        {mapUrl && <a className="button subtle small-button" href={mapUrl} target="_blank" rel="noreferrer">Mapa <ArrowUpRight size={15} /></a>}
+        {appointment && role && <Link className="button primary small-button" to={`/hire/${role}?partner=${partner.profileId}`}><CalendarDays size={15} /> Solicitar atendimento</Link>}
       </div>
     </div>
   </article>;
 }
 
-function LivePassScreen({ client }) {
+function PartnerDiscoverySection({ client, session, kind, notify }) {
   const [partners, setPartners] = useState([]);
-  const [filter, setFilter] = useState("academia");
+  const [followStates, setFollowStates] = useState({});
+  const [query, setQuery] = useState("");
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [followStateLoaded, setFollowStateLoaded] = useState(false);
+  const [followBusyId, setFollowBusyId] = useState("");
   const [error, setError] = useState("");
+  const [followError, setFollowError] = useState("");
   const [locationError, setLocationError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const userId = session?.user?.id;
+  const kindLabel = kind === "nutricionista" ? "nutricionistas" : "personais";
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setFollowStateLoaded(false);
+    setFollowStates({});
+    setError("");
+    setFollowError("");
+    loadApprovedPartners(client, { kind })
+      .then(async items => {
+        if (!active) return;
+        setPartners(items);
+        if (!userId || isDemoUser(userId) || !items.length) {
+          setFollowStateLoaded(true);
+          return;
+        }
+        try {
+          const states = await loadFollowStates(client, userId, items.map(item => item.profileId));
+          if (active) setFollowStates(states);
+        } catch (failure) {
+          console.error("Falha ao carregar seguimentos dos parceiros.", failure);
+          if (active) setFollowError(getErrorMessage(failure, "Não foi possível carregar o estado dos seguimentos."));
+        } finally {
+          if (active) setFollowStateLoaded(true);
+        }
+      })
+      .catch(failure => {
+        if (!active) return;
+        console.error("Falha ao carregar profissionais aprovados.", failure);
+        setError(getErrorMessage(failure, "Não foi possível carregar os profissionais."));
+        setFollowStateLoaded(true);
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [client, kind, retry, userId]);
+
+  const toggleFollow = async partner => {
+    if (!userId || isDemoUser(userId) || followBusyId) return;
+    const current = followStates[partner.profileId] || { isFollowing: false, requestStatus: "" };
+    setFollowBusyId(partner.profileId);
+    try {
+      let result;
+      if (current.requestStatus === "pending") {
+        await cancelFollowRequest(client, userId, partner.profileId);
+        result = "not-following";
+      } else {
+        result = await persistFollow(client, userId, partner.profileId, !current.isFollowing, partner.isPrivate);
+      }
+      setFollowStates(states => ({
+        ...states,
+        [partner.profileId]: {
+          isFollowing: result === "following",
+          requestStatus: result === "requested" ? "pending" : "",
+        },
+      }));
+      notify?.(result === "requested" ? "Solicitação de seguimento enviada."
+        : result === "following" ? "Perfil seguido." : "Você deixou de seguir este perfil.");
+    } catch (failure) {
+      console.error("Falha ao seguir parceiro.", failure);
+      notify?.(getErrorMessage(failure, "Não foi possível atualizar o seguimento."));
+    } finally {
+      setFollowBusyId("");
+    }
+  };
+
+  const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
+  const filtered = partners.filter(partner => [
+    partner.name, partner.city, partner.address, partner.bio, ...partner.modalities,
+  ].join(" ").toLocaleLowerCase("pt-BR").includes(normalizedQuery));
+  const shown = orderPartnersByDistance(filtered, location);
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Este navegador não oferece localização.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(position => {
+      setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      setLocationError("");
+    }, failure => {
+      console.error("Não foi possível obter a localização autorizada.", failure);
+      setLocationError(failure.code === failure.PERMISSION_DENIED
+        ? "A permissão de localização foi negada. Você ainda pode buscar pela cidade."
+        : "Não foi possível obter sua localização. Tente novamente.");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  };
+
+  return <section className="partner-discovery" aria-labelledby={`discover-${kind}`}>
+    <header className="partner-discovery-heading">
+      <span className="eyebrow">PROFISSIONAIS APROVADOS</span>
+      <h2 id={`discover-${kind}`}>Encontre {kindLabel}</h2>
+      <p>Veja perfis cadastrados e aprovados. As informações exibidas são as fornecidas pelos profissionais.</p>
+    </header>
+    <div className="partner-discovery-controls">
+      <label className="partner-search"><Search size={17} /><span className="sr-only">Buscar por nome, cidade, especialidade ou modalidade</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nome, cidade, especialidade ou modalidade" /></label>
+      <button type="button" className="button subtle small-button" onClick={requestLocation}><MapPin size={15} /> Buscar por proximidade</button>
+    </div>
+    {locationError && <p className="social-inline-error" role="alert">{locationError}</p>}
+    {followError && <p className="social-inline-error" role="alert">{followError}</p>}
+    {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
+    {loading && <p className="social-inline-status" role="status">Carregando profissionais aprovados…</p>}
+    {!loading && !error && !shown.length && <div className="empty-state"><Users size={24} /><h3>{query ? "Nenhum profissional encontrado" : `Ainda não há ${kindLabel} aprovados`}</h3><p>{query ? "Tente outro nome, cidade ou modalidade." : "Novos perfis reais aparecerão aqui após a aprovação pela equipe Fortalfy."}</p></div>}
+    {shown.length > 0 && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <LivePartnerCard key={partner.id} partner={partner} appointment session={session} followState={followStates[partner.profileId]} followBusy={followBusyId === partner.profileId} followStateLoaded={followStateLoaded} followStateError={Boolean(followError)} onToggleFollow={toggleFollow} />)}</div>}
+    <div className="partner-discovery-footnote"><ShieldCheck size={15} /> Nenhum preço, avaliação ou horário é estimado quando o profissional não cadastrou esses dados.</div>
+  </section>;
+}
+
+function LivePassScreen({ client, session, notify }) {
+  const [partners, setPartners] = useState([]);
+  const [filter, setFilter] = useState("academia");
+  const [query, setQuery] = useState("");
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [locationError, setLocationError] = useState("");
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
     loadApprovedPartners(client)
       .then(data => { if (active) { setPartners(data); setError(""); } })
       .catch(failure => {
@@ -867,10 +1027,13 @@ function LivePassScreen({ client }) {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [client]);
+  }, [client, retry]);
 
+  const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
   const shown = orderPartnersByDistance(
-    partners.filter(partner => filter === "todos" || partner.kind === filter),
+    partners.filter(partner => (filter === "todos" || partner.kind === filter)
+      && [partner.name, partner.city, partner.address, partner.bio, ...partner.modalities]
+        .join(" ").toLocaleLowerCase("pt-BR").includes(normalizedQuery)),
     location,
   );
   const requestLocation = () => {
@@ -893,19 +1056,34 @@ function LivePassScreen({ client }) {
     );
   };
 
-  return <Screen title="Parceiros próximos" subtitle="FORTALFY PASS" className="pass-screen">
-    <section className="pass-intro"><span className="verified-pill"><ShieldCheck size={15} /> Somente perfis aprovados</span><p>Os endereços e coordenadas são cadastrados pelos próprios parceiros. Nenhum local é inventado.</p></section>
-    <div className="social-feed-toolbar">
+  return <Screen title="FortalPass" subtitle="MOVIMENTO E CUIDADO PERTO DE VOCÊ" location className="pass-screen">
+    <section className="partner-discovery pass-discovery">
+      <header className="partner-discovery-heading">
+        <span className="eyebrow">DESCUBRA A REDE FORTALFY</span>
+        <h2>Encontre o próximo passo da sua jornada.</h2>
+        <p>Explore academias e profissionais com cadastro aprovado. Distância, serviços e endereço vêm dos dados publicados pelos parceiros.</p>
+      </header>
+      <div className="partner-discovery-controls">
+        <label className="partner-search"><Search size={17} /><span className="sr-only">Buscar academia ou profissional</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar nome, cidade ou modalidade" /></label>
+        <button type="button" className="button subtle small-button" onClick={requestLocation}><MapPin size={15} /> Usar minha localização</button>
+      </div>
+      <div className="social-feed-toolbar">
       <div className="social-filter-tabs">
         {[["academia", "Academias"], ["personal", "Personal"], ["nutricionista", "Nutricionistas"], ["todos", "Todos"]].map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}
       </div>
-      <button className="button subtle small-button" onClick={requestLocation}><MapPin size={15} /> Usar minha localização</button>
-    </div>
-    {locationError && <p className="social-inline-error" role="alert">{locationError}</p>}
-    {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={() => window.location.reload()}>Tentar novamente</button></div>}
-    {loading && <p className="social-inline-status">Carregando parceiros aprovados…</p>}
-    {!loading && !error && !shown.length && <div className="empty-state"><MapPin size={24} /><h3>Nenhum parceiro aprovado nesta categoria</h3><p>Parceiros reais aparecerão aqui após concluírem o cadastro e serem aprovados.</p></div>}
-    <div className="gym-cards">{shown.map(partner => <LivePartnerCard key={partner.id} partner={partner} appointment />)}</div>
+      </div>
+      {locationError && <p className="social-inline-error" role="alert">{locationError}</p>}
+      {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
+      {loading && <p className="social-inline-status" role="status">Carregando parceiros aprovados…</p>}
+      {!loading && !error && !shown.length && <div className="empty-state"><MapPin size={24} /><h3>{query ? "Nenhum parceiro encontrado" : "Nenhum parceiro aprovado nesta categoria"}</h3><p>{query ? "Tente outro termo ou categoria." : "Parceiros reais aparecerão aqui após concluírem o cadastro e serem aprovados."}</p></div>}
+      {shown.length > 0 && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <LivePartnerCard key={partner.id} partner={partner} appointment session={session} />)}</div>}
+      <div className="partner-discovery-footnote"><ShieldCheck size={15} /> Não exibimos preços, avaliações ou disponibilidade que não tenham sido informados pelo parceiro.</div>
+    </section>
+    <nav className="partner-discovery-shortcuts" aria-label="Atalhos de cuidado">
+      <Link to="/nutrition"><Utensils size={17} /><span><strong>Nutricionista</strong><small>Perfis e planos alimentares</small></span><ArrowRight size={16} /></Link>
+      <Link to="/workout"><Dumbbell size={17} /><span><strong>Personal</strong><small>Profissionais e seus treinos</small></span><ArrowRight size={16} /></Link>
+      <Link to="/messages"><MessageCircle size={17} /><span><strong>Mensagens</strong><small>Conversas da sua conta</small></span><ArrowRight size={16} /></Link>
+    </nav>
     <section className="partner-cta"><div><span className="eyebrow">VOCÊ É UM PARCEIRO?</span><h2>Cadastre seu perfil real</h2><p>Seu cadastro ficará oculto ao público até a aprovação da equipe.</p></div><Link to="/partner/manage" className="button lime-button">Gerenciar cadastro <ArrowRight size={17} /></Link></section>
   </Screen>;
 }
@@ -1096,11 +1274,14 @@ function LivePartnerScreen({ client }) {
 function AppContent() {
   const [toast, setToast] = useState("");
   const [authSession, setAuthSession] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [socialProfile, setSocialProfile] = useState(null);
   const [socialProfileError, setSocialProfileError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
+  const [activityOwnerId, setActivityOwnerId] = useState(null);
+  const [activityError, setActivityError] = useState("");
   const [shopCart, setShopCart] = useState(loadShopCart);
   const [savedArts, setSavedArts] = useState([]);
   const [studioArtwork, setStudioArtwork] = useState(null);
@@ -1124,6 +1305,38 @@ function AppContent() {
       // ignore
     }
   }, []);
+  const accountUserId = authSession?.user?.id && !isDemoUser(authSession.user.id) ? authSession.user.id : null;
+  useEffect(() => {
+    if (!authReady) return undefined;
+    if (!accountUserId) {
+      setActivityOwnerId(null);
+      setActivityError("");
+      setActivity(normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
+      return undefined;
+    }
+    let active = true;
+    setActivityOwnerId("");
+    setActivityError("");
+    setActivity(normalizeActivity(null));
+    loadAccountActivity(supabase)
+      .then(data => {
+        if (!active) return;
+        setActivity(normalizeActivity(data));
+        setActivityOwnerId(accountUserId);
+      })
+      .catch(error => {
+        if (!active) return;
+        console.error("Não foi possível carregar a atividade da conta.", error);
+        const message = getErrorMessage(error, "Não foi possível carregar seus registros da conta.");
+        setActivityError(message);
+        setActivityOwnerId(accountUserId);
+        notify(message);
+      });
+    return () => { active = false; };
+  }, [accountUserId, authReady]);
+  const activityStatus = accountUserId
+    ? activityOwnerId === accountUserId ? "Sincronizado com sua conta." : "Carregando registros da sua conta…"
+    : "Salvo neste navegador; não sincroniza com sua conta.";
 
   const handleSignOut = async () => {
     try {
@@ -1138,23 +1351,30 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if (!supabase) return undefined;
+    if (!supabase) {
+      setAuthReady(true);
+      return undefined;
+    }
     let active = true;
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) {
         console.error("Não foi possível recuperar a sessão do Supabase.", error);
         notify(getErrorMessage(error, "Não foi possível recuperar sua sessão."));
+        setAuthReady(true);
         return;
       }
       if (data.session) setAuthSession(data.session);
+      setAuthReady(true);
     }).catch(error => {
       if (!active) return;
       console.error("Falha ao recuperar a sessão do Supabase.", error);
       notify(getErrorMessage(error, "Não foi possível recuperar sua sessão."));
+      setAuthReady(true);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setAuthSession(session);
+      setAuthReady(true);
       if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
       if (!session) setSocialProfile(null);
     });
@@ -1255,7 +1475,7 @@ function AppContent() {
     };
     return savePosts([sharedPost, ...profilePosts]);
   };
-  const updateActivity = (kind, detail) => setActivity(current => {
+  const updateLocalActivity = (current, kind, detail) => {
     if (kind === "water") return normalizeActivity({ ...current, waterMl: current.waterMl + 250 });
     if (kind === "workout") return normalizeActivity({
       ...current,
@@ -1265,7 +1485,31 @@ function AppContent() {
     if (kind === "meal") return normalizeActivity({ ...current, mealEntries: [...current.mealEntries, detail] });
     if (kind === "removeMeal") return normalizeActivity({ ...current, mealEntries: current.mealEntries.filter(meal => meal.id !== detail) });
     return current;
-  });
+  };
+  const updateActivity = async (kind, detail) => {
+    const userId = authSession?.user?.id;
+    if (userId && !isDemoUser(userId)) {
+      if (activityOwnerId !== userId) {
+        notify("Aguarde a sincronização dos seus registros antes de salvar.");
+        return false;
+      }
+      setActivityError("");
+      try {
+        const updated = await recordAccountActivity(supabase, kind, detail ?? null);
+        setActivity(normalizeActivity(updated));
+        setActivityError("");
+        return true;
+      } catch (error) {
+        console.error("Não foi possível sincronizar os registros com a conta.", error);
+        const message = getErrorMessage(error, "Não foi possível salvar na sua conta. Tente novamente.");
+        setActivityError(message);
+        notify(message);
+        return false;
+      }
+    }
+    setActivity(current => updateLocalActivity(current, kind, detail));
+    return true;
+  };
   useEffect(() => {
     const listener = event => setToast(event.detail);
     window.addEventListener("fortalfy-toast", listener);
@@ -1277,13 +1521,14 @@ function AppContent() {
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
+    if (!authReady || accountUserId) return;
     try {
       window.localStorage.setItem(ACTIVITY_STORAGE_KEY, JSON.stringify(activity));
     } catch (error) {
       console.error("Não foi possível persistir os registros de rotina neste dispositivo.", error);
       setToast("O registro está visível, mas não pôde ser salvo neste navegador.");
     }
-  }, [activity]);
+  }, [activity, accountUserId, authReady]);
   useEffect(() => {
     try {
       window.localStorage.setItem(SHOP_CART_STORAGE_KEY, JSON.stringify(shopCart));
@@ -1298,20 +1543,20 @@ function AppContent() {
   return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} />} />
+      <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} activityStatus={activityStatus} activityError={activityError} notify={notify} />} />
       <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
-      <Route path="/pass" element={<LivePassScreen client={supabase} />} />
+      <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
       <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/local" element={<Navigate to="/profile" replace />} />
-      <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} />} />
-      <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} />} />
+      <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
+      <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
       <Route path="/curated" element={<Navigate to="/food" replace />} />
-      <Route path="/progress" element={<ProgressScreen activity={activity} />} />
+      <Route path="/progress" element={<ProgressScreen activity={activity} activityStatus={activityStatus} activityError={activityError} />} />
       <Route path="/earnings" element={<EarningsScreen session={authSession} />} />
       <Route path="/academy" element={<AcademyScreen />} />
       <Route path="/live" element={<LiveScreen />} />

@@ -590,6 +590,40 @@ img { display: block; max-width: 100%; }
 .gym-card-body .friend-line { font-size: 8px; }
 .gym-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
 .gym-tags span { padding: 4px 6px; border-radius: 15px; color: #647769; background: #f2f6f2; font-size: 7px; font-weight: 700; }
+.partner-discovery { margin: 0 0 18px; padding: 15px; border: 1px solid #e4ece5; border-radius: 20px; background: linear-gradient(145deg, #fbfdf9, #f3f8ef); }
+.partner-discovery-heading { margin-bottom: 13px; }
+.partner-discovery-heading .eyebrow { color: #63834e; }
+.partner-discovery-heading h2 { margin: 5px 0; color: #244a32; font-size: clamp(19px, 4vw, 25px); line-height: 1.15; letter-spacing: -.5px; }
+.partner-discovery-heading p { max-width: 620px; margin: 0; color: #69796d; font-size: 10px; line-height: 1.55; }
+.partner-discovery-controls { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+.partner-search { min-width: 160px; min-height: 38px; display: flex; flex: 1 1 230px; align-items: center; gap: 8px; padding: 0 11px; color: #6d7f70; border: 1px solid #e0e9e0; border-radius: 12px; background: #fff; }
+.partner-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: #264a32; background: transparent; font: inherit; font-size: 10px; }
+.partner-search input::placeholder { color: #98a39a; }
+.partner-discovery .social-feed-toolbar { margin: 9px 0 12px; }
+.partner-discovery-grid { grid-template-columns: 1fr; gap: 10px; }
+.partner-live-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); }
+.partner-live-card .gym-card-image { height: auto; min-height: 100%; }
+.partner-live-card .gym-card-image > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.partner-live-card .gym-card-image > span:first-child { top: 8px; right: 7px; left: 7px; width: fit-content; max-width: calc(100% - 14px); font-size: 6px; }
+.partner-live-card .gym-card-body { min-width: 0; padding: 11px; }
+.partner-live-card .gym-card-title { align-items: flex-start; flex-direction: column; gap: 5px; }
+.partner-live-card .gym-card-title h3 { font-size: 12px; }
+.partner-live-card .gym-card-title .rating { padding: 3px 7px; color: #496a4e; background: #edf5e9; border-radius: 20px; font-size: 8px; }
+.partner-live-card .gym-card-body > p { font-size: 9px; line-height: 1.4; }
+.partner-live-card .partner-live-bio { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.partner-live-card .partner-live-hours { display: flex; align-items: flex-start; gap: 5px; color: #5e7563; }
+.partner-live-hours svg { flex: 0 0 auto; }
+.partner-live-disclosure { display: block; margin-top: 8px; color: #79867b; font-size: 8px; line-height: 1.45; }
+.partner-live-card .partner-card-actions { gap: 6px; }
+.partner-live-card .partner-card-actions .button { min-height: 31px; padding: 0 9px; font-size: 8px; }
+.partner-discovery-footnote { display: flex; align-items: flex-start; gap: 6px; margin-top: 12px; color: #708071; font-size: 8px; line-height: 1.45; }
+.partner-discovery-footnote svg { flex: 0 0 auto; color: #658747; }
+.partner-discovery-shortcuts { display: grid; gap: 8px; margin: 16px 0; }
+.partner-discovery-shortcuts a { min-height: 55px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: #315640; background: #fff; border: 1px solid #e5ede6; border-radius: 14px; text-decoration: none; }
+.partner-discovery-shortcuts a > span { display: grid; flex: 1; gap: 3px; }
+.partner-discovery-shortcuts strong { font-size: 10px; }
+.partner-discovery-shortcuts small { color: #7a887d; font-size: 8px; }
+.pass-screen .partner-cta { margin-top: 14px; }
 .gym-price { display: block; color: #244d35; font-size: 8px; font-weight: 800; }
 .professional-care { margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #e7efe8; border-radius: 20px; }
 .professional-care h2 { margin: 5px 0; color: #214731; font-size: 20px; }
@@ -3477,6 +3511,14 @@ img { display: block; max-width: 100%; }
   .shop-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
   .shop-product-info { padding: 14px; }
   .shop-product-name { min-height: 40px; font-size: 13px; }
+  .partner-discovery { padding: 20px; }
+  .partner-discovery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .partner-live-card { grid-template-columns: 118px minmax(0, 1fr); }
+  .partner-live-card .gym-card-image { min-height: 100%; }
+  .partner-live-card .gym-card-body { padding: 13px; }
+  .partner-live-card .gym-card-title h3 { font-size: 13px; }
+  .partner-discovery-shortcuts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .partner-discovery-shortcuts a { min-height: 70px; }
 }
 
 @media (min-width: 1000px) {
