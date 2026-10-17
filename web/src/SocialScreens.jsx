@@ -56,6 +56,10 @@ const formatDate = value => {
     ? "agora"
     : date.toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 };
+const formatCompactCount = value => new Intl.NumberFormat("pt-BR", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+}).format(Math.max(0, Number(value) || 0));
 
 function SocialAuth({ client, configured, notify, recovery = false, onRecovered }) {
   const [mode, setMode] = useState(recovery ? "update" : "login");
@@ -1424,37 +1428,56 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     setMenuOpen(false);
   };
 
+  const postMenu = <div className="social-post-menu-wrap">
+    <button className="social-icon-button" aria-label="Opções da publicação" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><MoreHorizontal size={20} /></button>
+    {menuOpen && <div className="social-post-menu">
+      {own && <><button onClick={editPost}>Editar publicação</button><button className="danger-action" onClick={removePost}>Excluir publicação</button></>}
+      <button onClick={bookmark}><Bookmark size={14} /> {saved ? "Remover dos salvos" : "Salvar publicação"}</button>
+      <button onClick={copyLink}>Copiar link</button>
+      {!own && <button onClick={hide}>Ocultar publicação</button>}
+      {!own && <><button onClick={toggleFollow}>{followingAuthor ? <UserMinus size={14} /> : <UserPlus size={14} />}{authorFollowRequest === "pending" ? "Cancelar solicitação" : followingAuthor ? "Deixar de seguir" : post.author?.isPrivate ? "Solicitar para seguir" : "Seguir autor"}</button><button className="danger-action" onClick={report}><CircleAlert size={14} /> Denunciar</button></>}
+    </div>}
+  </div>;
+  const authorHeader = <header className={`social-post-header${reelMode ? " social-reel-author-header" : ""}`}>
+    {!reelMode && <AuthorLink author={post.author} ownId={userId} />}
+    <div className="social-post-author">
+      <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
+      {reelMode
+        ? <span className="social-reel-author-meta">{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}</span>
+        : <span>{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
+    </div>
+    {!reelMode && !own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
+    {postMenu}
+  </header>;
+  const postDescription = !!post.body && <div className="social-post-text"><LinkifiedText text={displayBody} />{longBody && <button className="social-text-toggle" onClick={() => setExpanded(value => !value)}>{expanded ? "Ver menos" : "Ver mais"}</button>}</div>;
+  const postActions = <div className={`social-post-actions${reelMode ? " social-reel-actions" : ""}`}>
+    <button className={liked ? "is-liked" : ""} aria-pressed={liked} aria-label={reelMode ? `${liked ? "Descurtir" : "Curtir"} · ${formatCompactCount(likeCount)} curtidas` : undefined} onClick={toggleLike} disabled={busy}><Heart size={reelMode ? 25 : 18} fill={liked ? "currentColor" : "none"} /><span>{reelMode ? formatCompactCount(likeCount) : "Curtir"}</span></button>
+    <button aria-label={reelMode ? `Comentar · ${formatCompactCount(post.commentCount)} comentários` : undefined} onClick={openComments}><MessageCircle size={reelMode ? 25 : 18} /><span>{reelMode ? formatCompactCount(post.commentCount) : "Comentar"}</span></button>
+    <button aria-label={reelMode ? `Compartilhar · ${formatCompactCount(post.shareCount)} compartilhamentos` : undefined} onClick={() => setShareOpen(true)}><Share2 size={reelMode ? 24 : 18} /><span>{reelMode ? formatCompactCount(post.shareCount) : "Compartilhar"}</span></button>
+  </div>;
+  const reelFollowLabel = authorFollowRequest === "pending"
+    ? "Cancelar solicitação para seguir"
+    : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`;
+
   return <article className={`social-post-card${reelMode ? " social-reel-card" : ""}`} id={`post-${post.id}`}>
     {post.shared_post_id && <div className="social-shared-label"><Share2 size={14} /> {post.author?.name || "Uma pessoa"} compartilhou</div>}
-    <header className={`social-post-header${reelMode ? " social-reel-author-header" : ""}`}>
-      <AuthorLink author={post.author} ownId={userId} />
-      <div className="social-post-author">
-        <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
-        {reelMode
-          ? <span className="social-reel-author-meta">{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}</span>
-          : <span>{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
-      </div>
-      {!own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
-      <div className="social-post-menu-wrap">
-        <button className="social-icon-button" aria-label="Opções da publicação" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><MoreHorizontal size={20} /></button>
-        {menuOpen && <div className="social-post-menu">
-          {own && <><button onClick={editPost}>Editar publicação</button><button className="danger-action" onClick={removePost}>Excluir publicação</button></>}
-          <button onClick={bookmark}><Bookmark size={14} /> {saved ? "Remover dos salvos" : "Salvar publicação"}</button>
-          <button onClick={copyLink}>Copiar link</button>
-          {!own && <button onClick={hide}>Ocultar publicação</button>}
-          {!own && <><button onClick={toggleFollow}>{followingAuthor ? <UserMinus size={14} /> : <UserPlus size={14} />}{authorFollowRequest === "pending" ? "Cancelar solicitação" : followingAuthor ? "Deixar de seguir" : post.author?.isPrivate ? "Solicitar para seguir" : "Seguir autor"}</button><button className="danger-action" onClick={report}><CircleAlert size={14} /> Denunciar</button></>}
-        </div>}
-      </div>
-    </header>
-    {!!post.body && <div className="social-post-text"><LinkifiedText text={displayBody} />{longBody && <button className="social-text-toggle" onClick={() => setExpanded(value => !value)}>{expanded ? "Ver menos" : "Ver mais"}</button>}</div>}
+    {reelMode
+      ? <div className="social-reel-caption">{authorHeader}{postDescription}</div>
+      : <>{authorHeader}{postDescription}</>}
     {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
     {post.original && <div className="social-original-post"><div className="social-original-author"><AuthorLink author={post.original.author} ownId={userId} /><span><strong>{post.original.author?.name}</strong><small>{formatDate(post.original.published_at)}</small></span></div><LinkifiedText text={post.original.body} /><PostMedia media={post.original.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} /></div>}
     <div className="social-post-stats"><span>{likeCount > 0 && <><Heart size={14} fill="currentColor" /> {likeCount} curtida{likeCount === 1 ? "" : "s"}</>}</span><span>{reelMode && <><Eye size={14} /> {reelViewCount} visualizaç{reelViewCount === 1 ? "ão" : "ões"} · </>}{post.commentCount} comentário{post.commentCount === 1 ? "" : "s"} · {post.shareCount} compartilhamento{post.shareCount === 1 ? "" : "s"}</span></div>
-    <div className="social-post-actions">
-      <button className={liked ? "is-liked" : ""} aria-pressed={liked} onClick={toggleLike} disabled={busy}><Heart size={18} fill={liked ? "currentColor" : "none"} /> Curtir</button>
-      <button onClick={openComments}><MessageCircle size={18} /> Comentar</button>
-      <button onClick={() => setShareOpen(true)}><Share2 size={18} /> Compartilhar</button>
-    </div>
+    {reelMode
+      ? <div className="social-reel-side-rail">
+        <div className="social-reel-creator-action">
+          <AuthorLink author={post.author} ownId={userId} />
+          {!own && <button type="button" className={`social-reel-follow-badge${followingAuthor ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={reelFollowLabel} title={reelFollowLabel}>
+            {followingAuthor || authorFollowRequest === "pending" ? <Check size={14} /> : <UserPlus size={14} />}
+          </button>}
+        </div>
+        {postActions}
+      </div>
+      : postActions}
     {commentsOpen && <section className="social-comments">
       {commentsLoading ? <p className="social-inline-status"><LoaderCircle className="spin" size={16} /> Carregando comentários…</p>
         : commentsError ? <p className="social-inline-error">{commentsError}<button onClick={async () => { setCommentsLoading(true); await refreshComments(); setCommentsLoading(false); }}>Tentar novamente</button></p>
