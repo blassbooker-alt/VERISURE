@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import Dashboard from "./Dashboards.jsx";
 import ProfessionalPortal from "./ProfessionalPortal.jsx";
+import BenefitsTerms from "./BenefitsTerms.jsx";
+import { GymCheckInPage, GymPartnerCheckinsPage, GymPlateAdminPage } from "./GymAccess.jsx";
 import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 import FortalShop from "./FortalShop.jsx";
@@ -1086,6 +1088,7 @@ function LivePassScreen({ client, session, notify }) {
       <Link to="/messages"><MessageCircle size={17} /><span><strong>Mensagens</strong><small>Conversas da sua conta</small></span><ArrowRight size={16} /></Link>
     </nav>
     <section className="partner-cta"><div><span className="eyebrow">VOCÊ É UM PARCEIRO?</span><h2>Cadastre seu perfil real</h2><p>Seu cadastro ficará oculto ao público até a aprovação da equipe.</p></div><Link to="/professional" className="button lime-button">Acessar área profissional <ArrowRight size={17} /></Link></section>
+    {session?.user?.app_metadata?.role === "admin" && <section className="partner-cta"><div><span className="eyebrow">OPERAÇÃO FORTALFY</span><h2>Placas oficiais das unidades</h2><p>Cadastre unidades, gere QR fixo e acompanhe instalação e tentativas no servidor.</p></div><Link to="/admin/gym-plates" className="button lime-button">Administrar placas <ArrowRight size={17} /></Link></section>}
   </Screen>;
 }
 
@@ -1156,6 +1159,7 @@ function PartnerListingManager({ client, session, profile, notify }) {
           {saved && <p className="social-inline-status">Cadastro salvo. Aprovação: {profile?.verified ? "aprovado" : "aguardando equipe"}.</p>}
           <button className="button primary wide-button" type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar cadastro real"}</button>
         </form>}
+    {session?.user?.id && profile?.kind === "academia" && <section className="partner-cta"><div><span className="eyebrow">OPERAÇÃO DA ACADEMIA</span><h2>Acessos FortalPass</h2><p>Consulte os registros operacionais vinculados às suas unidades.</p></div><Link to="/partner/checkins" className="button lime-button">Ver acessos <ArrowRight size={16} /></Link></section>}
   </Screen>;
 }
 
@@ -1538,19 +1542,23 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/shop", "/cart", "/studio"];
-  const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/");
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates"];
+  const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id && socialProfile);
   return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} activityStatus={activityStatus} activityError={activityError} notify={notify} />} />
+      <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />
       <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
       <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
+      <Route path="/checkin/:publicId" element={<Screen title="Validar presença" subtitle="FORTALPASS · ACESSO SEGURO" className="gym-access-screen"><GymCheckInPage client={supabase} session={authSession} /></Screen>} />
+      <Route path="/partner/checkins" element={<Screen title="Acessos FortalPass" subtitle="PAINEL DA ACADEMIA" className="gym-admin-screen"><GymPartnerCheckinsPage client={supabase} session={authSession} /></Screen>} />
+      <Route path="/admin/gym-plates" element={<Screen title="Placas oficiais" subtitle="ADMINISTRAÇÃO FORTALFY" className="gym-admin-screen"><GymPlateAdminPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/local" element={<Navigate to="/profile" replace />} />

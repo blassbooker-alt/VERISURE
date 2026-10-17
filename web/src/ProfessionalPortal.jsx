@@ -11,6 +11,11 @@ import {
   saveProfessionalApplication, submitProfessionalApplication, uploadProfessionalApplicationDocument,
   validateProfessionalApplication,
 } from "./professionalService.js";
+import {
+  acceptFreeBusinessRegistration, loadAdminCommercialData, loadPartnerCommercialState,
+  reviewCommercialBusiness, reviewCommercialItem, reviewCommercialReport, saveDiscountRule, setDiscountItemEligibility,
+  setPartnerDiscountEnrollment,
+} from "./commercialService.js";
 
 const CATEGORY_ICONS = {
   empresa: BriefcaseBusiness,
@@ -140,6 +145,282 @@ function AdminReview({ client, applications, onRefresh, notify }) {
   </section>;
 }
 
+function CommercialAdmin({ client, notify }) {
+  const [data, setData] = useState({ businesses: [], reports: [], commercialContent: [], schedule: [], suspiciousPrices: [], priceHistory: [], businessAudit: [], moderationAudit: [], ruleAudit: [], commercialContentAudit: [] });
+  const [edits, setEdits] = useState({});
+  const [reportNotes, setReportNotes] = useState({});
+  const [contentNotes, setContentNotes] = useState({});
+  const [ruleEdits, setRuleEdits] = useState({});
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  const refresh = async () => {
+    setError("");
+    const result = await loadAdminCommercialData(client);
+    setData(result);
+    setEdits(Object.fromEntries(result.businesses.map(business => [business.profile_id, {
+      status: business.status,
+      advertisingEnabled: business.advertising_enabled,
+      note: business.reviewer_note || "",
+    }])));
+    setRuleEdits(Object.fromEntries(result.schedule.map(rule => [`${rule.plan}:${rule.day_from}`, {
+      ...rule,
+      day_from: String(rule.day_from),
+      day_to: String(rule.day_to),
+      percent: String(rule.percent),
+    }])));
+  };
+
+  useEffect(() => {
+    let active = true;
+    loadAdminCommercialData(client).then(result => {
+      if (!active) return;
+      setData(result);
+      setEdits(Object.fromEntries(result.businesses.map(business => [business.profile_id, {
+        status: business.status,
+        advertisingEnabled: business.advertising_enabled,
+        note: business.reviewer_note || "",
+      }])));
+      setRuleEdits(Object.fromEntries(result.schedule.map(rule => [`${rule.plan}:${rule.day_from}`, {
+        ...rule,
+        day_from: String(rule.day_from),
+        day_to: String(rule.day_to),
+        percent: String(rule.percent),
+      }])));
+    }).catch(failure => {
+      if (active) setError(failure.message || "Não foi possível carregar a administração comercial.");
+    });
+    return () => { active = false; };
+  }, [client]);
+
+  const saveBusiness = async event => {
+    event.preventDefault();
+    const profileId = event.currentTarget.dataset.profileId;
+    const edit = edits[profileId];
+    if (!edit) return;
+    setBusy(profileId);
+    try {
+      await reviewCommercialBusiness(client, profileId, edit.status, edit.advertisingEnabled, edit.note);
+      await refresh();
+      notify("Autorização comercial atualizada e registrada.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível atualizar a empresa.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const decideReport = async (report, status) => {
+    setBusy(report.id);
+    try {
+      await reviewCommercialReport(client, report.id, status, reportNotes[report.id] || "");
+      await refresh();
+      notify("Decisão de moderação registrada.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível atualizar a denúncia.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const decideCommercialItem = async (item, status) => {
+    const key = `${item.target_kind}:${item.target_id}`;
+    setBusy(key);
+    try {
+      await reviewCommercialItem(client, item.target_kind, item.target_id, status, contentNotes[key] || "");
+      await refresh();
+      notify("Decisão sobre o conteúdo comercial registrada.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível moderar este conteúdo.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const saveRule = async key => {
+    setBusy(key);
+    try {
+      const [plan, previousDayFrom] = key.split(":");
+      await saveDiscountRule(client, { ...ruleEdits[key], plan }, Number(previousDayFrom));
+      await refresh();
+      notify("Regra de desconto atualizada. A alteração foi registrada no histórico.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível salvar a regra.");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  return <section className="professional-admin-review">
+    <div className="professional-portal-heading"><div><span className="eyebrow">PUBLICIDADE E DESCONTOS</span><h2>Governança comercial</h2><p>Cadastro gratuito não libera anúncios automaticamente. Autorizações, denúncias e mudanças de regra ficam registradas no servidor.</p></div></div>
+    {error && <p className="professional-error" role="alert">{error}</p>}
+    <h3>Empresas e permissão de publicidade</h3>
+    {!data.businesses.length && <p className="professional-empty">Nenhum cadastro comercial registrado.</p>}
+    {data.businesses.map(business => {
+      const edit = edits[business.profile_id] || {
+        status: business.status,
+        advertisingEnabled: business.advertising_enabled,
+        note: business.reviewer_note || "",
+      };
+      return <form className="professional-review-card" key={business.profile_id} data-profile-id={business.profile_id} onSubmit={saveBusiness}>
+        <div><span className="eyebrow">{business.category} · {business.profile_id}</span><h3>{business.display_name || "Nome comercial não informado"}</h3><p>@{business.username || "sem-username"} · Situação: {business.status}{business.advertising_enabled ? " · anúncios autorizados" : ""}</p></div>
+        <div className="professional-fields-grid">
+          <label className="professional-form-field">Revisão<select value={edit.status} onChange={event => setEdits(current => ({ ...current, [business.profile_id]: { ...edit, status: event.target.value, advertisingEnabled: event.target.value === "approved" && edit.advertisingEnabled } }))}>
+            <option value="pending">Pendente</option><option value="approved">Aprovada</option><option value="rejected">Recusada</option><option value="suspended">Suspensa</option>
+          </select></label>
+          <label className="social-auth-consent"><input type="checkbox" checked={Boolean(edit.advertisingEnabled)} disabled={edit.status !== "approved"} onChange={event => setEdits(current => ({ ...current, [business.profile_id]: { ...edit, advertisingEnabled: event.target.checked } }))} /><span>Permitir publicidade comercial nos módulos habilitados</span></label>
+        </div>
+        <label className="professional-form-field">Registro da decisão<textarea rows={2} maxLength={2000} value={edit.note || ""} onChange={event => setEdits(current => ({ ...current, [business.profile_id]: { ...edit, note: event.target.value } }))} /></label>
+        <button className="button primary small-button" disabled={busy === business.profile_id}>{busy === business.profile_id ? "Salvando…" : "Salvar revisão"}</button>
+      </form>;
+    })}
+    <h3>Fila de revisão de anúncios e ofertas</h3>
+    {!data.commercialContent.length && <p className="professional-empty">Nenhum conteúdo comercial aguardando ou em revisão.</p>}
+    {data.commercialContent.map(item => {
+      const key = `${item.target_kind}:${item.target_id}`;
+      return <article className="professional-review-card" key={key}>
+        <div><span className="eyebrow">{item.target_kind} · {item.profile_id} · {item.status}</span><h4>{item.display_name || "Empresa"}</h4><pre>{JSON.stringify(item.details, null, 2)}</pre>{item.reviewer_note && <small>Observação: {item.reviewer_note}</small>}</div>
+        <label className="professional-form-field">Observação da moderação<textarea rows={2} maxLength={2000} value={contentNotes[key] || ""} onChange={event => setContentNotes(current => ({ ...current, [key]: event.target.value }))} /></label>
+        <div className="professional-review-actions">
+          {item.status !== "approved" && <button className="button primary small-button" type="button" disabled={busy === key} onClick={() => decideCommercialItem(item, "approved")}>Aprovar publicação</button>}
+          {item.status !== "suspended" && <button className="button subtle small-button" type="button" disabled={busy === key} onClick={() => decideCommercialItem(item, "suspended")}>Suspender</button>}
+          {item.status !== "rejected" && <button className="button subtle small-button" type="button" disabled={busy === key} onClick={() => decideCommercialItem(item, "rejected")}>Reprovar</button>}
+        </div>
+      </article>;
+    })}
+    <h3>Denúncias comerciais</h3>
+    {!data.reports.length && <p className="professional-empty">Nenhuma denúncia comercial aberta.</p>}
+    {data.reports.map(report => <article className="professional-review-card" key={report.id}>
+      <div><span className="eyebrow">{report.target_kind} · {report.target_id} · {report.status}</span><p>{report.reason}</p><small>Denunciado em {new Date(report.created_at).toLocaleString("pt-BR")}</small></div>
+      {report.status === "pending" && <>
+        <label className="professional-form-field">Decisão<textarea rows={2} maxLength={2000} value={reportNotes[report.id] || ""} onChange={event => setReportNotes(current => ({ ...current, [report.id]: event.target.value }))} /></label>
+        <div className="professional-review-actions"><button className="button primary small-button" type="button" disabled={busy === report.id} onClick={() => decideReport(report, "actioned")}>Aplicar medida</button><button className="button subtle small-button" type="button" disabled={busy === report.id} onClick={() => decideReport(report, "dismissed")}>Arquivar denúncia</button></div>
+      </>}
+      {report.decision_note && <small>Decisão registrada: {report.decision_note}</small>}
+    </article>)}
+    <h3>Faixas e percentuais globais</h3>
+    <p>Fuso da operação: America/Fortaleza. A tabela pode ser editada, mas ainda não é aplicada a compras porque não há assinatura verificada e checkout ativo.</p>
+    <div className="professional-fields-grid">{data.schedule.map(rule => {
+      const key = `${rule.plan}:${rule.day_from}`;
+      const edit = ruleEdits[key] || rule;
+      return <form className="professional-review-card" key={key} onSubmit={event => { event.preventDefault(); saveRule(key); }}>
+        <strong>Fortal {rule.plan}</strong>
+        <div className="partner-product-form-row">
+          <label>Dia inicial<input type="number" min="1" max="31" value={edit.day_from} onChange={event => setRuleEdits(current => ({ ...current, [key]: { ...edit, day_from: event.target.value } }))} /></label>
+          <label>Dia final<input type="number" min="1" max="31" value={edit.day_to} onChange={event => setRuleEdits(current => ({ ...current, [key]: { ...edit, day_to: event.target.value } }))} /></label>
+          <label>Percentual<input type="number" min="0" max={rule.plan === "start" ? "5" : rule.plan === "plus" ? "10" : "20"} step="0.01" value={edit.percent} onChange={event => setRuleEdits(current => ({ ...current, [key]: { ...edit, percent: event.target.value } }))} /></label>
+        </div>
+        <button className="button subtle small-button" disabled={busy === key}>{busy === key ? "Salvando…" : "Salvar regra"}</button>
+      </form>;
+    })}</div>
+    <h3>Histórico de preços sinalizados</h3>
+    {!data.suspiciousPrices.length && <p className="professional-empty">Nenhuma alteração de preço suspeita sinalizada.</p>}
+    {data.suspiciousPrices.map(change => <article className="professional-review-card" key={change.id}><strong>{change.target_kind} · {change.target_id}</strong><p>{change.old_price == null ? "Preço inicial" : `${change.old_price} → ${change.new_price}`} · {new Date(change.changed_at).toLocaleString("pt-BR")}</p></article>)}
+    <details><summary>Histórico de preços (últimas 200 alterações)</summary>{data.priceHistory.map(change => <p key={`price-${change.id}`}>{change.target_kind} · {change.target_id} · {change.old_price == null ? "cadastro inicial" : `${change.old_price} → ${change.new_price}`}{change.suspicious_increase ? " · sinalizada para revisão" : ""} · {new Date(change.changed_at).toLocaleString("pt-BR")}</p>)}</details>
+    <details><summary>Trilha de revisão empresarial</summary>{data.businessAudit.map(entry => <p key={`business-audit-${entry.id}`}>{entry.action} · {entry.profile_id} · {new Date(entry.created_at).toLocaleString("pt-BR")} · {JSON.stringify(entry.new_values)}</p>)}</details>
+    <details><summary>Histórico de decisões de moderação</summary>{data.moderationAudit.map(entry => <p key={`moderation-audit-${entry.id}`}>{entry.previous_status} → {entry.new_status} · {new Date(entry.changed_at).toLocaleString("pt-BR")} · {entry.decision_note || "sem observação"}</p>)}</details>
+    <details><summary>Histórico de revisões de conteúdo comercial</summary>{data.commercialContentAudit.map(entry => <p key={`content-audit-${entry.id}`}>{entry.target_kind} · {entry.target_id} · {entry.action} · {entry.previous_status || "novo"} → {entry.new_status} · {new Date(entry.changed_at).toLocaleString("pt-BR")} · {entry.reviewer_note || "sem observação"}</p>)}</details>
+    <details><summary>Histórico de alterações dos percentuais</summary>{data.ruleAudit.map(entry => <p key={`rule-audit-${entry.id}`}>Fortal {entry.plan}: dias {entry.old_day_from ?? "novo"}–{entry.old_day_to ?? "novo"} ({entry.old_percent ?? "—"}%) → dias {entry.day_from}–{entry.day_to} ({entry.new_percent}%) · {new Date(entry.changed_at).toLocaleString("pt-BR")}</p>)}</details>
+  </section>;
+}
+
+function PartnerDiscountProgramPanel({ client, userId, category, notify }) {
+  const [commercial, setCommercial] = useState({ business: null, enrollment: null, eligibility: [], priceHistory: [], schedule: [] });
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = async () => {
+    setError("");
+    const [commercialState, storesResult, foodResult] = await Promise.all([
+      loadPartnerCommercialState(client, userId),
+      client.from("partner_store_products").select("id,name,price,is_active").eq("profile_id", userId),
+      client.from("food_menu_items").select("id,name,price,available").eq("restaurant_id", userId),
+    ]);
+    if (storesResult.error) throw storesResult.error;
+    if (foodResult.error) throw foodResult.error;
+    setCommercial(commercialState);
+    setItems([
+      ...(storesResult.data || []).map(item => ({ ...item, targetKind: "store_product", active: item.is_active })),
+      ...(foodResult.data || []).map(item => ({ ...item, targetKind: "food_menu_item", active: item.available })),
+    ]);
+  };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    refresh().catch(failure => {
+      if (active) setError(failure.message || "Não foi possível carregar a participação comercial.");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [client, userId]);
+
+  const enrollmentActive = Boolean(commercial.enrollment?.active
+    && commercial.enrollment.terms_version === "fortalfy-partner-discounts-v1");
+  const toggleEnrollment = async accepted => {
+    setBusy(true);
+    try {
+      await setPartnerDiscountEnrollment(client, accepted);
+      await refresh();
+      notify(accepted ? "Adesão voluntária registrada." : "Adesão desativada para ofertas futuras.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível atualizar a participação.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const toggleItem = async (item, enabled) => {
+    setBusy(true);
+    try {
+      await setDiscountItemEligibility(client, item.targetKind, item.id, enabled);
+      await refresh();
+      notify(enabled ? "Item marcado como elegível." : "Item removido da participação.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível atualizar a elegibilidade.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const acceptFreeTerms = async () => {
+    setBusy(true);
+    try {
+      await acceptFreeBusinessRegistration(client, category);
+      await refresh();
+      notify("Aceite do cadastro gratuito registrado.");
+    } catch (failure) {
+      setError(failure.message || "Não foi possível registrar o aceite.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return <section className="professional-application-editor">
+    <header><div><span className="eyebrow">ADESÃO VOLUNTÁRIA</span><h2>Programa de descontos Fortalfy</h2><p>Não há cobrança de cadastro nem obrigação de participar.</p></div></header>
+    {loading && <p className="professional-inline-status"><LoaderCircle size={16} className="spin" /> Carregando itens comerciais…</p>}
+    {error && <p className="professional-error" role="alert">{error}</p>}
+    {!loading && <p><strong>Permissão de publicidade:</strong> {commercial.business?.advertising_enabled ? "autorizada" : "aguardando aprovação administrativa"}</p>}
+    {!loading && !commercial.business?.free_registration_accepted_at && <button type="button" className="button subtle small-button" disabled={busy || !client} onClick={acceptFreeTerms}>Aceitar as condições gratuitas do perfil comercial</button>}
+    <label className="social-auth-consent">
+      <input type="checkbox" checked={enrollmentActive} disabled={loading || busy || !commercial.business?.advertising_enabled || Boolean(error)} onChange={event => toggleEnrollment(event.target.checked)} />
+      <span>Aceito voluntariamente os termos { "fortalfy-partner-discounts-v1" }: os descontos serão financiados pelo parceiro, incidem sobre o preço cadastrado na Fortalfy, não são cumulativos por padrão e só se aplicam a itens selecionados. Posso desativar futuras ofertas.</span>
+    </label>
+    {!enrollmentActive && <p>Cancelamentos/reembolsos de compras confirmadas seguirão os termos legais e comerciais do checkout quando ele existir. Nenhum desconto ou pedido é criado neste momento.</p>}
+    {!!commercial.schedule.length && <details><summary>Ver faixas globais de desconto</summary><div className="table-scroll"><table><thead><tr><th>Dias do mês</th><th>Start</th><th>Plus</th><th>Master</th></tr></thead><tbody>{[[1, 10], [11, 20], [21, 25], [26, 31]].map(([from, to]) => <tr key={`${from}-${to}`}><td>{from}–{to}</td>{["start", "plus", "master"].map(plan => <td key={plan}>{commercial.schedule.find(rule => rule.plan === plan && Number(rule.day_from) === from)?.percent ?? "—"}%</td>)}</tr>)}</tbody></table></div></details>}
+    {enrollmentActive && <div>{items.length === 0 && <p>Nenhum produto ou item de cardápio elegível foi encontrado nesta conta.</p>}
+      <p>{commercial.enrollment?.included_conditions}</p><p>{commercial.enrollment?.cancellation_terms}</p>
+      {items.map(item => {
+        const eligible = commercial.eligibility.some(entry => entry.target_kind === item.targetKind && entry.target_id === item.id && entry.enabled);
+        return <label className="social-auth-consent" key={`${item.targetKind}-${item.id}`}>
+          <input type="checkbox" checked={eligible} disabled={busy || !item.active || Boolean(error)} onChange={event => toggleItem(item, event.target.checked)} />
+          <span>{item.name} · {item.targetKind === "food_menu_item" ? "FortalFood" : "FortalShop"} · R$ {Number(item.price).toFixed(2)}{!item.active ? " · indisponível" : ""}</span>
+        </label>;
+      })}
+      <p>Este painel guarda a adesão e a seleção. O sistema ainda não possui assinaturas pagas verificáveis nem checkout integrado para aplicar esses descontos a compras.</p>
+    </div>}
+  </section>;
+}
+
 export default function ProfessionalPortal({ client, session, profile, notify }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedCategory = searchParams.get("category") || "";
@@ -158,6 +439,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
   const [loadError, setLoadError] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [formError, setFormError] = useState("");
+  const [acceptedFreeBusinessTerms, setAcceptedFreeBusinessTerms] = useState(false);
   const [retry, setRetry] = useState(0);
   const userId = session?.user?.id || "";
   const admin = session?.user?.app_metadata?.role === "admin";
@@ -288,6 +570,10 @@ export default function ProfessionalPortal({ client, session, profile, notify })
 
   const submit = async event => {
     event.preventDefault();
+    if (!acceptedFreeBusinessTerms) {
+      setFormError("Confirme que leu as condições do cadastro comercial gratuito antes de enviar.");
+      return;
+    }
     if (["nutricionista", "personal", "vendedor"].includes(selectedCategory) && !documents.length) {
       setFormError("Anexe ao menos um documento de comprovação antes de enviar o cadastro.");
       setStep(1);
@@ -304,6 +590,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
     if (!saved) return;
     setSaving(true);
     try {
+      await acceptFreeBusinessRegistration(client, selectedCategory);
       await submitProfessionalApplication(client, saved.id);
       const refreshed = await loadProfessionalApplications(client, userId);
       setApplications(refreshed);
@@ -353,6 +640,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
 
   const chooseCategory = kind => {
     setSelectedCategory(kind);
+    setAcceptedFreeBusinessTerms(false);
     setSearchParams({ category: kind }, { replace: true });
   };
 
@@ -383,7 +671,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
       <div><span className="eyebrow">FORTALFY PROFISSIONAIS</span><h1>Seu espaço profissional</h1><p>Use sua conta Fortalfy atual; cadastros profissionais não criam uma identidade de login duplicada.</p></div>
       <Link className="button subtle small-button" to="/profile">Meu perfil <ArrowRight size={15} /></Link>
     </header>
-    {admin && <>{reviewError && <div className="professional-error" role="alert">{reviewError}</div>}<AdminReview client={client} applications={reviewApplications} onRefresh={refreshReviewApplications} notify={notify} /></>}
+    {admin && <>{reviewError && <div className="professional-error" role="alert">{reviewError}</div>}<AdminReview client={client} applications={reviewApplications} onRefresh={refreshReviewApplications} notify={notify} /><CommercialAdmin client={client} notify={notify} /></>}
     {loading && <p className="professional-inline-status"><LoaderCircle size={17} className="spin" /> Carregando seus cadastros…</p>}
     {loadError && <div className="professional-error" role="alert">{loadError}<button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
     {!loading && !loadError && <>
@@ -412,6 +700,10 @@ export default function ProfessionalPortal({ client, session, profile, notify })
             {documents.map(document => <div className="professional-document-item" key={document.id}><span>{document.file_name}<small>{document.document_kind} · {Math.ceil(document.size_bytes / 1024)} KB</small></span>{!["under_review", "approved", "suspended", "rejected"].includes(selectedApplication?.status) && <button type="button" disabled={uploadingDocument} onClick={() => removeDocument(document)}>Remover</button>}</div>)}
             {["nutricionista", "personal", "vendedor"].includes(selectedCategory) && documents.length === 0 && <small className="professional-required-document">Este tipo de cadastro exige ao menos um documento antes do envio.</small>}
           </section>}
+          {step === 2 && <label className="social-auth-consent">
+            <input type="checkbox" checked={acceptedFreeBusinessTerms} onChange={event => setAcceptedFreeBusinessTerms(event.target.checked)} required />
+            <span>Confirmo que o cadastro, a manutenção do perfil e a listagem básica são gratuitos; aceito as políticas comerciais e entendo que publicidade exige aprovação separada. A adesão a descontos é voluntária e terá aceite próprio.</span>
+          </label>}
           {formError && <p className="professional-error" role="alert">{formError}</p>}
           <footer className="professional-form-actions">
             <button type="button" className="button subtle" disabled={saving || step === 0 || selectedApplication?.status === "under_review"} onClick={() => moveStep(-1)}>Voltar</button>
@@ -421,6 +713,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
           </footer>
         </form>
       </section>}
+      {applications.length > 0 && <PartnerDiscountProgramPanel key={userId} client={client} userId={userId} category={selectedCategory || applications[0]?.kind} notify={notify} />}
       <p className="professional-portal-safety">Não solicitamos senhas de redes sociais nem dados bancários. CRN/CREF e documentos são revisados pela equipe; nenhum selo é concedido automaticamente.</p>
     </>}
   </main>;

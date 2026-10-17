@@ -268,6 +268,7 @@ Deno.serve(async request => {
   let postId: string;
   let caption: string;
   let visibility: string;
+  let commercialContent = false;
   try {
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).byteLength > 4096) {
@@ -278,6 +279,7 @@ Deno.serve(async request => {
     postId = body?.postId;
     caption = typeof body?.caption === "string" ? body.caption.trim() : "";
     visibility = body?.visibility;
+    commercialContent = body?.commercialContent === true;
   } catch {
     return response({ error: "Não foi possível ler os dados do vídeo." }, 400);
   }
@@ -303,7 +305,7 @@ Deno.serve(async request => {
       ? storedType
       : storagePath.toLowerCase().endsWith(".mp4") ? "video/mp4" : "video/webm";
     const metadata = inspectVideo(bytes, mimeType);
-    const { data: publishedPostId, error: publishError } = await serviceClient.rpc("publish_fortalreel", {
+    const { data: publishedPostId, error: publishError } = await serviceClient.rpc("fortalfy_publish_commercial_reel", {
       p_post_id: postId,
       p_author_id: authData.user.id,
       p_storage_path: storagePath,
@@ -312,6 +314,7 @@ Deno.serve(async request => {
       p_width: metadata.width,
       p_height: metadata.height,
       p_duration_seconds: Number(metadata.durationSeconds.toFixed(3)),
+      p_commercial: commercialContent,
     });
     if (publishError || publishedPostId !== postId) {
       console.error("Could not publish FortalReels video.", publishError?.code || "invalid_response");
@@ -323,6 +326,7 @@ Deno.serve(async request => {
       valid: true,
       postId: publishedPostId,
       storagePath,
+      commercial: commercialContent,
       width: metadata.width,
       height: metadata.height,
       durationSeconds: Number(metadata.durationSeconds.toFixed(3)),

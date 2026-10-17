@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, Building2, ExternalLink, ImagePlus, LoaderCircle, MapPin, PackagePlus, Pencil, Save, Store, Trash2, X, ArrowUpRight, Dumbbell, HeartPulse, UsersRound } from "lucide-react";
+import { BadgeCheck, Building2, CircleAlert, ExternalLink, ImagePlus, LoaderCircle, MapPin, PackagePlus, Pencil, Save, Store, Trash2, X, ArrowUpRight, Dumbbell, HeartPulse, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { deleteStoreProduct, loadStorefront, saveStoreProduct } from "./partnerStoreService.js";
 import { getErrorMessage } from "./socialService.js";
+import {
+  getDiscountSchedulePercent, loadPartnerCommercialState, reportCommercialContent,
+  setDiscountItemEligibility, setPartnerDiscountEnrollment,
+} from "./commercialService.js";
 
 const emptyFields = { name: "", category: "", description: "", price: "", isLaunch: false, isActive: true };
 const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
@@ -71,11 +75,14 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
   const [storefront, setStorefront] = useState({ listing: null, products: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [commercialError, setCommercialError] = useState("");
+  const [commercial, setCommercial] = useState({ business: null, enrollment: null, eligibility: [], priceHistory: [], schedule: [] });
+  const [commercialBusy, setCommercialBusy] = useState(false);
   const [editing, setEditing] = useState(null);
   const isGym = profile.kind === "academia";
   const isOfficialBrand = !isGym && profile.username?.toLowerCase() === "fortalfy";
 
-  const refresh = async () => {
+  const refresh = async ({ strictCommercial = false } = {}) => {
     setLoading(true);
     setError("");
     try {
@@ -83,9 +90,23 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
     } catch (failure) {
       console.error("Falha ao carregar a vitrine comercial.", failure);
       setError(getErrorMessage(failure, "Não foi possível carregar a vitrine."));
-    } finally {
       setLoading(false);
+      return false;
     }
+    setCommercialError("");
+    if (isOwn) {
+      try {
+        setCommercial(await loadPartnerCommercialState(client, profile.id));
+      } catch (commercialFailure) {
+        console.error("Falha ao carregar a governança e adesão comercial.", commercialFailure);
+        setCommercialError(getErrorMessage(commercialFailure, "Não foi possível carregar as regras comerciais."));
+        setLoading(false);
+        if (strictCommercial) throw commercialFailure;
+        return false;
+      }
+    }
+    setLoading(false);
+    return true;
   };
 
   useEffect(() => { refresh(); }, [client, profile.id]);
@@ -105,6 +126,48 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
   const saveProduct = saved => {
     return refresh().then(() => setEditing(null));
   };
+
+  const toggleDiscountProgram = async accepted => {
+    setCommercialBusy(true);
+    try {
+      await setPartnerDiscountEnrollment(client, accepted);
+      if (!await refresh({ strictCommercial: true })) throw new Error("A vitrine não foi atualizada.");
+      notify(accepted
+        ? "Adesão voluntária registrada. Ela não aplica descontos enquanto o checkout não estiver ativo."
+        : "Participação desativada para ofertas futuras.");
+    } catch (failure) {
+      notify(getErrorMessage(failure, "Não foi possível atualizar a adesão."));
+    } finally {
+      setCommercialBusy(false);
+    }
+  };
+
+  const toggleProductEligibility = async (product, enabled) => {
+    setCommercialBusy(true);
+    try {
+      await setDiscountItemEligibility(client, "store_product", product.id, enabled);
+      if (!await refresh({ strictCommercial: true })) throw new Error("A vitrine não foi atualizada.");
+      notify(enabled ? "Produto marcado como elegível para futuras ofertas." : "Produto removido das futuras ofertas.");
+    } catch (failure) {
+      notify(getErrorMessage(failure, "Não foi possível atualizar a elegibilidade."));
+    } finally {
+      setCommercialBusy(false);
+    }
+  };
+
+  const reportProduct = async product => {
+    const reason = window.prompt("Descreva o motivo da denúncia comercial.");
+    if (reason == null) return;
+    try {
+      await reportCommercialContent(client, "store_product", product.id, reason.trim());
+      notify("Denúncia enviada para análise.");
+    } catch (failure) {
+      notify(getErrorMessage(failure, "Não foi possível enviar a denúncia."));
+    }
+  };
+
+  const enrollmentActive = Boolean(commercial.enrollment?.active
+    && commercial.enrollment.terms_version === "fortalfy-partner-discounts-v1");
 
   return <section className="partner-storefront">
     {isOfficialBrand && <section className="partner-store-brand-showcase" aria-labelledby="partner-store-brand-title">
@@ -130,6 +193,42 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
         {storefront.listing?.website_url && <a className="partner-store-meta partner-store-website" href={storefront.listing.website_url} target="_blank" rel="noreferrer"><ExternalLink size={14} />Acessar site oficial</a>}
       </div>
     </div>
+    {isOwn && <section className="professional-review-card" aria-labelledby="partner-commercial-title">
+      <span className="eyebrow">PAINEL GRATUITO DO PARCEIRO</span><h3 id="partner-commercial-title">Cadastro e participação comercial</h3>
+      <p>Cadastro, perfil e presença básica são gratuitos; não há mensalidade empresarial. A aprovação comercial e a permissão de publicidade são etapas distintas.</p>
+      {commercialError && <p className="professional-error" role="alert">{commercialError}</p>}
+      {commercial.business && <p><strong>Cadastro:</strong> {commercial.business.status}{commercial.business.advertising_enabled ? " · publicidade autorizada" : " · publicidade ainda não autorizada"}</p>}
+      {commercial.business?.reviewer_note && <p>Observação da equipe: {commercial.business.reviewer_note}</p>}
+      <label className="social-auth-consent">
+        <input type="checkbox" checked={enrollmentActive} disabled={commercialBusy || !commercial.business?.advertising_enabled || Boolean(commercialError)} onChange={event => toggleDiscountProgram(event.target.checked)} />
+        <span>Quero aderir voluntariamente ao programa de descontos Fortalfy. O parceiro financia integralmente os descontos sobre o preço vigente cadastrado e pode desativar ofertas futuras.</span>
+      </label>
+      {enrollmentActive && <>
+        <p><strong>Termo aceito:</strong> {commercial.enrollment.terms_version} · {new Date(commercial.enrollment.accepted_at).toLocaleString("pt-BR")} · financiamento: parceiro.</p>
+        <p>{commercial.enrollment.included_conditions}</p><p>{commercial.enrollment.cancellation_terms}</p>
+        <p>Marque apenas os produtos que deseja tornar elegíveis quando a aplicação de descontos estiver disponível:</p>
+        {storefront.products.map(product => {
+          const eligible = commercial.eligibility.some(item => item.target_kind === "store_product" && item.target_id === product.id && item.enabled);
+          return <label className="social-auth-consent" key={`discount-${product.id}`}>
+            <input type="checkbox" checked={eligible} disabled={commercialBusy || Boolean(commercialError) || !product.is_active} onChange={event => toggleProductEligibility(product, event.target.checked)} />
+            <span>{product.name} · preço Fortalfy {formatPrice(product.price)}{!product.is_active ? " · produto oculto" : ""}</span>
+          </label>;
+        })}
+      </>}
+      {!!commercial.schedule.length && <details><summary>Consultar percentuais e simulação da tabela global</summary>
+        <p>Valores de referência editáveis pela administração. Não são aplicados em vendas: assinaturas e checkout ainda não estão conectados.</p>
+        <div className="table-scroll"><table><thead><tr><th>Dia do mês</th><th>Start</th><th>Plus</th><th>Master</th></tr></thead><tbody>
+          {[[1, 10], [11, 20], [21, 25], [26, 31]].map(([from, to]) => <tr key={`${from}-${to}`}><td>{from}–{to}</td>{["start", "plus", "master"].map(plan => <td key={plan}>{getDiscountSchedulePercent(commercial.schedule, plan, from) ?? "—"}%</td>)}</tr>)}
+        </tbody></table></div>
+        {storefront.products.filter(product => product.is_active).slice(0, 1).map(product => <div key={`preview-${product.id}`}><strong>Exemplo de cálculo sobre {product.name} ({formatPrice(product.price)}) no dia 26 — sem efeito em compra:</strong>{["start", "plus", "master"].map(plan => {
+          const percent = getDiscountSchedulePercent(commercial.schedule, plan, 26);
+          const eligible = commercial.eligibility.some(item => item.target_kind === "store_product" && item.target_id === product.id && item.enabled);
+          const simulated = eligible && enrollmentActive && percent != null ? Math.round(product.price * (100 - percent)) / 100 : null;
+          return <p key={plan}>Fortal {plan}: {simulated == null ? "sem benefício ativo" : `${percent}% · ${formatPrice(simulated)} (simulação)`}</p>;
+        })}</div>)}
+      </details>}
+      {!!commercial.priceHistory.filter(item => item.suspicious_increase).length && <p className="professional-error"><CircleAlert size={15} /> Há alteração(ões) de preço para revisão. A sinalização não indica fraude por si só.</p>}
+    </section>}
     <div className="partner-store-products-heading"><div><span className="eyebrow">VITRINE</span><h3>{isGym ? "Produtos e novidades" : "Produtos e lançamentos"}</h3></div>{isOwn && !editing && <button className="button primary small-button" onClick={() => setEditing({ product: null })}><PackagePlus size={15} /> Cadastrar produto</button>}</div>
     {isOwn && !profile.partnerApproved && <p className="partner-store-disclaimer">Sua vitrine ficará visível para o público após a aprovação do perfil de parceiro.</p>}
     {isOfficialBrand && <section className="partner-store-brand-pillars" aria-label="Conheça o Fortalfy">
@@ -147,6 +246,7 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
             <div className="partner-store-product-image"><img src={product.image} alt={product.name} />{product.is_launch && <span>Lançamento</span>}{isOwn && !product.is_active && <span className="partner-product-inactive">Oculto</span>}</div>
             <div className="partner-store-product-info"><span>{product.category}</span><h4>{product.name}</h4>{product.description && <p>{product.description}</p>}<strong>{formatPrice(product.price)}</strong><small>Preço informado pela loja · confirme disponibilidade</small>
               {isOwn && <div className="partner-store-product-actions"><button className="button subtle small-button" onClick={() => setEditing({ product })}><Pencil size={14} /> Editar</button><button className="button subtle small-button" onClick={() => remove(product)}><Trash2 size={14} /> Remover</button></div>}
+              {!isOwn && userId && <button type="button" className="button subtle small-button" onClick={() => reportProduct(product)}><CircleAlert size={14} /> Denunciar conteúdo comercial</button>}
             </div>
           </article>)}</div>
           : <div className="partner-store-empty"><ImagePlus size={24} /><h3>A vitrine ainda não tem produtos</h3><p>{isOwn ? "Cadastre produtos reais da sua loja para que apareçam aqui após a aprovação do perfil." : "Os produtos cadastrados por este parceiro aparecerão aqui."}</p>{isOwn && !editing && <button className="button subtle small-button" onClick={() => setEditing({ product: null })}><PackagePlus size={15} /> Cadastrar primeiro produto</button>}</div>}

@@ -147,6 +147,10 @@ export async function createAccount(client, fields, emailRedirectTo) {
         goals: fields.goals,
         interests: fields.interests,
         accepted_terms: fields.acceptedTerms,
+        ...(fields.acceptedBenefitsTerms ? {
+          accepted_benefit_terms: true,
+          benefit_terms_version: "fortalfy-benefits-v1",
+        } : {}),
       },
     },
   });

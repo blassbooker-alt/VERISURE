@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   deletePost, getErrorMessage, isUsernameAvailable, loadComments, loadFeed, loadFollowState, loadFollowStates,
   loadMutualFollowState, loadProfileConnections, mapProfile, recordReelView,
-  normalizeSocialCount, prepareProfileImage, publishPost, respondFollowRequest, startConversation,
+  getProfileImageCropRect, normalizeSocialCount, prepareProfileImage, publishPost, respondFollowRequest, startConversation,
   setFollow,
 } from "../src/socialService.js";
 
@@ -51,7 +51,7 @@ test("profile mapping only shows verification for actually verified or approved 
   assert.equal(mapProfile({ partner_approved_at: "2026-10-16T12:00:00Z" }).verified, true);
 });
 
-test("profile and Reel schema errors point to the required Supabase migrations", () => {
+test("profile, Reel, and commercial schema errors point to the required Supabase migrations", () => {
   assert.match(getErrorMessage({
     code: "PGRST202",
     message: "Could not find the function public.get_fortalfy_profile_social_stats(p_profile_id) in the schema cache",
@@ -64,6 +64,14 @@ test("profile and Reel schema errors point to the required Supabase migrations",
     code: "42703",
     message: "column posts.is_reel does not exist",
   }), /FORTALFY_REELS_9_16_SUPABASE\.sql/);
+  assert.match(getErrorMessage({
+    code: "42703",
+    message: "column posts.commercial_content does not exist",
+  }), /FORTALFY_COMMERCIAL_GOVERNANCE_AND_DISCOUNTS_V1\.sql/);
+  assert.match(getErrorMessage({
+    code: "PGRST204",
+    message: "Could not find the 'commercial_content' column of 'posts' in the schema cache",
+  }), /recarregue o schema do PostgREST/);
 });
 
 test("username availability normalizes valid input and skips malformed usernames", async () => {
@@ -362,6 +370,26 @@ test("regular posts do not require the optional Reel schema columns", async () =
   assert.equal(Object.hasOwn(insertedPost, "is_reel"), false);
 });
 
+test("commercial posts are explicitly classified for server-side authorization", async () => {
+  let insertedPost;
+  const client = {
+    from(table) {
+      assert.equal(table, "posts");
+      return {
+        insert: async post => {
+          insertedPost = post;
+          return { error: null };
+        },
+      };
+    },
+  };
+  await publishPost(client, "business-1", { body: "Oferta da empresa", commercialContent: true });
+  assert.equal(insertedPost.author_id, "business-1");
+  assert.equal(insertedPost.sponsored, true);
+  assert.equal(insertedPost.commercial_content, true);
+  assert.equal(insertedPost.commercial_profile_id, "business-1");
+});
+
 test("deleting a post removes its row before cleaning up attached media", async () => {
   const operations = [];
   const client = {
@@ -408,6 +436,22 @@ test("profile images preserve valid animated GIFs and reject excessive source si
     prepareProfileImage({ type: "image/jpeg", size: 16 * 1024 * 1024 }, "cover_path"),
     /15 MB/,
   );
+});
+
+test("profile image crop keeps the selected aspect ratio and clamps drag offsets", () => {
+  const avatar = getProfileImageCropRect(1200, 800, "avatar_path");
+  assert.deepEqual(avatar, {
+    x: 200, y: 0, width: 800, height: 800, maxPanX: 200, maxPanY: 0,
+  });
+  const cover = getProfileImageCropRect(1600, 900, "cover_path");
+  assert.equal(cover.width / cover.height, 3);
+  assert.equal(cover.x, 0);
+  assert.equal(cover.y, cover.maxPanY);
+  const zoomed = getProfileImageCropRect(1600, 900, "cover_path", 2, 5, -5);
+  assert.equal(zoomed.width / zoomed.height, 3);
+  assert.equal(zoomed.x, 800);
+  assert.equal(zoomed.y, 0);
+  assert.throws(() => getProfileImageCropRect(0, 800, "avatar_path"), /Dimensões/);
 });
 
 test("feed loads mapped counts, the current user's like state, and pagination", async () => {

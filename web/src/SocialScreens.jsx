@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import {
   Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, ExternalLink, Heart,
   ImagePlus, Link as LinkIcon, LoaderCircle, Lock, LockKeyhole, Mail, MapPin, MessageCircle, MoreHorizontal, Plus,
-  Play, Search, Send, Share2, ShieldCheck, Sparkles, Trash2, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
+  Move, Play, Search, Send, Share2, ShieldCheck, Sparkles, Trash2, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
 import { fortalfyAsset } from "./assetPath.js";
@@ -18,7 +18,7 @@ import {
   addComment, cancelFollowRequest, deleteComment, deletePost, getErrorMessage,
   hidePost, loadComments, loadFeed, loadFollowRequests, loadFollowState, loadProfile,
   isUsernameAvailable, loadConversations, loadDirectMessages, loadMutualFollowState, loadProfileConnections, mapProfile, markConversationRead, publishPost,
-  prepareProfileImage, recordReelView,
+  getProfileImageCropRect, prepareProfileImage, recordReelView,
   reportComment, reportPost, respondFollowRequest, searchProfiles, sendDirectMessage,
   setBookmark, removeProfileImage, setCommentLike, setFollow as persistFollow, setPostLike, sharePost, startConversation, normalizeSocialCount,
   updateComment, updatePost, uploadProfileImage,
@@ -31,6 +31,7 @@ import {
   loadApprovedProfessionalProfiles, loadProfessionalApplications, loadProfileLinks, PROFESSIONAL_CATEGORIES,
   saveSocialProfile, validateProfileLinks,
 } from "./professionalService.js";
+import { reportCommercialContent } from "./commercialService.js";
 
 const mediaUrl = path => path || "";
 const REEL_SOUND_EVENT = "fortalfy:reel-sound";
@@ -72,6 +73,94 @@ const formatCompactCount = value => new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 }).format(Math.max(0, Number(value) || 0));
 
+function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
+  const dragRef = useRef(null);
+  const isAvatar = imageDraft.field === "avatar_path";
+  const canAdjust = imageDraft.file.type !== "image/gif";
+
+  const drawPreview = () => {
+    const canvas = canvasRef.current;
+    const image = imageRef.current;
+    if (!canvas || !image?.naturalWidth || !image.naturalHeight) return;
+    const width = isAvatar ? 900 : 1500;
+    const height = isAvatar ? 900 : 500;
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    const crop = getProfileImageCropRect(
+      image.naturalWidth,
+      image.naturalHeight,
+      imageDraft.field,
+      imageDraft.zoom,
+      imageDraft.panX,
+      imageDraft.panY,
+    );
+    context.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+  };
+
+  useEffect(() => {
+    drawPreview();
+  }, [imageDraft.previewUrl, imageDraft.zoom, imageDraft.panX, imageDraft.panY, isAvatar]);
+
+  const moveImage = event => {
+    const drag = dragRef.current;
+    const canvas = canvasRef.current;
+    if (!canAdjust || !drag || drag.pointerId !== event.pointerId || !canvas || !imageRef.current?.naturalWidth) return;
+    const crop = getProfileImageCropRect(
+      imageRef.current.naturalWidth,
+      imageRef.current.naturalHeight,
+      imageDraft.field,
+      imageDraft.zoom,
+      drag.panX,
+      drag.panY,
+    );
+    setImageDraft(current => ({
+      ...current,
+      panX: crop.maxPanX ? Math.min(1, Math.max(-1, drag.panX - ((event.clientX - drag.clientX) / canvas.clientWidth * crop.width) / crop.maxPanX)) : 0,
+      panY: crop.maxPanY ? Math.min(1, Math.max(-1, drag.panY - ((event.clientY - drag.clientY) / canvas.clientHeight * crop.height) / crop.maxPanY)) : 0,
+    }));
+  };
+
+  const nudge = (x, y) => setImageDraft(current => ({
+    ...current,
+    panX: Math.min(1, Math.max(-1, current.panX + x)),
+    panY: Math.min(1, Math.max(-1, current.panY + y)),
+  }));
+
+  return <div className={`social-image-crop-preview ${isAvatar ? "avatar" : "cover"}`}>
+    <canvas
+      ref={canvasRef}
+      role="img"
+      aria-label={`Prévia do corte da ${isAvatar ? "foto do perfil" : "foto de capa"}${canAdjust ? ". Arraste para posicionar ou use as setas do teclado." : "."}`}
+      tabIndex={canAdjust ? 0 : undefined}
+      onPointerDown={event => {
+        if (!canAdjust || event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragRef.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, panX: imageDraft.panX, panY: imageDraft.panY };
+      }}
+      onPointerMove={moveImage}
+      onPointerUp={event => { if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null; }}
+      onPointerCancel={event => { if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null; }}
+      onKeyDown={event => {
+        if (!canAdjust) return;
+        const step = event.shiftKey ? 0.2 : 0.05;
+        const movement = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[event.key];
+        if (movement) {
+          event.preventDefault();
+          nudge(...movement);
+        }
+      }}
+    />
+    <img ref={imageRef} src={imageDraft.previewUrl} alt="" aria-hidden="true" className="social-image-crop-source" onLoad={drawPreview} />
+    {canAdjust && <span className="social-image-crop-move-hint"><Move size={14} /> Arraste para reposicionar</span>}
+  </div>;
+}
+
 function SocialAuth({ client, configured, notify, recovery = false, onRecovered }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,6 +173,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
   const [fields, setFields] = useState({
     name: "", username: "", email: "", password: "", birthDate: "", city: "", kind: professionalKind || "cliente",
     goals: ["emagrecimento", "forca"], interests: ["feed", "treinos"], acceptedTerms: false,
+    acceptedBenefitsTerms: false,
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
@@ -689,6 +779,14 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                   />
                   <span>Li e aceito os Termos de Uso, a Política de Privacidade e as Diretrizes da Comunidade Fortalfy.</span>
                 </label>
+                <label className="social-auth-consent">
+                  <input
+                    type="checkbox"
+                    checked={fields.acceptedBenefitsTerms}
+                    onChange={event => setFields(current => ({ ...current, acceptedBenefitsTerms: event.target.checked }))}
+                  />
+                  <span>Li e concordo com as regras dos benefícios e descontos Fortalfy, quando aplicáveis. <Link to="/benefits-terms">Consultar declaração e termos</Link>. Este aceite é opcional e separado dos termos gerais.</span>
+                </label>
               </>
             )}
 
@@ -1137,6 +1235,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false, s
   const [body, setBody] = useState("");
   const [files, setFiles] = useState([]);
   const [visibility, setVisibility] = useState("public");
+  const [commercialContent, setCommercialContent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [videoEditorFile, setVideoEditorFile] = useState(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -1203,10 +1302,12 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false, s
         files,
         visibility,
         isReel: videosOnly,
+        commercialContent,
         postId: videosOnly ? reelPostId.current : "",
       });
       setBody("");
       setFiles([]);
+      setCommercialContent(false);
       reelPostId.current = createSecureId();
       notify(videosOnly ? "Reel publicado no FortalReels." : "Publicação enviada para a comunidade.");
       try {
@@ -1230,9 +1331,11 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false, s
     <div className="social-create-footer">
       {videosOnly && <button className="button subtle small-button" type="button" onClick={() => setCameraOpen(true)}><Camera size={16} /> Gravar vertical</button>}
       <label className="button subtle small-button social-file-picker">{videosOnly ? <Clapperboard size={16} /> : <ImagePlus size={16} />}{videosOnly ? " Escolher vídeo" : " Foto/vídeo esportivo"}<input type="file" accept={videosOnly ? "video/mp4,video/webm,video/quicktime" : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"} multiple={!videosOnly} onChange={chooseFiles} /></label>
+      <label className="social-visibility"><input type="checkbox" checked={commercialContent} onChange={event => setCommercialContent(event.target.checked)} /><span>Conteúdo comercial</span></label>
       <label className="social-visibility"><ShieldCheck size={14} /><select value={visibility} onChange={event => setVisibility(event.target.value)}><option value="public">Público</option><option value="followers">Seguidores</option></select><ChevronDown size={13} /></label>
       <button className="button primary small-button" type="submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />} {videosOnly ? "Publicar Reel" : "Publicar"}</button>
     </div>
+    {commercialContent && <p className="professional-inline-status">O backend só publica conteúdo comercial vinculado a uma empresa aprovada com permissão de publicidade.</p>}
   </form>
   {videoEditorFile && <ReelVideoEditor file={videoEditorFile} soundtrackByDefault={soundtrackByDefault} onCancel={() => setVideoEditorFile(null)} onReady={async file => {
     const metadata = await inspectReelVideo(file);
@@ -1480,7 +1583,9 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       notify("Descreva o motivo da denúncia.");
       return;
     }
-    await doAction(() => reportPost(client, userId, post.id, reason.trim()), "Denúncia enviada à moderação.");
+    await doAction(() => post.commercial_content
+      ? reportCommercialContent(client, "post", post.id, reason.trim())
+      : reportPost(client, userId, post.id, reason.trim()), "Denúncia enviada à moderação.");
     setMenuOpen(false);
   };
   const reportAComment = async comment => {
@@ -1512,8 +1617,8 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     <div className="social-post-author">
       <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
       {reelMode
-        ? <span className="social-reel-author-meta">{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}</span>
-        : <span>{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
+        ? <span className="social-reel-author-meta">{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}{post.commercial_content && <><span aria-hidden="true">·</span>Publicidade</>}</span>
+        : <span>{post.commercial_content && <><strong className="social-author-role">Publicidade</strong> · </>}{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
     </div>
     {!reelMode && !own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
     {postMenu}
@@ -2377,7 +2482,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     } else if (file.size > 15 * 1024 * 1024) {
       notify("A imagem original pode ter até 15 MB.");
     } else {
-      setImageDraft({ field, file, previewUrl: URL.createObjectURL(file), zoom: 1 });
+      setImageDraft({ field, file, previewUrl: URL.createObjectURL(file), zoom: 1, panX: 0, panY: 0 });
     }
     event.target.value = "";
   };
@@ -2386,7 +2491,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     setBusy(true);
     try {
       const oldPath = imageDraft.field === "avatar_path" ? person.avatarPath : person.coverPath;
-      const prepared = await prepareProfileImage(imageDraft.file, imageDraft.field, imageDraft.zoom);
+      const prepared = await prepareProfileImage(imageDraft.file, imageDraft.field, imageDraft.zoom, { x: imageDraft.panX, y: imageDraft.panY });
       await uploadProfileImage(client, userId, prepared, imageDraft.field);
       const updated = await onProfileUpdated();
       setPerson(updated);
@@ -2541,13 +2646,15 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     {imageDraft && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !busy && setImageDraft(null)}>
       <section className="social-share-dialog social-image-crop-dialog" role="dialog" aria-modal="true" aria-label={imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}>
         <header><strong>{imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}</strong><button className="social-icon-button" onClick={() => setImageDraft(null)} aria-label="Fechar" disabled={busy}><X size={18} /></button></header>
-        <div className={`social-image-crop-preview ${imageDraft.field === "avatar_path" ? "avatar" : "cover"}`}>
-          <img src={imageDraft.previewUrl} alt="Prévia do corte da imagem" style={{ transform: `scale(${imageDraft.zoom})` }} />
-        </div>
+        <ProfileImageCropPreview imageDraft={imageDraft} setImageDraft={setImageDraft} />
         {imageDraft.file.type === "image/gif"
-          ? <p className="social-image-crop-note">O GIF será mantido animado; o corte e a compressão não serão aplicados.</p>
-          : <label className="social-image-zoom">Ajustar enquadramento<input type="range" min="1" max="2" step="0.05" value={imageDraft.zoom} onChange={event => setImageDraft(current => ({ ...current, zoom: Number(event.target.value) }))} /></label>}
-        <p className="social-image-crop-note">Arraste o controle para ajustar o enquadramento. A imagem será cortada e otimizada ao salvar.</p>
+          ? <p className="social-image-crop-note">GIFs animados são mantidos sem corte para preservar a animação.</p>
+          : <div className="social-image-zoom">
+            <div><span>Zoom</span><output>{Math.round(imageDraft.zoom * 100)}%</output></div>
+            <input aria-label="Zoom do enquadramento" type="range" min="1" max="3" step="0.05" value={imageDraft.zoom} onChange={event => setImageDraft(current => ({ ...current, zoom: Number(event.target.value) }))} />
+            <button type="button" className="social-image-crop-reset" onClick={() => setImageDraft(current => ({ ...current, zoom: 1, panX: 0, panY: 0 }))}>Redefinir enquadramento</button>
+          </div>}
+        <p className="social-image-crop-note">Arraste a imagem para escolher o enquadramento. A prévia mostra exatamente o corte que será salvo.</p>
         <footer className="social-image-crop-actions"><button className="button subtle" disabled={busy} onClick={() => setImageDraft(null)}>Cancelar</button><button className="button primary" disabled={busy} onClick={saveProfileImage}>{busy ? "Preparando imagem…" : "Usar esta imagem"}</button></footer>
       </section>
     </div>}

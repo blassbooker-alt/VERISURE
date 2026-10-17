@@ -30,6 +30,12 @@ export function getErrorMessage(error, fallback = "Não foi possível concluir e
   if (error.code === "42703" && /posts\.is_reel/i.test(error.message || "")) {
     return "O banco ainda não tem o suporte aos Reels. Aplique FORTALFY_REELS_9_16_SUPABASE.sql para ativar essa área.";
   }
+  if (error.code === "42703" && /commercial_content|commercial_profile_id/i.test(error.message || "")) {
+    return "O banco do projeto Supabase conectado não possui as colunas de conteúdo comercial do Feed. Aplique a migração FORTALFY_COMMERCIAL_GOVERNANCE_AND_DISCOUNTS_V1.sql corrigida no projeto usado pelo app.";
+  }
+  if (error.code === "PGRST204" && /commercial_content|commercial_profile_id/i.test(error.message || "")) {
+    return "O Supabase ainda não reconhece as colunas comerciais no schema da API. Confirme que a migração foi aplicada no projeto conectado e recarregue o schema do PostgREST antes de tentar novamente.";
+  }
   if (error.code === "PGRST205") return "Esta área ainda não está habilitada no banco. A equipe precisa aplicar as migrações do Fortalfy no Supabase.";
   return error.message || fallback;
 }
@@ -81,7 +87,32 @@ export async function uploadProfileImage(client, userId, file, field) {
   return path;
 }
 
-export async function prepareProfileImage(file, field, zoom = 1) {
+export function getProfileImageCropRect(width, height, field, zoom = 1, panX = 0, panY = 0) {
+  if (!PROFILE_FIELDS.has(field)) throw new Error("Tipo de imagem de perfil inválido.");
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    throw new Error("Dimensões da imagem inválidas.");
+  }
+  const ratio = field === "avatar_path" ? 1 : 3;
+  const baseWidth = Math.min(width, height * ratio);
+  const baseHeight = baseWidth / ratio;
+  const scale = Math.min(3, Math.max(1, Number(zoom) || 1));
+  const cropWidth = baseWidth / scale;
+  const cropHeight = baseHeight / scale;
+  const maxPanX = Math.max(0, (width - cropWidth) / 2);
+  const maxPanY = Math.max(0, (height - cropHeight) / 2);
+  const normalizedPanX = Math.min(1, Math.max(-1, Number(panX) || 0));
+  const normalizedPanY = Math.min(1, Math.max(-1, Number(panY) || 0));
+  return {
+    x: (width - cropWidth) / 2 + normalizedPanX * maxPanX,
+    y: (height - cropHeight) / 2 + normalizedPanY * maxPanY,
+    width: cropWidth,
+    height: cropHeight,
+    maxPanX,
+    maxPanY,
+  };
+}
+
+export async function prepareProfileImage(file, field, zoom = 1, pan = {}) {
   if (!PROFILE_FIELDS.has(field)) throw new Error("Tipo de imagem de perfil inválido.");
   if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file?.type)) {
     throw new Error("Use uma imagem JPG, PNG, WebP ou GIF.");
@@ -97,20 +128,13 @@ export async function prepareProfileImage(file, field, zoom = 1) {
 
   const bitmap = await globalThis.createImageBitmap(file);
   try {
-    const ratio = field === "avatar_path" ? 1 : 3;
-    const sourceWidth = Math.min(bitmap.width, bitmap.height * ratio);
-    const sourceHeight = sourceWidth / ratio;
-    const scale = Math.min(2, Math.max(1, Number(zoom) || 1));
-    const cropWidth = sourceWidth / scale;
-    const cropHeight = sourceHeight / scale;
-    const sourceX = (bitmap.width - cropWidth) / 2;
-    const sourceY = (bitmap.height - cropHeight) / 2;
+    const crop = getProfileImageCropRect(bitmap.width, bitmap.height, field, zoom, pan.x, pan.y);
     const canvas = document.createElement("canvas");
     canvas.width = field === "avatar_path" ? 900 : 1500;
     canvas.height = field === "avatar_path" ? 900 : 500;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Não foi possível preparar o corte da imagem.");
-    context.drawImage(bitmap, sourceX, sourceY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise((resolve, reject) => canvas.toBlob(
       result => result ? resolve(result) : reject(new Error("Não foi possível comprimir a imagem.")),
       "image/webp",
@@ -211,7 +235,7 @@ export async function loadFeed(client, userId, {
     ? ""
     : ",\n    likes:post_likes(count),\n    comments:post_comments(count)";
   let query = client.from("posts").select(`
-    id,author_id,body,visibility,shared_post_id,published_at,
+    id,author_id,body,visibility,shared_post_id,published_at,commercial_content,
     author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
     ${mediaRelation}(id,storage_path,media_type,sort_order)
     ${engagementRelations}
@@ -242,7 +266,7 @@ export async function loadFeed(client, userId, {
   let relatedPromise = Promise.resolve({ results: [] });
   if (rows.length) {
     const originalFields = `
-      id,author_id,body,published_at,media_path,
+      id,author_id,body,published_at,media_path,commercial_content,
       author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
       post_media(id,storage_path,media_type,sort_order)
     `;
@@ -553,7 +577,7 @@ export async function loadComments(client, userId, postId, { offset = 0, limit =
 }
 
 export async function publishPost(client, userId, {
-  body, files = [], visibility = "public", isReel = false, postId: requestedPostId = "",
+  body, files = [], visibility = "public", isReel = false, commercialContent = false, postId: requestedPostId = "",
 }) {
   requireRealUser(userId);
   if (!client) throw new Error("A conexão com o Supabase não está configurada.");
@@ -572,6 +596,7 @@ export async function publishPost(client, userId, {
         postId,
         caption: body.trim(),
         visibility,
+        ...(commercialContent ? { commercialContent: true } : {}),
       },
     });
     if (error) {
@@ -587,6 +612,28 @@ export async function publishPost(client, userId, {
     }
     if (!data?.valid || data.postId !== postId || data.storagePath !== storagePath) {
       throw new Error("O servidor não confirmou a publicação vertical do FortalReels.");
+    }
+    if (commercialContent) {
+      const { data: classifiedPost, error: updateError } = await client.from("posts")
+        .update({
+          sponsored: true,
+          commercial_content: true,
+          commercial_profile_id: userId,
+        })
+        .eq("id", postId)
+        .eq("author_id", userId)
+        .select("id")
+        .maybeSingle();
+      const classificationError = updateError
+        || (classifiedPost?.id === postId ? null : new Error("O servidor não confirmou a classificação comercial do Reel."));
+      if (classificationError) {
+        const { error: postCleanupError } = await client.from("posts").delete().eq("id", postId).eq("author_id", userId);
+        if (postCleanupError) {
+          console.error("Não foi possível limpar um Reel comercial que não pôde ser classificado.", postCleanupError);
+          throw new Error("O Reel não foi classificado como comercial e a limpeza automática falhou. Contate o suporte.");
+        }
+        throw classificationError;
+      }
     }
     return { id: data.postId };
   };
@@ -629,6 +676,11 @@ export async function publishPost(client, userId, {
       body: body.trim(),
       visibility,
       media_path: uploaded[0]?.storage_path || null,
+      ...(commercialContent ? {
+        sponsored: true,
+        commercial_content: true,
+        commercial_profile_id: userId,
+      } : {}),
     });
     if (postError) throw postError;
     postCreated = true;

@@ -678,6 +678,101 @@ img { display: block; max-width: 100%; }
 .profile-metrics span { color: #40594a; font-size: 9px; line-height: 1.35; }
 .profile-metrics small { color: #859188; font-size: 7px; }
 .profile-local-notice { display: flex; align-items: flex-start; gap: 7px; margin: 0; padding: 10px 15px; color: #586c5d; background: #f3f8f1; border-top: 1px solid #e6efe3; font-size: 9px; line-height: 1.45; }
+
+.gym-access-screen .screen-content { max-width: 650px; }
+.gym-admin-screen .screen-content { max-width: 960px; }
+.gym-access-content, .gym-admin-content { display: grid; gap: 16px; }
+.gym-access-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--forest); }
+.gym-access-brand-mark { width: 40px; height: 40px; display: grid; place-items: center; color: var(--lime); background: var(--forest); border-radius: 13px; font-size: 24px; font-weight: 950; }
+.gym-access-brand > div { display: grid; gap: 3px; }
+.gym-access-brand strong { font-size: 17px; letter-spacing: .4px; }
+.gym-access-brand small { color: var(--quiet); font-size: 8px; font-weight: 850; letter-spacing: 1px; }
+.gym-access-card, .gym-admin-panel { padding: 19px; background: #fff; border: 1px solid #e4ece5; border-radius: 20px; box-shadow: 0 8px 24px #113b2010; }
+.gym-access-card h2 { margin: 6px 0 4px; color: var(--forest); font-size: clamp(22px, 6vw, 30px); letter-spacing: -.7px; }
+.gym-access-address { margin: 0 0 16px; color: var(--quiet); font-size: 12px; }
+.gym-access-alert, .gym-access-proof, .gym-admin-warning { display: flex; align-items: flex-start; gap: 9px; padding: 12px; color: #5d4a24; background: #fff8e7; border: 1px solid #f2e5c2; border-radius: 13px; font-size: 11px; line-height: 1.5; }
+.gym-access-alert svg, .gym-access-proof svg, .gym-admin-warning svg { flex: 0 0 auto; margin-top: 1px; }
+.gym-access-alert a { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--forest); font-weight: 800; white-space: nowrap; }
+.gym-access-method, .gym-access-proof { margin: 12px 0; color: #45614f; background: #f3f8f2; border-color: #e5efe3; }
+.gym-access-method { display: flex; align-items: center; gap: 7px; font-size: 10px; }
+.gym-access-proof { align-items: flex-start; }
+.gym-access-card .button { margin-top: 7px; }
+.gym-access-success { display: flex; align-items: flex-start; gap: 8px; padding: 11px; color: #1f6543; background: #edf8ef; border-radius: 12px; font-size: 11px; line-height: 1.45; }
+.gym-access-finance, .gym-access-footer, .gym-admin-disclaimer { margin: 0; color: #728077; font-size: 10px; line-height: 1.55; }
+.gym-access-history { padding: 16px; background: #fff; border: 1px solid #e4ece5; border-radius: 17px; }
+.gym-access-history h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 11px; color: var(--forest); font-size: 14px; }
+.gym-access-history-row, .gym-audit-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 0; border-top: 1px solid #edf1ed; color: #53675a; font-size: 10px; }
+.gym-access-history-row strong, .gym-audit-row strong { color: #315642; }
+.gym-access-history-row small, .gym-audit-row small { grid-column: 1 / -1; color: #849087; }
+.gym-admin-heading { display: grid; gap: 9px; padding: 4px 0; }
+.gym-admin-heading > p, .gym-admin-panel > p { margin: 0; color: var(--quiet); font-size: 11px; line-height: 1.55; }
+.gym-admin-warning { color: #5b4924; }
+.gym-partner-content { display: grid; gap: 13px; }
+.gym-partner-unit { display: grid; gap: 9px; padding: 15px; background: #fff; border: 1px solid #e4ece5; border-radius: 16px; }
+.gym-partner-unit h2 { margin: 4px 0; color: var(--forest); font-size: 17px; }
+.gym-partner-unit > div > p { margin: 0; color: var(--quiet); font-size: 10px; }
+.gym-partner-visit { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 10px 0 0; border-top: 1px solid #edf1ed; }
+.gym-partner-visit-icon { width: 29px; height: 29px; display: grid; place-items: center; color: var(--forest); background: #eaf5e9; border-radius: 50%; }
+.gym-partner-visit > div { display: grid; gap: 3px; min-width: 0; }
+.gym-partner-visit strong { overflow: hidden; color: #274b38; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.gym-partner-visit small { color: #7a887e; font-size: 9px; }
+.gym-admin-panel { display: grid; gap: 13px; }
+.gym-admin-panel > h2 { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--forest); font-size: 16px; }
+.gym-admin-form { display: grid; gap: 11px; }
+.gym-admin-form label { display: grid; gap: 5px; color: #4b6253; font-size: 10px; font-weight: 750; }
+.gym-admin-form input, .gym-admin-form select, .gym-admin-form textarea { width: 100%; min-height: 42px; padding: 9px 11px; color: #18382a; background: #fbfdfb; border: 1px solid #dfe9e1; border-radius: 11px; font-size: 12px; }
+.gym-admin-form textarea { min-height: 90px; resize: vertical; }
+.gym-contract-unit-select { display: grid; gap: 5px; color: #4b6253; font-size: 10px; font-weight: 750; }
+.gym-contract-unit-select select { width: 100%; min-height: 42px; padding: 9px 11px; color: #18382a; background: #fbfdfb; border: 1px solid #dfe9e1; border-radius: 11px; font-size: 12px; }
+.gym-contract-confirm { grid-template-columns: auto 1fr; align-items: start; }
+.gym-contract-confirm input { width: auto; min-height: auto; margin-top: 2px; }
+.gym-admin-inline-form { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+.gym-admin-inline-form .button { grid-column: 1 / -1; justify-self: start; }
+.gym-admin-empty { margin: 0; padding: 12px; color: #718077; background: #f7faf7; border-radius: 12px; font-size: 11px; }
+.gym-admin-plates { display: grid; gap: 12px; }
+.gym-admin-plate { display: grid; gap: 15px; padding: 14px; background: #fbfdfb; border: 1px solid #e5ece6; border-radius: 16px; }
+.gym-admin-plate-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
+.gym-admin-plate-title h3 { margin: 4px 0; color: var(--forest); font-size: 15px; }
+.gym-admin-plate-details > p { margin: 5px 0; color: #607167; font-size: 10px; }
+.gym-admin-plate-details > small { display: block; margin-top: 4px; overflow-wrap: anywhere; color: #7f8b82; font-size: 9px; }
+.gym-plate-status { flex: 0 0 auto; padding: 5px 8px; color: #79551e; background: #fff2d7; border-radius: 20px; font-size: 8px; font-weight: 850; }
+.gym-plate-status.active { color: #1f6644; background: #e8f6eb; }
+.gym-plate-status.disabled, .gym-plate-status.replaced { color: #8b443f; background: #fff0ee; }
+.gym-admin-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.gym-admin-actions .button { min-height: 35px; }
+.gym-plate-print-content { width: 220px; display: grid; justify-items: center; gap: 6px; padding: 10px; color: #173a29; background: white; border: 1px solid #e6ede7; border-radius: 13px; text-align: center; }
+.gym-qr-frame { width: 150px; height: 150px; display: grid; place-items: center; }
+.gym-qr-frame img { width: 100%; }
+.gym-plate-print-content strong { font-size: 9px; }
+.gym-plate-print-content span, .gym-plate-print-content small { color: #65776b; font-size: 8px; line-height: 1.4; }
+.gym-nfc-setup { display: grid; justify-items: start; gap: 8px; }
+.gym-nfc-setup code { width: 100%; padding: 10px; overflow-wrap: anywhere; color: #315642; background: #f2f7f2; border-radius: 9px; font-size: 10px; }
+.gym-audit-row { grid-template-columns: 140px 1fr; }
+.gym-audit-row small { grid-column: 2; }
+.gym-print-only { display: none; }
+
+@media (max-width: 600px) {
+  .gym-access-card, .gym-admin-panel { padding: 15px; }
+  .gym-admin-inline-form { grid-template-columns: 1fr; }
+  .gym-admin-inline-form .button { grid-column: auto; }
+  .gym-access-alert { flex-wrap: wrap; }
+  .gym-access-alert a { margin-left: 26px; }
+  .gym-audit-row { grid-template-columns: 1fr; }
+  .gym-audit-row small { grid-column: 1; }
+}
+
+@media print {
+  @page { margin: 12mm; }
+  body * { visibility: hidden !important; }
+  .gym-print-only, .gym-print-only * { visibility: visible !important; }
+  .gym-print-only { position: fixed; inset: 0; display: grid !important; place-items: center; padding: 10mm; background: #fff; }
+  .gym-print-card { width: 100%; max-width: 170mm; display: grid; justify-items: center; gap: 9px; padding: 12mm; color: #123a29; border: 2px solid #123a29; border-radius: 8mm; text-align: center; }
+  .gym-print-card h1 { margin: 3mm 0 0; font-size: 28pt; }
+  .gym-print-card h2 { margin: 2mm 0 0; font-size: 16pt; }
+  .gym-print-card p { margin: 0; font-size: 11pt; }
+  .gym-print-card img { width: 75mm; height: 75mm; }
+  .gym-print-card small { max-width: 145mm; overflow-wrap: anywhere; color: #5a6b60; font-size: 8pt; }
+}
 .profile-local-notice svg { flex: 0 0 auto; color: #4a8050; }
 .profile-evolution-entry { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; margin: 14px 0 20px; padding: 14px; background: #f1f7f1; border: 1px solid #e1eae2; border-radius: 17px; }
 .profile-section-icon { width: 39px; height: 39px; display: grid; place-items: center; color: #28613c; background: #fff; border: 1px solid #e0eadf; border-radius: 12px; }
@@ -2242,15 +2337,29 @@ img { display: block; max-width: 100%; }
   .partner-product-form-actions .button { flex: 1; }
 }
 .social-connections-dialog { width: min(100%, 430px); }
-.social-image-crop-dialog { width: min(100%, 460px); }
-.social-image-crop-preview { width: 100%; display: grid; place-items: center; overflow: hidden; margin: 12px 0; border-radius: 14px; background: #edf3ee; }
-.social-image-crop-preview.avatar { aspect-ratio: 1; max-height: 42vh; border-radius: 50%; }
-.social-image-crop-preview.cover { aspect-ratio: 3 / 1; }
-.social-image-crop-preview img { width: 100%; height: 100%; object-fit: cover; transition: transform .1s ease-out; }
-.social-image-zoom { display: grid; gap: 8px; color: #35513e; font-size: 11px; font-weight: 700; }
+.social-image-crop-dialog { width: min(100%, 600px); max-height: min(92vh, 820px); padding: 22px; }
+.social-image-crop-preview { position: relative; display: block; overflow: hidden; margin: 12px auto 16px; border: 1px solid #e3ebe4; background: #edf3ee; touch-action: none; user-select: none; }
+.social-image-crop-preview.avatar { width: min(100%, 360px, 42vh); aspect-ratio: 1; border-radius: 50%; }
+.social-image-crop-preview.cover { width: 100%; min-height: 110px; aspect-ratio: 3 / 1; border-radius: 14px; }
+.social-image-crop-preview canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+.social-image-crop-preview canvas:active { cursor: grabbing; }
+.social-image-crop-preview canvas:focus-visible { outline: 3px solid #55a46d; outline-offset: -4px; }
+.social-image-crop-source { display: none; }
+.social-image-crop-move-hint { position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid #ffffff5c; border-radius: 999px; color: #fff; background: #10271dbd; font-size: 11px; font-weight: 700; pointer-events: none; backdrop-filter: blur(8px); }
+.social-image-zoom { display: grid; gap: 8px; color: #35513e; font-size: 12px; font-weight: 700; }
+.social-image-zoom > div { display: flex; align-items: center; justify-content: space-between; }
+.social-image-zoom output { color: #718076; font-variant-numeric: tabular-nums; }
 .social-image-zoom input { width: 100%; accent-color: #26744b; }
-.social-image-crop-note { margin: 8px 0; color: #718076; font-size: 10px; line-height: 1.5; }
-.social-image-crop-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 13px; }
+.social-image-crop-reset { justify-self: start; border: 0; padding: 4px 0; color: #26744b; background: transparent; font: inherit; cursor: pointer; }
+.social-image-crop-reset:hover { text-decoration: underline; }
+.social-image-crop-note { margin: 10px 0; color: #718076; font-size: 11px; line-height: 1.5; }
+.social-image-crop-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 17px; }
+@media (max-width: 600px) {
+  .social-image-crop-dialog { padding: 17px; }
+  .social-image-crop-preview.cover { min-height: 96px; }
+  .social-image-crop-move-hint { right: 7px; bottom: 7px; padding: 6px 8px; font-size: 10px; }
+  .social-image-crop-actions .button { flex: 1; }
+}
 .social-connection-list { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
 .social-connection-list li > a { min-height: 58px; display: flex; align-items: center; gap: 10px; padding: 7px; border-radius: 11px; color: inherit; text-decoration: none; }
 .social-connection-list li > a:hover { background: #f1f7f1; }
