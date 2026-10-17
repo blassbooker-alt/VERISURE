@@ -30,6 +30,7 @@ import {
 
 const mediaUrl = path => path || "";
 const REEL_SOUND_EVENT = "fortalfy:reel-sound";
+const FOLLOW_STATE_EVENT = "fortalfy:follow-state";
 let reelSoundEnabled = (() => {
   try {
     const preference = window.localStorage.getItem("fortalfy.reels.sound");
@@ -48,6 +49,12 @@ function saveReelSoundPreference(enabled) {
     console.error("Não foi possível salvar a preferência de áudio dos Reels.", error);
   }
   window.dispatchEvent(new CustomEvent(REEL_SOUND_EVENT, { detail: enabled }));
+}
+
+function publishFollowState(followerId, followedId, isFollowing, requestStatus = "") {
+  window.dispatchEvent(new CustomEvent(FOLLOW_STATE_EVENT, {
+    detail: { followerId, followedId, isFollowing, requestStatus },
+  }));
 }
 
 const formatDate = value => {
@@ -1227,6 +1234,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const [followingAuthor, setFollowingAuthor] = useState(false);
   const [authorFollowRequest, setAuthorFollowRequest] = useState("");
   const [followStateLoaded, setFollowStateLoaded] = useState(false);
+  const followStateRevision = useRef(0);
   const [saved, setSaved] = useState(Boolean(post.savedByMe));
   const [liked, setLiked] = useState(Boolean(post.likedByMe));
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
@@ -1264,10 +1272,11 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   useEffect(() => {
     if (own) return undefined;
     let active = true;
+    const revision = followStateRevision.current;
     setFollowStateLoaded(false);
     loadFollowState(client, userId, post.author_id)
       .then(state => {
-        if (!active) return;
+        if (!active || followStateRevision.current !== revision) return;
         setFollowingAuthor(state.isFollowing);
         setAuthorFollowRequest(state.requestStatus);
         setFollowStateLoaded(true);
@@ -1278,6 +1287,18 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       });
     return () => { active = false; };
   }, [client, userId, post.author_id, own]);
+  useEffect(() => {
+    const syncFollowState = event => {
+      const { followerId, followedId, isFollowing, requestStatus } = event.detail;
+      if (followerId !== userId || followedId !== post.author_id) return;
+      followStateRevision.current += 1;
+      setFollowingAuthor(isFollowing);
+      setAuthorFollowRequest(requestStatus);
+      setFollowStateLoaded(true);
+    };
+    window.addEventListener(FOLLOW_STATE_EVENT, syncFollowState);
+    return () => window.removeEventListener(FOLLOW_STATE_EVENT, syncFollowState);
+  }, [userId, post.author_id]);
 
   const doAction = async (action, successMessage) => {
     setBusy(true);
@@ -1389,15 +1410,19 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const toggleFollow = async () => {
     const result = await doAction(() => authorFollowRequest === "pending"
       ? cancelFollowRequest(client, userId, post.author_id)
-      : setFollow(client, userId, post.author_id, !followingAuthor, post.author?.isPrivate));
+      : persistFollow(client, userId, post.author_id, !followingAuthor, post.author?.isPrivate));
     if (result) {
       if (authorFollowRequest === "pending") {
         setAuthorFollowRequest("");
+        publishFollowState(userId, post.author_id, false);
         notify("Solicitação cancelada.");
       } else {
-        setFollowingAuthor(!followingAuthor && !post.author?.isPrivate);
-        setAuthorFollowRequest(post.author?.isPrivate && !followingAuthor ? "pending" : "");
-        notify(post.author?.isPrivate && !followingAuthor ? "Solicitação de seguimento enviada." : followingAuthor ? "Você deixou de seguir este perfil." : "Perfil seguido.");
+        const isFollowing = result === "following";
+        const requestStatus = result === "requested" ? "pending" : "";
+        setFollowingAuthor(isFollowing);
+        setAuthorFollowRequest(requestStatus);
+        publishFollowState(userId, post.author_id, isFollowing, requestStatus);
+        notify(requestStatus ? "Solicitação de seguimento enviada." : isFollowing ? "Perfil seguido." : "Você deixou de seguir este perfil.");
       }
       await onRefresh();
     }
@@ -1728,7 +1753,8 @@ export function SocialMessages({ client, session, configured, notify }) {
     if (!pendingTarget || following) return;
     setFollowing(true);
     try {
-      await setFollow(client, userId, pendingTarget.person.id, true, pendingTarget.person.isPrivate);
+      const result = await persistFollow(client, userId, pendingTarget.person.id, true, pendingTarget.person.isPrivate);
+      publishFollowState(userId, pendingTarget.person.id, result === "following", result === "requested" ? "pending" : "");
       const access = await loadMutualFollowState(client, userId, pendingTarget.person.id);
       setPendingTarget(current => current ? { ...current, access } : current);
       if (access.canMessage) {
@@ -1993,6 +2019,18 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   const [imageDraft, setImageDraft] = useState(null);
   const profileUsername = draft.username.trim().replace(/^@/, "").toLowerCase();
   const [profileUsernameCheck, setProfileUsernameCheck] = useState({ username: "", checking: false, available: null, error: "" });
+  const followStateRevision = useRef(0);
+
+  useEffect(() => {
+    const syncFollowState = event => {
+      const { followerId, followedId, isFollowing, requestStatus } = event.detail;
+      if (followerId !== userId || followedId !== targetId) return;
+      followStateRevision.current += 1;
+      setFollow(current => ({ ...current, isFollowing, requestStatus }));
+    };
+    window.addEventListener(FOLLOW_STATE_EVENT, syncFollowState);
+    return () => window.removeEventListener(FOLLOW_STATE_EVENT, syncFollowState);
+  }, [userId, targetId]);
 
   useEffect(() => {
     if (!imageDraft?.previewUrl) return undefined;
@@ -2064,12 +2102,13 @@ export function SocialProfile({ client, session, profile, profileError = "", con
           console.error("Falha ao carregar as publicações do perfil.", failure);
           setPostsError(getErrorMessage(failure, "Não foi possível carregar as publicações."));
         });
+      const followRevision = followStateRevision.current;
       Promise.all([
         loadFollowState(client, userId, targetId),
         isOwn ? loadFollowRequests(client, userId) : Promise.resolve([]),
       ]).then(([nextFollow, nextRequests]) => {
         if (!active) return;
-        setFollow(nextFollow);
+        if (followStateRevision.current === followRevision) setFollow(nextFollow);
         setRequests(nextRequests);
         setDetailsError("");
       }).catch(failure => {
@@ -2183,6 +2222,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       if (follow.requestStatus === "pending") {
         await cancelFollowRequest(client, userId, targetId);
         setFollow(current => ({ ...current, requestStatus: "" }));
+        publishFollowState(userId, targetId, false);
         notify("Solicitação cancelada.");
         return;
       }
@@ -2190,9 +2230,11 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       const result = await persistFollow(client, userId, targetId, !follow.isFollowing, person?.isPrivate);
       if (result === "requested") {
         setFollow(current => ({ ...current, requestStatus: "pending" }));
+        publishFollowState(userId, targetId, false, "pending");
         notify("Solicitação de seguimento enviada.");
       } else {
         setFollow(current => ({ ...current, isFollowing: result === "following", requestStatus: "", followers: Math.max(0, normalizeSocialCount(current.followers) + (result === "following" ? 1 : wasFollowing ? -1 : 0)) }));
+        publishFollowState(userId, targetId, result === "following");
         notify(result === "following" ? "Perfil seguido." : "Você deixou de seguir este perfil.");
       }
     } catch (failure) {
