@@ -882,7 +882,7 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
 function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   const watchedMedia = useRef(new Set());
   const containerRef = useRef(null);
-  const audioTrackCheckRef = useRef({ path: "", promise: null });
+  const audioTrackCheckRef = useRef({ path: "", promise: null, hasAudio: null });
   const soundtrackRef = useRef(null);
   const soundEnabledRef = useRef(reelSoundEnabled);
   const reelVisibleRef = useRef(false);
@@ -930,26 +930,41 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
       const enabled = soundEnabledRef.current;
       if (!active || !intersects || document.visibilityState !== "visible" || !enabled) {
         stopSoundtrack();
-        return;
-      }
-      if (fromUserGesture) {
         video.muted = true;
-        startSoundtrack();
-      } else if (video.paused) {
-        stopSoundtrack();
         return;
       }
       if (audioTrackCheckRef.current.path !== reel.storage_path) {
-        audioTrackCheckRef.current = {
+        const check = {
           path: reel.storage_path,
           promise: inspectMp4AudioTrackUrl(reel.url),
+          hasAudio: null,
         };
+        check.promise = check.promise.then(hasAudio => {
+          if (audioTrackCheckRef.current.path === reel.storage_path) {
+            audioTrackCheckRef.current.hasAudio = hasAudio;
+          }
+          return hasAudio;
+        });
+        audioTrackCheckRef.current = check;
       }
-      audioTrackCheckRef.current.promise.then(hasAudio => {
+      const audioCheck = audioTrackCheckRef.current;
+      if (audioCheck.hasAudio === true) {
+        stopSoundtrack();
+        video.muted = false;
+      } else {
+        video.muted = true;
+        if (audioCheck.hasAudio === false || fromUserGesture) startSoundtrack();
+        else stopSoundtrack();
+      }
+      if (video.paused && !fromUserGesture) return;
+      audioCheck.promise.then(hasAudio => {
         if (!active || !intersects || document.visibilityState !== "visible" || !soundEnabledRef.current) return;
         if (hasAudio === false) {
           video.muted = true;
           if (soundtrack.paused) startSoundtrack();
+        } else if (hasAudio === true) {
+          stopSoundtrack();
+          video.muted = false;
         } else {
           stopSoundtrack();
           video.muted = false;
@@ -959,7 +974,6 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
     const syncPlayback = () => {
       reelVisibleRef.current = intersects && document.visibilityState === "visible";
       if (intersects && document.visibilityState === "visible") {
-        video.muted = !soundEnabledRef.current;
         syncSoundtrack();
         video.play().catch(error => {
           if (error.name === "AbortError") return;
@@ -1013,9 +1027,13 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
     setSoundEnabled(next);
     if (next) {
       const soundtrack = soundtrackRef.current;
-      if (soundtrack && reelVisibleRef.current) {
+      const reel = media.find(item => item.media_type === "video");
+      const hasOriginalAudio = reel && audioTrackCheckRef.current.path === reel.storage_path
+        ? audioTrackCheckRef.current.hasAudio
+        : null;
+      if (reelVisibleRef.current && hasOriginalAudio !== true) {
         video.muted = true;
-        soundtrack.play().catch(error => {
+        if (soundtrack) soundtrack.play().catch(error => {
           if (error.name === "NotAllowedError") {
             soundEnabledRef.current = false;
             saveReelSoundPreference(false);
@@ -1025,6 +1043,8 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
             console.error("Não foi possível iniciar a trilha dos Reels.", error);
           }
         });
+      } else if (hasOriginalAudio === true) {
+        video.muted = false;
       }
       if (reelVisibleRef.current && video.paused) video.play().catch(error => {
         if (error.name !== "AbortError") console.error("Não foi possível iniciar a reprodução do Reel com som.", error);
