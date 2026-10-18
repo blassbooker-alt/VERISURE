@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
   Bell, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleAlert,
@@ -1337,6 +1337,12 @@ function hasInvalidAuthCallback() {
   });
 }
 
+function hasPasswordRecoveryCallback() {
+  const hash = window.location.hash.replace(/^#/, "");
+  const params = new URLSearchParams(hash.replace(/^\//, ""));
+  return params.get("type") === "recovery";
+}
+
 function AppContent() {
   const [toast, setToast] = useState("");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
@@ -1349,7 +1355,7 @@ function AppContent() {
   const [themePreference, setThemePreference] = useState(() => readThemePreference());
   const [socialProfile, setSocialProfile] = useState(null);
   const [socialProfileError, setSocialProfileError] = useState("");
-  const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(() => hasPasswordRecoveryCallback());
   const [invalidAuthCallback, setInvalidAuthCallback] = useState(() => hasInvalidAuthCallback());
   const [showSplash, setShowSplash] = useState(true);
   const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
@@ -1369,6 +1375,12 @@ function AppContent() {
     return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   });
   const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (passwordRecovery && location.pathname !== "/profile") {
+      navigate("/profile", { replace: true });
+    }
+  }, [passwordRecovery, location.pathname, navigate]);
   useEffect(() => {
     if (!invalidAuthCallback || location.search.includes("authError=expired")) return;
     window.location.hash = "/profile?authError=expired";
@@ -1505,14 +1517,17 @@ function AppContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setAuthSession(session);
       setAuthReady(true);
-      if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
+      if (event === "PASSWORD_RECOVERY") {
+        setPasswordRecovery(true);
+        navigate("/profile", { replace: true });
+      }
       if (!session) setSocialProfile(null);
     });
     return () => {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
   useEffect(() => {
     const userId = authSession?.user?.id;
     if (!userId) {

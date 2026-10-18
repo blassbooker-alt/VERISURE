@@ -339,7 +339,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         setMode("login");
       } else if (mode === "reset") {
         if (!configured || !client) throw new Error("Supabase não configurado.");
-        const redirectTo = `${window.location.origin}${window.location.pathname}#/profile`;
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
         const { error } = await client.auth.resetPasswordForEmail(fields.email.trim(), { redirectTo });
         if (error) throw error;
         setMessage("Se o e-mail estiver cadastrado, você receberá um link seguro para redefinir sua senha.");
