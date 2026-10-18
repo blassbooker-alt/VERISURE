@@ -7,3 +7,8 @@ export function visualPackAsset(filename) {
   const basePath = import.meta.env?.BASE_URL || "/";
   return `${basePath}assets/visual-pack/${filename}`;
 }
+
+export function publicAsset(filename) {
+  const basePath = import.meta.env?.BASE_URL || "/";
+  return `${basePath}assets/${filename}`;
+}

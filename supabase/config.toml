@@ -7,6 +7,9 @@ verify_jwt = false
 [functions.validate-fortalreel-media]
 verify_jwt = true
 
+[functions.fortalfy-push-worker]
+verify_jwt = false
+
 [auth.email.template.confirmation]
 subject = "Confirme seu cadastro na Fortalfy"
 content_path = "./templates/confirmation.html"

@@ -17,6 +17,7 @@ import FortalShop from "./FortalShop.jsx";
 import FortalfyStudio from "./FortalfyStudio.jsx";
 import PerformanceDashboard from "./PerformanceDashboard.jsx";
 import ThemeSettings from "./ThemeSettings.jsx";
+import NotificationSettings from "./NotificationSettings.jsx";
 import StoryExperience from "./Stories.jsx";
 import { WeeklyClientPlan } from "./WeeklyPlans.jsx";
 import { OnboardingGate, SocialFeed, SocialMessages, SocialPeople, SocialProfile } from "./SocialScreens.jsx";
@@ -36,6 +37,7 @@ import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
+import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
 
 function Toast({ message, onClose }) {
   useEffect(() => {
@@ -51,33 +53,53 @@ const NOTIFICATIONS_STORAGE_KEY = "fortalfy.notifications.local.v1";
 const APP_NOTIFICATION_TYPES = new Set([
   "post_like", "post_comment", "post_share", "message", "workout_reminder",
   "nutritionist_message", "personal_message", "shop", "product_delivery",
-  "food_delivery", "official_promotion",
+  "food_delivery", "official_promotion", "social.like", "social.comment", "social.reply",
+  "social.mention", "social.follow", "chat.message", "workout.schedule_changed",
+  "partner.request_accepted", "professional.approved", "professional.review_update",
+  "shop.order_update", "account.security", "system.important",
 ]);
 const APP_NOTIFICATION_LABELS = {
   post_like: "Curtida", post_comment: "Comentário", post_share: "Compartilhamento",
   message: "Mensagem", workout_reminder: "Lembrete de treino",
   nutritionist_message: "Nutricionista", personal_message: "Personal",
   shop: "FortalShop", product_delivery: "Entrega de produto", food_delivery: "Entrega de comida",
-  official_promotion: "Promoção oficial",
+  official_promotion: "Promoção oficial", "social.like": "Curtida", "social.comment": "Comentário",
+  "social.reply": "Resposta", "social.mention": "Menção", "social.follow": "Novo seguidor",
+  "chat.message": "Mensagem", "workout.schedule_changed": "Agendamento",
+  "partner.request_accepted": "FortalPass", "professional.approved": "Cadastro profissional",
+  "professional.review_update": "Cadastro profissional", "shop.order_update": "Pedido da loja",
+  "account.security": "Segurança", "system.important": "Aviso importante",
 };
 const NotificationContext = createContext({ open: () => {}, unreadCount: 0, push: () => {} });
 
-function NotificationCenter({ notifications, onClose, onRead, onReadAll, onClear }) {
+function NotificationCenter({ notifications, onClose, onRead, onReadAll, onClear, onNavigate, loading = false, error = "", onRetry, page = false }) {
+  const [filter, setFilter] = useState("all");
   useEffect(() => {
     const closeOnEscape = event => event.key === "Escape" && onClose();
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
 
-  return <div className="notification-center-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-    <section className="notification-center" role="dialog" aria-modal="true" aria-labelledby="notification-center-title">
-      <header><div><span className="eyebrow">FORTALFY</span><h2 id="notification-center-title">Notificações</h2><p>Avisos recentes deste app e aparelho.</p></div><button className="icon-button" aria-label="Fechar notificações" onClick={onClose}><X size={19} /></button></header>
-      {!!notifications.length && <div className="notification-center-actions"><button type="button" onClick={onReadAll}>Marcar todas como lidas</button><button type="button" onClick={onClear}>Limpar avisos</button></div>}
-      {!notifications.length ? <div className="notification-center-empty"><Bell size={24} /><strong>Tudo em dia</strong><span>Os avisos do app aparecerão aqui.</span></div> : <ol className="notification-center-list">{[...notifications].reverse().map(item => <li key={item.id} className={item.read ? "is-read" : "is-unread"}>
-        <span className="notification-center-icon"><Bell size={16} /></span><div><strong>{item.title}</strong><p>{item.message}</p><small>{APP_NOTIFICATION_LABELS[item.type]}</small><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></div>
+  const filteredNotifications = notifications.filter(item => {
+    if (filter === "unread") return !item.read;
+    if (filter === "social") return item.type.startsWith("social.") || item.type.startsWith("post_");
+    if (filter === "messages") return item.type === "chat.message" || item.type === "message";
+    if (filter === "training") return item.type.startsWith("workout.") || item.type === "workout_reminder";
+    if (filter === "account") return ["shop.order_update", "shop", "product_delivery", "food_delivery", "professional.approved", "professional.review_update", "partner.request_accepted", "account.security", "system.important"].includes(item.type);
+    return true;
+  });
+  const filters = [["all", "Todas"], ["unread", "Não lidas"], ["social", "Comunidade"], ["messages", "Mensagens"], ["training", "Treinos"], ["account", "Conta e pedidos"]];
+  return <div className={page ? "notification-center-page" : "notification-center-scrim"} role={page ? undefined : "presentation"} onMouseDown={event => !page && event.target === event.currentTarget && onClose()}>
+    <section className={`notification-center${page ? " notification-center-full-page" : ""}`} role={page ? "region" : "dialog"} aria-modal={page ? undefined : "true"} aria-labelledby="notification-center-title">
+      <header><div><span className="eyebrow">FORTALFY</span><h2 id="notification-center-title">Notificações</h2><p>Avisos recentes deste app e aparelho.</p>{!page && <button type="button" className="notification-full-page-link" onClick={() => { onClose(); onNavigate?.("/notifications"); }}>Abrir central completa <ArrowRight size={14} /></button>}</div><button className="icon-button" aria-label="Fechar notificações" onClick={onClose}><X size={19} /></button></header>
+      {!!notifications.length && <><div className="notification-center-filters" role="group" aria-label="Filtrar avisos">{filters.map(([key, label]) => <button key={key} type="button" className={filter === key ? "is-active" : ""} aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>)}</div><div className="notification-center-actions"><button type="button" onClick={onReadAll}>Marcar todas como lidas</button>{onClear && <button type="button" onClick={onClear}>Limpar avisos locais</button>}</div></>}
+      {loading && <div className="notification-loading" role="status">Carregando notificações…</div>}
+      {error && <div className="notification-load-error" role="alert">{error}{onRetry && <button type="button" onClick={onRetry}>Tentar novamente</button>}</div>}
+      {!loading && !error && !notifications.length ? <div className="notification-center-empty"><Bell size={24} /><strong>Tudo em dia</strong><span>Os avisos importantes do app aparecerão aqui.</span></div> : !loading && !error && !filteredNotifications.length ? <div className="notification-center-empty"><Bell size={24} /><strong>Nenhum aviso nesta categoria</strong><span>Escolha outra categoria para continuar.</span></div> : <ol className="notification-center-list">{[...filteredNotifications].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()).map(item => <li key={item.id} className={item.read ? "is-read" : "is-unread"}>
+        <span className="notification-center-icon"><Bell size={16} /></span><button className="notification-content-button" type="button" onClick={() => { onRead(item.id); onNavigate?.(item.targetRoute || "/home"); onClose(); }}><strong>{item.title}</strong><p>{item.message}</p><small>{APP_NOTIFICATION_LABELS[item.type] || "Fortalfy"}{item.groupCount > 1 ? ` · ${item.groupCount} atividades` : ""}</small><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></button>
         {!item.read && <button type="button" aria-label="Marcar como lida" onClick={() => onRead(item.id)}><span /></button>}
       </li>)}</ol>}
-      <p className="notification-center-note">Esta central guarda avisos gerados enquanto você usa o app neste aparelho. Notificações push e sincronização entre aparelhos ainda dependem de um serviço de notificações no servidor.</p>
+      <p className="notification-center-note">Push fora do app requer permissão e suporte do navegador. Preferências e avisos persistidos ficam associados à sua conta Fortalfy.</p>
     </section>
   </div>;
 }
@@ -1370,6 +1392,10 @@ function hasPasswordRecoveryCallback() {
 function AppContent() {
   const [toast, setToast] = useState("");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationError, setNotificationError] = useState("");
+  const [notificationPreferences, setNotificationPreferences] = useState(null);
+  const [liveNotification, setLiveNotification] = useState(null);
   const [notifications, setNotifications] = useState(() => {
     const saved = loadLocalValue(NOTIFICATIONS_STORAGE_KEY, []);
     return Array.isArray(saved) ? saved.filter(item => item && APP_NOTIFICATION_TYPES.has(item.type) && typeof item.id === "string" && typeof item.message === "string" && typeof item.createdAt === "string").slice(-50) : [];
@@ -1400,6 +1426,10 @@ function AppContent() {
   });
   const location = useLocation();
   const navigate = useNavigate();
+  const openNotificationTarget = route => {
+    const safeRoute = typeof route === "string" && route.startsWith("/") && !route.startsWith("//") ? route : "/home";
+    navigate(safeRoute);
+  };
   useEffect(() => {
     if (passwordRecovery && location.pathname !== "/profile") {
       navigate("/profile", { replace: true });
@@ -1414,6 +1444,7 @@ function AppContent() {
     if (text) setToast(text);
   }, []);
   const pushNotification = useCallback(({ type, title, message } = {}) => {
+    if (authSession?.user?.id && !isDemoUser(authSession.user.id)) return;
     const text = String(message || "").trim();
     if (!APP_NOTIFICATION_TYPES.has(type) || !text) return;
     setNotifications(current => [...current, {
@@ -1424,19 +1455,50 @@ function AppContent() {
       createdAt: new Date().toISOString(),
       read: false,
     }].slice(-50));
-  }, []);
+  }, [authSession?.user?.id]);
+  const accountUserId = authSession?.user?.id && !isDemoUser(authSession.user.id) ? authSession.user.id : null;
   const unreadNotificationCount = notifications.reduce((count, item) => count + (item.read ? 0 : 1), 0);
-  const markNotificationRead = id => setNotifications(current => current.map(item => item.id === id ? { ...item, read: true } : item));
-  const markAllNotificationsRead = () => setNotifications(current => current.map(item => ({ ...item, read: true })));
+  const refreshNotifications = useCallback(async () => {
+    if (!supabase || !accountUserId) return;
+    setNotificationLoading(true);
+    setNotificationError("");
+    try {
+      const [rows, preferences] = await Promise.all([
+        loadNotifications(supabase, accountUserId),
+        loadNotificationPreferences(supabase, accountUserId),
+      ]);
+      setNotifications(rows);
+      setNotificationPreferences(preferences);
+    } catch (error) {
+      setNotificationError(notificationErrorMessage(error, "Não foi possível carregar seus avisos."));
+    } finally {
+      setNotificationLoading(false);
+    }
+  }, [accountUserId]);
+  const markNotificationRead = id => {
+    if (accountUserId) {
+      markRemoteNotificationRead(supabase, id).then(() => setNotifications(current => current.map(item => item.id === id ? { ...item, read: true } : item))).catch(error => setNotificationError(error.message || "Não foi possível atualizar este aviso."));
+      return;
+    }
+    setNotifications(current => current.map(item => item.id === id ? { ...item, read: true } : item));
+  };
+  const markAllNotificationsRead = () => {
+    if (accountUserId) {
+      markAllRemoteNotificationsRead(supabase, accountUserId).then(() => setNotifications(current => current.map(item => ({ ...item, read: true })))).catch(error => setNotificationError(error.message || "Não foi possível atualizar os avisos."));
+      return;
+    }
+    setNotifications(current => current.map(item => ({ ...item, read: true })));
+  };
   const clearNotifications = () => setNotifications([]);
 
   useEffect(() => {
+    if (accountUserId) return;
     try {
       window.localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
     } catch (error) {
       console.error("Não foi possível salvar as notificações neste aparelho.", error);
     }
-  }, [notifications]);
+  }, [notifications, accountUserId]);
 
   useEffect(() => {
     try {
@@ -1445,7 +1507,44 @@ function AppContent() {
       // ignore
     }
   }, []);
-  const accountUserId = authSession?.user?.id && !isDemoUser(authSession.user.id) ? authSession.user.id : null;
+  useEffect(() => {
+    if (!authReady) return undefined;
+    if (!accountUserId) {
+      setNotificationPreferences(null);
+      setNotificationError("");
+      setNotifications(() => {
+        const saved = loadLocalValue(NOTIFICATIONS_STORAGE_KEY, []);
+        return Array.isArray(saved) ? saved.filter(item => item && APP_NOTIFICATION_TYPES.has(item.type)) : [];
+      });
+      return undefined;
+    }
+    let active = true;
+    setNotifications([]);
+    setNotificationPreferences(null);
+    setNotificationLoading(true);
+    Promise.all([loadNotifications(supabase, accountUserId), loadNotificationPreferences(supabase, accountUserId)])
+      .then(([rows, preferences]) => {
+        if (!active) return;
+        setNotifications(rows);
+        setNotificationPreferences(preferences);
+        setNotificationError("");
+      })
+      .catch(error => { if (active) setNotificationError(notificationErrorMessage(error, "Não foi possível carregar seus avisos.")); })
+      .finally(() => { if (active) setNotificationLoading(false); });
+    const channel = supabase?.channel(`fortalfy-notifications-${accountUserId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
+        const item = notificationFromRow(payload.new);
+        setNotifications(current => [item, ...current.filter(entry => entry.id !== item.id)].slice(0, 60));
+        setLiveNotification(item);
+        if (notificationPreferences?.sound_enabled && document.visibilityState === "visible" && location.pathname !== item.targetRoute?.split("?")[0]) playNotificationSound();
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
+        const item = notificationFromRow(payload.new);
+        setNotifications(current => current.map(entry => entry.id === item.id ? item : entry));
+      })
+      .subscribe();
+    return () => { active = false; if (channel) supabase.removeChannel(channel); };
+  }, [accountUserId, authReady, refreshNotifications, location.pathname, notificationPreferences?.sound_enabled]);
   useEffect(() => {
     if (!authReady) return;
     setThemePreference(accountUserId ? getAccountThemePreference(authSession?.user) : readThemePreference());
@@ -1690,6 +1789,21 @@ function AppContent() {
     return () => window.removeEventListener("fortalfy-notification", listener);
   }, [pushNotification]);
   useEffect(() => {
+    if (!liveNotification) return undefined;
+    const timer = window.setTimeout(() => setLiveNotification(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [liveNotification]);
+  useEffect(() => {
+    const listener = event => {
+      if (event.data?.type !== "FORTALFY_NOTIFICATION_OPEN") return;
+      const route = event.data.route;
+      if (event.data.id && accountUserId) markNotificationRead(event.data.id);
+      openNotificationTarget(route);
+    };
+    navigator.serviceWorker?.addEventListener("message", listener);
+    return () => navigator.serviceWorker?.removeEventListener("message", listener);
+  }, [accountUserId]);
+  useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => setShowSplash(false), reducedMotion ? 900 : 6500);
     return () => window.clearTimeout(timer);
@@ -1711,7 +1825,7 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id && socialProfile);
   return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
@@ -1746,7 +1860,9 @@ function AppContent() {
       <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
       <Route path="/restaurants" element={<Navigate to="/food" replace />} />
       <Route path="/results" element={<Navigate to="/progress" replace />} />
-      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /></Screen>} />
+      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /><Link className="button subtle notification-settings-link" to="/settings/notifications"><Bell size={17} /> Preferências de notificação <ArrowRight size={16} /></Link></Screen>} />
+      <Route path="/settings/notifications" element={<Screen className="settings-screen notification-settings-screen" title="Notificações" subtitle="SUA EXPERIÊNCIA FORTALFY"><NotificationSettings client={supabase} userId={accountUserId} /></Screen>} />
+      <Route path="/notifications" element={<Screen className="notification-screen"><NotificationCenter page notifications={notifications} loading={notificationLoading} error={notificationError} onRetry={refreshNotifications} onClose={() => navigate(-1)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onNavigate={openNotificationTarget} /></Screen>} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional/manage" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
@@ -1759,7 +1875,7 @@ function AppContent() {
       <Route path="/nutritionist" element={<Dashboard key="nutritionist" role="nutritionist" client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} onRetryProfile={retrySocialProfile} />} />
       <Route path="*" element={<Screen title="Página não encontrada" subtitle="FORTALFY"><div className="empty-state"><CircleHelp size={24} /><h3>Este endereço não existe</h3><p>Escolha uma área disponível para continuar.</p><Link className="button subtle" to="/home">Voltar ao início <ArrowRight size={16} /></Link></div></Screen>} />
     </Routes>
-    {notificationCenterOpen && <NotificationCenter notifications={notifications} onClose={() => setNotificationCenterOpen(false)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onClear={clearNotifications} />}
+    {notificationCenterOpen && <NotificationCenter notifications={notifications} loading={notificationLoading} error={notificationError} onRetry={refreshNotifications} onClose={() => setNotificationCenterOpen(false)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onClear={accountUserId ? null : clearNotifications} onNavigate={openNotificationTarget} />}
     </NotificationContext.Provider>
     {supabase && authSession?.user?.id && !isDemoUser(authSession.user.id) && (
       <OnboardingGate
@@ -1771,6 +1887,7 @@ function AppContent() {
       />
     )}
     <Toast message={toast} onClose={() => setToast("")} />
+    {liveNotification && <aside className="notification-live-toast" role="status"><span className="notification-live-icon"><Bell size={16} /></span><button type="button" className="notification-live-content" onClick={() => { markNotificationRead(liveNotification.id); openNotificationTarget(liveNotification.targetRoute); setLiveNotification(null); }}><strong>{liveNotification.title}</strong><span>{liveNotification.message}</span></button><button type="button" className="icon-button" aria-label="Dispensar notificação" onClick={() => setLiveNotification(null)}><X size={16} /></button></aside>}
     {showSplash && <SplashScreen onClose={() => setShowSplash(false)} />}
   </div>;
 }

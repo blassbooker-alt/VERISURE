@@ -1,0 +1,162 @@
+import { publicAsset } from "./assetPath.js";
+
+export const NOTIFICATION_PREFERENCES_DEFAULTS = Object.freeze({
+  likes_enabled: true,
+  comments_enabled: true,
+  mentions_enabled: true,
+  messages_enabled: true,
+  workout_reminders_enabled: true,
+  partner_updates_enabled: true,
+  shop_updates_enabled: true,
+  marketing_enabled: false,
+  sound_enabled: true,
+  vibration_enabled: true,
+  quiet_hours_start: "22:00",
+  quiet_hours_end: "07:00",
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo",
+});
+
+const BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+export function notificationErrorMessage(error, fallback = "Não foi possível concluir esta ação.") {
+  const code = String(error?.code || "");
+  const message = String(error?.message || "");
+  if (["PGRST205", "42P01", "42883"].includes(code) || /could not find the table|relation .* does not exist|function .* does not exist/i.test(message)) {
+    return "A central de notificações ainda não foi configurada no Supabase. Aplique FORTALFY_NOTIFICATIONS_V1.sql e publique a função fortalfy-push-worker.";
+  }
+  return message || fallback;
+}
+
+function decodeBase64Url(value) {
+  const normalized = value.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const bytes = [];
+  let buffer = 0;
+  let bits = 0;
+  for (const char of normalized) {
+    const index = BASE64_URL_ALPHABET.indexOf(char);
+    if (index < 0) throw new Error("A chave pública VAPID não está em formato válido.");
+    buffer = (buffer << 6) | index;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 255);
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+export function notificationFromRow(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    message: row.body,
+    createdAt: row.created_at,
+    read: Boolean(row.read_at),
+    readAt: row.read_at,
+    targetRoute: row.target_route,
+    priority: row.priority,
+    groupCount: row.group_count || 1,
+  };
+}
+
+export async function loadNotifications(client, userId, limit = 60) {
+  if (!client || !userId) return [];
+  const { data, error } = await client.from("fortalfy_notifications")
+    .select("id,type,title,body,created_at,read_at,target_route,priority,group_count")
+    .eq("recipient_user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data || []).map(notificationFromRow);
+}
+
+export async function markNotificationRead(client, notificationId) {
+  if (!client || !notificationId) return;
+  const { error } = await client.from("fortalfy_notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .is("read_at", null);
+  if (error) throw error;
+}
+
+export async function markAllNotificationsRead(client, userId) {
+  if (!client || !userId) return;
+  const { error } = await client.from("fortalfy_notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("recipient_user_id", userId)
+    .is("read_at", null);
+  if (error) throw error;
+}
+
+export async function loadNotificationPreferences(client, userId) {
+  if (!client || !userId) return { ...NOTIFICATION_PREFERENCES_DEFAULTS };
+  const { data, error } = await client.from("fortalfy_notification_preferences")
+    .select("likes_enabled,comments_enabled,mentions_enabled,messages_enabled,workout_reminders_enabled,partner_updates_enabled,shop_updates_enabled,marketing_enabled,sound_enabled,vibration_enabled,quiet_hours_start,quiet_hours_end,timezone")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return { ...NOTIFICATION_PREFERENCES_DEFAULTS, ...(data || {}) };
+}
+
+export async function saveNotificationPreferences(client, userId, preferences) {
+  if (!client || !userId) throw new Error("Entre na sua conta para salvar as preferências.");
+  const { error } = await client.from("fortalfy_notification_preferences").upsert({
+    user_id: userId,
+    ...preferences,
+    timezone: preferences.timezone || NOTIFICATION_PREFERENCES_DEFAULTS.timezone,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+  if (error) throw error;
+}
+
+export async function enableWebPush(client, userId) {
+  if (!client || !userId) throw new Error("Entre na sua conta para ativar as notificações.");
+  if (!window.isSecureContext || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return { supported: false, permission: "unsupported" };
+  }
+
+  const vapidPublicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY;
+  if (!vapidPublicKey) throw new Error("O serviço de notificações ainda não foi configurado.");
+
+  let permission = Notification.permission;
+  if (permission !== "granted") permission = await Notification.requestPermission();
+  if (permission !== "granted") return { supported: true, permission };
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription()
+    || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeBase64Url(vapidPublicKey) });
+  const subscriptionJson = subscription.toJSON();
+  const userAgent = navigator.userAgent;
+  const platform = /iPhone|iPad|iPod/i.test(userAgent) ? "ios_pwa" : /Android/i.test(userAgent) ? "android_pwa" : "web";
+  const { error } = await client.rpc("register_fortal_push_subscription", {
+    p_subscription: subscriptionJson,
+    p_platform: platform,
+    p_device_name: userAgent.slice(0, 160),
+  });
+  if (error) {
+    await subscription.unsubscribe().catch(() => {});
+    throw error;
+  }
+  return { supported: true, permission, subscription };
+}
+
+export async function disableWebPush(client) {
+  if (!("serviceWorker" in navigator)) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager?.getSubscription();
+  if (!subscription) return;
+  const { error } = await client?.rpc("revoke_fortal_push_subscription", { p_endpoint: subscription.endpoint }) || {};
+  if (error) throw error;
+  await subscription.unsubscribe();
+}
+
+export async function playNotificationSound() {
+  try {
+    const audio = new Audio(publicAsset("fortalfy-notificacao-profissional.mp3"));
+    audio.volume = 0.52;
+    await audio.play();
+  } catch {
+    // Browsers may block playback until the user interacts with the page.
+  }
+}
