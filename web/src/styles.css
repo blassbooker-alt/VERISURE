@@ -5800,6 +5800,142 @@ html[data-theme="dark"] .mobile-app :is(.quick-tile-community, .quick-tile-partn
 }
 html[data-theme="dark"] .mobile-app :is(input, textarea, select)::placeholder { color: #a3afa5; }
 
+/* Desktop app shell: replace the phone tab bar with a full-height navigation rail. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .mobile-app .app-screen:not(.immersive-screen) {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: 68px minmax(calc(100vh - 68px), auto);
+    align-items: start;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) > .mobile-header { grid-column: 1 / -1; grid-row: 1; padding: 0 28px 0 252px; }
+  .mobile-app .app-screen:not(.immersive-screen) > .mobile-header > a { position: static; left: auto; transform: none; margin-right: auto; }
+  .mobile-app .app-screen:not(.immersive-screen) > .screen-content { grid-column: 2; grid-row: 2; width: 100%; min-width: 0; padding: 30px 28px 44px; }
+  .mobile-app .app-screen:not(.immersive-screen) > .bottom-nav {
+    grid-column: 1; grid-row: 2; position: sticky; top: 68px; left: auto; z-index: 10;
+    width: 220px; height: calc(100vh - 68px); min-height: 520px; margin: 0; padding: 22px 14px;
+    transform: none; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 7px;
+    overflow: visible; border: 0; border-right: 1px solid var(--color-border); border-radius: 0;
+    background: var(--color-navigation-background); box-shadow: none; backdrop-filter: none;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-indicator { display: none !important; }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-item { width: 100%; min-width: 0; height: 50px; flex: 0 0 50px; flex-direction: row; justify-content: flex-start; gap: 11px; padding: 0 12px; color: var(--color-text-secondary); border-radius: 10px; font-size: 12px; }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-icon { width: 23px; height: 23px; }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-item.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 11%, var(--color-navigation-background)); }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-item.active .bottom-nav-icon svg { color: var(--color-primary); animation: none; }
+  .mobile-app .app-screen:not(.immersive-screen) .screen-inner { width: min(100%, 960px); max-width: 960px; padding-inline: 20px; }
+  .mobile-app .feed-screen { max-width: 100%; }
+  .home-screen .home-inner { padding-top: 28px; }
+  .home-screen .module-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .home-screen .module-card { min-height: 280px; padding: 18px; }
+  .shop-screen .shop-editorial { height: 218px; min-height: 218px; }
+  .settings-screen { max-width: 100%; }
+}
+
+@media (min-width: 1200px) {
+  .mobile-app .app-screen:not(.immersive-screen) {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-rows: 68px minmax(calc(100vh - 68px), auto);
+    align-items: start;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) > .mobile-header { grid-column: 1 / -1; grid-row: 1; padding: 0 32px 0 280px; }
+  .mobile-app .app-screen:not(.immersive-screen) > .mobile-header > a { position: static; left: auto; transform: none; margin-right: auto; }
+  .mobile-app .app-screen:not(.immersive-screen) > .screen-content {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+    padding: 34px 44px 52px;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) > .bottom-nav {
+    grid-column: 1;
+    grid-row: 2;
+    position: sticky;
+    top: 68px;
+    left: auto;
+    z-index: 10;
+    width: 248px;
+    height: calc(100vh - 68px);
+    min-height: 520px;
+    margin: 0;
+    padding: 26px 18px;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow: visible;
+    border: 0;
+    border-right: 1px solid var(--color-border);
+    border-radius: 0;
+    background: var(--color-navigation-background);
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-indicator { display: none !important; }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-item {
+    width: 100%;
+    min-width: 0;
+    height: 52px;
+    flex: 0 0 52px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 13px;
+    color: var(--color-text-secondary);
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-icon { width: 24px; height: 24px; }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-item.active {
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 11%, var(--color-navigation-background));
+    font-weight: 800;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) .bottom-nav-item.active .bottom-nav-icon svg { color: var(--color-primary); animation: none; }
+  .mobile-app .app-screen:not(.immersive-screen) .screen-content > .screen-heading { margin-bottom: 24px; }
+  .mobile-app .app-screen:not(.immersive-screen) .screen-heading h1 { font-size: clamp(32px, 2.8vw, 42px); letter-spacing: -1.2px; }
+  .mobile-app .app-screen:not(.immersive-screen) .screen-inner { width: min(100%, 1180px); max-width: 1180px; padding-right: 32px; padding-left: 32px; }
+  .mobile-app .feed-screen { max-width: 900px; }
+  .home-screen .screen-content { padding: 0 0 48px; }
+  .home-screen .home-hero { min-height: 470px; padding: 34px clamp(44px, 6vw, 96px) 28px; border-radius: 0 0 28px 28px; }
+  .home-screen .home-hero-top,
+  .home-screen .home-hello { width: min(100%, 1180px); max-width: 1180px; }
+  .home-screen .home-hello { margin-top: 56px; }
+  .home-screen .home-hello h1 { max-width: 12ch; font-size: clamp(54px, 4.3vw, 68px); }
+  .home-screen .hero-copy { max-width: 48ch; font-size: 16px; }
+  .home-screen .hero-activity { width: min(100%, 1180px); max-width: 1180px; margin-top: 24px; }
+  .home-screen .home-inner { padding-top: 38px; }
+  .home-screen .module-catalog-heading { margin-bottom: 22px; }
+  .home-screen .module-catalog-heading h2 { font-size: 34px; }
+  .home-screen .module-catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .home-screen .module-card { min-height: 300px; padding: 20px; border-radius: 22px; }
+  .home-screen .module-card-copy strong { font-size: clamp(22px, 1.7vw, 28px); }
+  .home-screen .module-card-copy > span { font-size: 12px; }
+  .shop-screen .shop-editorial { height: 250px; min-height: 250px; margin: 18px 0 28px; padding: 28px; }
+  .shop-screen .shop-editorial-copy h1 { max-width: 14ch; font-size: clamp(34px, 3vw, 46px); }
+  .shop-screen .shop-departments { margin-bottom: 28px; }
+  .shop-screen .shop-section-heading h2,
+  .shop-screen .shop-catalog-heading h2 { font-size: 24px; }
+  .shop-screen .shop-department-card strong { font-size: 12px; }
+  .shop-screen .shop-department-card small { font-size: 10px; }
+  .shop-screen .shop-category-chip { min-height: 38px; padding-inline: 15px; font-size: 12px; }
+  .shop-screen .shop-product-grid { gap: 20px; }
+  .shop-screen .shop-product-info { padding: 16px; }
+  .settings-screen { max-width: 960px; }
+}
+
+@media (min-width: 1400px) {
+  .mobile-app .app-screen:not(.immersive-screen) { grid-template-columns: 272px minmax(0, 1fr); }
+  .mobile-app .app-screen:not(.immersive-screen) > .mobile-header { padding-left: 304px; }
+  .mobile-app .app-screen:not(.immersive-screen) > .bottom-nav { width: 272px; padding-inline: 22px; }
+  .mobile-app .app-screen:not(.immersive-screen) > .screen-content { padding-right: 64px; padding-left: 64px; }
+  .home-screen .module-catalog-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

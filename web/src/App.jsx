@@ -1687,7 +1687,7 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id && socialProfile);
   return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
