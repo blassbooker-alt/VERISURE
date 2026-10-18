@@ -29,7 +29,7 @@ import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
 } from "./partnerService.js";
-import { fortalfyAsset } from "./assetPath.js";
+import { fortalfyAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { gyms, profile } from "./data.js";
@@ -178,6 +178,26 @@ function Screen({ children, title, subtitle, location = false, className = "", a
   </div>;
 }
 
+function PublicLanding() {
+  const experiences = [
+    { title: "FortalPass", image: "fortalfy-pack-gym-interior.jpg", alt: "Academia clara com equipamentos de treino", description: "Explore academias, estúdios e profissionais parceiros." , to: "/pass" },
+    { title: "FortalReels", image: "fortalfy-pack-reels-training.jpg", alt: "Treino de mobilidade em um estúdio iluminado", description: "Encontre ideias de movimento em vídeos curtos.", to: "/reels" },
+    { title: "FortalFood", image: "fortalfy-pack-food-card.jpg", alt: "Prato equilibrado com vegetais, quinoa e frango", description: "Descubra cardápios e escolhas para a rotina.", to: "/food" },
+    { title: "FortalShop", image: "fortalfy-pack-wellness-product.jpg", alt: "Acessórios de bem-estar em tons naturais", description: "Conheça o catálogo de produtos Fortalfy.", to: "/shop" },
+  ];
+  return <main className="public-landing">
+    <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link><Link to="/feed" className="button primary">Começar agora <ArrowRight size={16} /></Link></div></header>
+    <section className="public-hero">
+      <div className="public-hero-copy"><span className="eyebrow">BEM-ESTAR, MOVIMENTO E COMUNIDADE</span><h1>Seu bem-estar começa com um próximo passo.</h1><p>Treine, encontre profissionais e construa uma rotina mais saudável em um só lugar.</p><div className="public-hero-actions"><Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link><a href="#experiencias" className="button subtle">Conhecer a Fortalfy</a></div><div className="public-value-points"><span><BadgeCheck size={16} /> Profissionais parceiros</span><span><Users size={16} /> Comunidade</span><span><Activity size={16} /> Sua evolução</span></div></div>
+      <div className="public-hero-visual"><img src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher treinando força em um ambiente claro e acolhedor" fetchpriority="high" /><span>Movimento possível, no seu ritmo.</span></div>
+    </section>
+    <section className="public-how-section" id="como-funciona"><div className="public-section-heading"><span className="eyebrow">UMA ROTINA QUE CABE EM VOCÊ</span><h2>Um espaço para cuidar do seu ritmo.</h2><p>Descubra o que faz sentido para a sua jornada, sem promessas ou metas prontas.</p></div><div className="public-benefit-grid"><article><span className="public-benefit-icon"><Activity size={20} /></span><h3>Movimento</h3><p>Encontre espaços e atividades para diferentes momentos.</p></article><article><span className="public-benefit-icon"><BadgeCheck size={20} /></span><h3>Cuidado profissional</h3><p>Conheça profissionais e informações fornecidas por parceiros.</p></article><article><span className="public-benefit-icon"><Users size={20} /></span><h3>Comunidade</h3><p>Compartilhe experiências com pessoas que também estão em movimento.</p></article><article><span className="public-benefit-icon"><HeartPulse size={20} /></span><h3>Evolução pessoal</h3><p>Acompanhe os registros que você escolhe fazer, no seu tempo.</p></article></div></section>
+    <section className="public-experiences-section" id="experiencias"><div className="public-section-heading"><span className="eyebrow">EXPERIÊNCIAS FORTALFY</span><h2>Escolha por onde começar.</h2><p>Áreas conectadas para apoiar movimento, alimentação e bem-estar.</p></div><div className="public-experience-grid">{experiences.map(item => <Link to={item.to} className="public-experience-card" key={item.title}><img src={visualPackAsset(item.image)} alt={item.alt} loading="lazy" /><span><small>{item.title.toUpperCase()}</small><strong>{item.description}</strong><i aria-hidden="true"><ArrowUpRight size={17} /></i></span></Link>)}</div></section>
+    <section className="public-routine-section" id="sobre"><img src={visualPackAsset("fortalfy-pack-wellness-morning.jpg")} alt="Mulher alongando em casa pela manhã" loading="lazy" /><div><span className="eyebrow">NO SEU RITMO</span><h2>Pequenos passos também contam.</h2><p>A Fortalfy reúne ferramentas e experiências para você construir uma rotina possível, com mais clareza e apoio.</p><Link to="/feed" className="button primary">Conhecer a plataforma <ArrowRight size={16} /></Link></div></section>
+    <footer className="public-footer"><Link to="/" aria-label="Fortalfy, início"><Brand /></Link><span>Seu bem-estar, no seu ritmo.</span><nav aria-label="Links institucionais"><a href="#sobre">Sobre</a><Link to="/benefits-terms">Termos e benefícios</Link><a href="mailto:fortalfy@gmail.com">Suporte</a></nav><small>© {new Date().getFullYear()} Fortalfy</small></footer>
+  </main>;
+}
+
 function SectionTitle({ title, action, to }) {
   return <div className="section-title-row"><h2>{title}</h2>{action && <Link to={to || "/pass"} className="text-link">{action}<ArrowRight size={15} /></Link>}</div>;
 }
@@ -192,7 +212,7 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
   const firstName = displayName.trim().split(/\s+/)[0];
   return <Screen className="home-screen">
     <section className="home-hero">
-      <img className="home-hero-image" src={fortalfyAsset("publicidade", "04-feed-comunidade.jpg")} alt="" aria-hidden="true" />
+      <img className="home-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="" aria-hidden="true" loading="eager" decoding="async" />
       <div className="home-hero-top"><span className="location-label">FORTALFY · BEM-ESTAR</span><span className="status-live">NO SEU RITMO</span></div>
       <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Movimento, comunidade e bem-estar em um só lugar.</span><Link to="/pass" className="hero-cta">Conheça o FortalPass <ArrowRight size={16} /></Link></div>
       <div className="hero-activity">
@@ -209,25 +229,25 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
       </div>
       <div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">
         <Link to="/pass" className="module-card module-card-pass">
-          <img src={fortalfyAsset("publicidade", "03-fortalpass-academia.jpg")} alt="" loading="eager" decoding="async" />
+          <img src={visualPackAsset("fortalfy-pack-gym-interior.jpg")} alt="" loading="lazy" decoding="async" />
           <span className="module-card-shade" aria-hidden="true" />
           <span className="module-card-top"><span>DESCUBRA PERTO DE VOCÊ</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
           <span className="module-card-copy"><small>FORTALPASS</small><strong>Seu próximo treino começa aqui.</strong><span>Encontre academias e profissionais aprovados.</span></span>
         </Link>
         <Link to="/reels" className="module-card module-card-reels">
-          <img src={fortalfyAsset("treino", "08-treino-cardio.jpg")} alt="" loading="eager" decoding="async" />
+          <img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="" loading="lazy" decoding="async" />
           <span className="module-card-shade" aria-hidden="true" />
           <span className="module-card-top"><span>VÍDEOS DA COMUNIDADE</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
           <span className="module-card-copy"><small>FORTALREELS</small><strong>Inspire-se em movimento.</strong><span>Conteúdo fitness em formato vertical.</span></span>
         </Link>
         <Link to="/food" className="module-card module-card-food">
-          <img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" loading="lazy" decoding="async" />
+          <img src={visualPackAsset("fortalfy-pack-food-card.jpg")} alt="" loading="lazy" decoding="async" />
           <span className="module-card-shade" aria-hidden="true" />
           <span className="module-card-top"><span>COMER BEM, COM LEVEZA</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
           <span className="module-card-copy"><small>FORTALFOOD</small><strong>Seu próximo prato favorito.</strong><span>Conheça cardápios publicados por parceiros.</span></span>
         </Link>
         <Link to="/shop" className="module-card module-card-shop">
-          <img src={fortalfyAsset("publicidade", "banner-nova-colecao.jpg")} alt="" loading="lazy" decoding="async" />
+          <img src={visualPackAsset("fortalfy-pack-wellness-product.jpg")} alt="" loading="lazy" decoding="async" />
           <span className="module-card-shade" aria-hidden="true" />
           <span className="module-card-top"><span>SEU RITUAL DE BEM-ESTAR</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
           <span className="module-card-copy"><small>FORTALSHOP</small><strong>Encontre o que move você.</strong><span>Explore o catálogo Fortalfy.</span></span>
@@ -235,7 +255,9 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
       </div>
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
-        <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span></div>
+        {activity.workoutsLogged || activity.mealsLogged
+          ? <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span></div>
+          : <p className="home-empty-progress">Seu próximo passo pode começar hoje. Registre um treino ou uma refeição para acompanhar sua rotina.</p>}
         <div className="home-local-actions"><Link to="/workout" className="performance-link">Abrir treinos <ArrowRight size={16} /></Link><Link to="/nutrition" className="performance-link">Abrir diário alimentar <ArrowRight size={16} /></Link></div>
       </section>
       <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
@@ -370,7 +392,8 @@ function FoodScreen({ client, configured, session }) {
     ["Sal", "salt_g", "g"],
   ];
   return <Screen title="FortalFood" subtitle="CARDÁPIOS DOS RESTAURANTES" className="food-screen">
-    <section className="food-promo"><img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" aria-hidden="true" /><div className="food-promo-copy"><span className="eyebrow">FORTALFOOD · COMIDA DE VERDADE</span><h2>Seu ritmo também se alimenta.</h2><p>Encontre pratos fitness de restaurantes parceiros e consulte composição e informações declaradas.</p><button type="button" className="food-promo-cta" onClick={() => document.getElementById("food-menu")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Explorar cardápios <ArrowRight size={15} /></button></div><div className="food-promo-mark" aria-hidden="true"><Utensils size={40} /></div></section>
+    <section className="food-promo"><img src={visualPackAsset("fortalfy-pack-food-card.jpg")} alt="" aria-hidden="true" /><div className="food-promo-copy"><span className="eyebrow">FORTALFOOD · COMIDA DE VERDADE</span><h2>Seu ritmo também se alimenta.</h2><p>Descubra pratos, ingredientes e escolhas que combinam com sua rotina.</p><button type="button" className="food-promo-cta" onClick={() => document.getElementById("food-menu")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Explorar cardápios <ArrowRight size={15} /></button></div><div className="food-promo-mark" aria-hidden="true"><Utensils size={40} /></div></section>
+    {needsLogin && <section className="food-visual-preview" aria-label="Inspiração para sua rotina alimentar"><div><span className="eyebrow">INSPIRAÇÃO PARA SUA ROTINA</span><h2>Comida de verdade, ideias para o dia a dia.</h2><p>Crie sua conta para consultar cardápios e informações publicados pelos parceiros.</p></div><div className="food-preview-gallery"><img src={visualPackAsset("fortalfy-pack-food-breakfast.jpg")} alt="Inspiração de café da manhã" loading="lazy" /><img src={visualPackAsset("fortalfy-pack-food-smoothie.jpg")} alt="Vitamina de frutas e folhas" loading="lazy" /><img src={visualPackAsset("fortalfy-pack-food-dinner.jpg")} alt="Inspiração para jantar" loading="lazy" /></div><Link className="button primary" to="/feed">Entrar ou criar conta <ArrowRight size={16} /></Link></section>}
     <div className="food-marketplace-intro"><div><span className="eyebrow">ESCOLHAS PARA SUA ROTINA</span><h2>Comer bem, do seu jeito.</h2><p>Pratos dos restaurantes parceiros Fortalfy.</p></div><div className="food-marketplace-count"><strong>{loading || needsLogin || error ? "—" : items.length}</strong><span>pratos disponíveis</span><small>{loading ? "Carregando parceiros" : needsLogin ? "Entre para consultar o cardápio" : error ? "Não foi possível consultar agora" : `${restaurantsCount} ${restaurantsCount === 1 ? "restaurante" : "restaurantes"} parceiros`}</small></div></div>
     <label className="search-field food-search-field"><Search size={19} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Busque um prato, ingrediente ou restaurante" aria-label="Buscar pratos, ingredientes ou restaurantes" /><button type="button" aria-label="Limpar busca" onClick={() => setSearch("")}>{search && <X size={17} />}</button></label>
     <div className="food-discovery-controls"><div className="food-filter-row" role="group" aria-label="Filtrar pratos">{filters.map(filter => <button type="button" key={filter.id} className={`food-filter-chip${activeFilter === filter.id ? " active" : ""}`} aria-pressed={activeFilter === filter.id} onClick={() => setActiveFilter(filter.id)}>{filter.label}</button>)}</div><label className="food-sort-control">Ordenar por<select aria-label="Ordenar pratos" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">Recomendados</option><option value="price-ascending">Menor preço</option>{items.some(item => item.nutrition?.protein_g != null) && <option value="protein-descending">Mais proteína declarada</option>}</select></label></div>
@@ -401,7 +424,7 @@ function PassScreen() {
   const [showPlan, setShowPlan] = useState(false);
   const [planConfirmed, setPlanConfirmed] = useState(false);
   return <Screen title="Seu treino, mais perto de você." subtitle="FORTALFY PASS" location className="pass-screen">
-    <div className="pass-hero"><PhotoCard image={gyms[0].image} alt="Rede de academias credenciadas FortalPass" /><div className="pass-hero-overlay"><span>FORTALPASS OFICIAL</span><h2>Movimento que<br />combina com você.</h2><p>Acesse as melhores academias e studios credenciados de Fortaleza em um só passe.</p><Link to="/partner/gym" className="button lime-button">Explorar academias <ArrowRight size={16} /></Link></div></div>
+    <div className="pass-hero"><PhotoCard image={visualPackAsset("fortalfy-pack-gym-interior.jpg")} alt="Academia ampla e iluminada" /><div className="pass-hero-overlay"><span>FORTALPASS OFICIAL</span><h2>Movimento que<br />combina com você.</h2><p>Acesse as melhores academias e studios credenciados de Fortaleza em um só passe.</p><Link to="/partner/gym" className="button lime-button">Explorar academias <ArrowRight size={16} /></Link></div></div>
     <div className="pass-intro"><span className="verified-pill"><ShieldCheck size={15} /> Seu cuidado em boa companhia</span><p>Experiências e profissionais para acompanhar sua rotina — no seu ritmo.</p></div>
     <SectionTitle title="Academias por perto" action="Ver mapa" to="/partner/gym" />
     <div className="gym-cards">{gyms.map((gym, index) => <GymCard gym={gym} key={gym.name} index={index} />)}</div>
@@ -1694,11 +1717,11 @@ function AppContent() {
   return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
     <NotificationContext.Provider value={{ open: () => setNotificationCenterOpen(true), unreadCount: unreadNotificationCount, push: pushNotification }}>
     <Routes>
-      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="/" element={authSession?.user?.id ? <Navigate to="/home" replace /> : <PublicLanding />} />
       <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} activityStatus={activityStatus} activityError={activityError} notify={notify} />} />
       <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />
       <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
-      <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
+      <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />

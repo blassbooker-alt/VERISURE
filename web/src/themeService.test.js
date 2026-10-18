@@ -14,9 +14,9 @@ function createStorage() {
   };
 }
 
-test("appearance defaults to dark and resolves the automatic option from system appearance", () => {
-  assert.equal(normalizeThemePreference("invalid"), "dark");
-  assert.equal(readThemePreference(createStorage()), "dark");
+test("appearance defaults to light and resolves the automatic option from system appearance", () => {
+  assert.equal(normalizeThemePreference("invalid"), "light");
+  assert.equal(readThemePreference(createStorage()), "light");
   assert.equal(resolveThemePreference("system", true), "dark");
   assert.equal(resolveThemePreference("system", false), "light");
   assert.equal(resolveThemePreference("light", true), "light");
@@ -27,8 +27,8 @@ test("appearance persistence uses separate guest and per-account storage keys", 
   assert.notEqual(themeStorageKey("user-a"), themeStorageKey("user-b"));
   assert.equal(saveLocalThemePreference("light", storage, "user-a"), true);
   assert.equal(readThemePreference(storage, "user-a"), "light");
-  assert.equal(readThemePreference(storage, "user-b"), "dark");
-  assert.equal(readThemePreference(storage), "dark");
+  assert.equal(readThemePreference(storage, "user-b"), "light");
+  assert.equal(readThemePreference(storage), "light");
 });
 
 test("account metadata takes precedence over its local fallback", () => {

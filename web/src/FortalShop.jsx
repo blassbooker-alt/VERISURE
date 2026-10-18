@@ -138,7 +138,7 @@ export default function FortalShop({ cart, setCart, initialDialog = "", notify }
         </div>
       </section>
       <section className="shop-editorial" aria-label="Destaque FortalShop">
-        <img className="shop-editorial-banner" src="/assets/fortalfy/publicidade/banner-app-papagaio-b.jpg" alt="" />
+        <img className="shop-editorial-banner" src="/assets/visual-pack/fortalfy-pack-wellness-product.jpg" alt="" />
         <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Suplementos, acessórios e tecnologia para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
       </section>
       <section className="shop-departments" aria-label="Explore por departamento">

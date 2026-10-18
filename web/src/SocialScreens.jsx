@@ -6,7 +6,7 @@ import {
   Move, Play, Search, Send, Share2, ShieldCheck, Sparkles, Trash2, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
-import { fortalfyAsset } from "./assetPath.js";
+import { fortalfyAsset, visualPackAsset } from "./assetPath.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
 import { createSecureId } from "./secureId.js";
@@ -501,7 +501,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
 
           <img
             className="showcase-banner"
-            src={fortalfyAsset("publicidade", "banner-comunidade.jpg")}
+            src={visualPackAsset("fortalfy-pack-onboarding-lifestyle.jpg")}
             alt=""
             aria-hidden="true"
           />
@@ -2689,7 +2689,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   return <div className="social-profile">
     <CommunityNavigation active="" />
     <section className="social-profile-card">
-      <div className={`social-profile-cover${person.cover ? " has-image" : ""}`}>{person.cover && <img src={person.cover} alt="" />}
+      <div className={`social-profile-cover${person.cover ? " has-image" : ""}`}>{person.cover ? <img src={person.cover} alt="" /> : <img className="social-profile-cover-default" src={visualPackAsset("fortalfy-pack-wellness-morning.jpg")} alt="" loading="lazy" />}
         {isOwn && <label className="social-profile-cover-edit" title="Alterar foto de capa"><Camera size={16} /><span>Editar capa</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Escolher foto de capa" onChange={event => updateProfileImage(event, "cover_path")} disabled={busy} /></label>}
       </div>
       <div className="social-profile-main">
