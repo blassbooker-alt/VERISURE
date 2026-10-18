@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
@@ -15,6 +15,8 @@ import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 import FortalShop from "./FortalShop.jsx";
 import FortalfyStudio from "./FortalfyStudio.jsx";
+import PerformanceDashboard from "./PerformanceDashboard.jsx";
+import ThemeSettings from "./ThemeSettings.jsx";
 import StoryExperience from "./Stories.jsx";
 import { WeeklyClientPlan } from "./WeeklyPlans.jsx";
 import { OnboardingGate, SocialFeed, SocialMessages, SocialPeople, SocialProfile } from "./SocialScreens.jsx";
@@ -33,6 +35,7 @@ import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
+import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
 
 function Toast({ message, onClose }) {
   useEffect(() => {
@@ -42,6 +45,41 @@ function Toast({ message, onClose }) {
   }, [message, onClose]);
   if (!message) return null;
   return <div className="toast-message" role="status"><Check size={17} />{message}<button aria-label="Fechar aviso" onClick={onClose}><X size={16} /></button></div>;
+}
+
+const NOTIFICATIONS_STORAGE_KEY = "fortalfy.notifications.local.v1";
+const APP_NOTIFICATION_TYPES = new Set([
+  "post_like", "post_comment", "post_share", "message", "workout_reminder",
+  "nutritionist_message", "personal_message", "shop", "product_delivery",
+  "food_delivery", "official_promotion",
+]);
+const APP_NOTIFICATION_LABELS = {
+  post_like: "Curtida", post_comment: "Comentário", post_share: "Compartilhamento",
+  message: "Mensagem", workout_reminder: "Lembrete de treino",
+  nutritionist_message: "Nutricionista", personal_message: "Personal",
+  shop: "FortalShop", product_delivery: "Entrega de produto", food_delivery: "Entrega de comida",
+  official_promotion: "Promoção oficial",
+};
+const NotificationContext = createContext({ open: () => {}, unreadCount: 0, push: () => {} });
+
+function NotificationCenter({ notifications, onClose, onRead, onReadAll, onClear }) {
+  useEffect(() => {
+    const closeOnEscape = event => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return <div className="notification-center-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
+    <section className="notification-center" role="dialog" aria-modal="true" aria-labelledby="notification-center-title">
+      <header><div><span className="eyebrow">FORTALFY</span><h2 id="notification-center-title">Notificações</h2><p>Avisos recentes deste app e aparelho.</p></div><button className="icon-button" aria-label="Fechar notificações" onClick={onClose}><X size={19} /></button></header>
+      {!!notifications.length && <div className="notification-center-actions"><button type="button" onClick={onReadAll}>Marcar todas como lidas</button><button type="button" onClick={onClear}>Limpar avisos</button></div>}
+      {!notifications.length ? <div className="notification-center-empty"><Bell size={24} /><strong>Tudo em dia</strong><span>Os avisos do app aparecerão aqui.</span></div> : <ol className="notification-center-list">{[...notifications].reverse().map(item => <li key={item.id} className={item.read ? "is-read" : "is-unread"}>
+        <span className="notification-center-icon"><Bell size={16} /></span><div><strong>{item.title}</strong><p>{item.message}</p><small>{APP_NOTIFICATION_LABELS[item.type]}</small><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></div>
+        {!item.read && <button type="button" aria-label="Marcar como lida" onClick={() => onRead(item.id)}><span /></button>}
+      </li>)}</ol>}
+      <p className="notification-center-note">Esta central guarda avisos gerados enquanto você usa o app neste aparelho. Notificações push e sincronização entre aparelhos ainda dependem de um serviço de notificações no servidor.</p>
+    </section>
+  </div>;
 }
 
 function Modal({ title, children, onClose }) {
@@ -120,16 +158,17 @@ function SplashScreen({ onClose }) {
   </div>;
 }
 
-function MobileHeader({ location = false, action }) {
+function MobileHeader({ location = false, action, onNotificationsOpen, notificationCount = 0 }) {
   return <header className="mobile-header"><NavigationDrawer /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
     {location && <button className="location-chip" onClick={action}><MapPin size={15} /><span>Aldeota, Fortaleza</span><ChevronDown size={14} /></button>}
-    {!location && <button className="icon-button" aria-label="Notificações" onClick={action}><Bell size={20} /></button>}
+    <button className="icon-button notification-bell" aria-label={notificationCount ? `Notificações, ${notificationCount} não lidas` : "Notificações"} onClick={onNotificationsOpen}><Bell size={20} />{notificationCount > 0 && <span className="notification-bell-count">{notificationCount > 9 ? "9+" : notificationCount}</span>}</button>
   </header>;
 }
 
 function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false }) {
+  const notifications = useContext(NotificationContext);
   return <div className={`app-screen${immersive ? " immersive-screen" : ""}`}>
-    {!immersive && <MobileHeader location={location} action={action} />}
+    {!immersive && <MobileHeader location={location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} />}
     <main className={`screen-content ${className}`}>
       {title && !immersive && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
       {children}
@@ -152,9 +191,9 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
   const firstName = displayName.trim().split(/\s+/)[0];
   return <Screen className="home-screen">
     <section className="home-hero">
-      <img className="home-hero-image" src={fortalfyAsset("publicidade", "05-inicio-bem-estar.jpg")} alt="" aria-hidden="true" />
+      <img className="home-hero-image" src={fortalfyAsset("publicidade", "04-feed-comunidade.jpg")} alt="" aria-hidden="true" />
       <div className="home-hero-top"><span className="location-label">FORTALFY · BEM-ESTAR</span><span className="status-live">NO SEU RITMO</span></div>
-      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Acesse sua comunidade, seus registros e parceiros.</span></div>
+      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Movimento, comunidade e bem-estar em um só lugar.</span><Link to="/pass" className="hero-cta">Conheça o FortalPass <ArrowRight size={16} /></Link></div>
       <div className="hero-activity">
         <div className="activity-icon"><Dumbbell size={20} /></div>
         <div className="activity-text"><span>SEUS REGISTROS</span><strong>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</strong><small>{activityError || activityStatus}</small></div>
@@ -162,12 +201,36 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
       </div>
     </section>
     <div className="screen-inner home-inner">
-      <SectionTitle title="Acesso rápido" />
-      <div className="quick-grid">
-        <Link to="/feed" className="quick-tile quick-tile-community"><span className="quick-icon mint"><Users size={19} /></span><strong>Comunidade</strong><small>Publicações e perfis reais</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/pass" className="quick-tile quick-tile-partners"><span className="quick-icon pink"><MapPin size={19} /></span><strong>Parceiros</strong><small>Locais e profissionais aprovados</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/food" className="quick-tile quick-tile-food"><span className="quick-icon yellow"><Utensils size={19} /></span><strong>FortalFood</strong><small>Cardápios publicados por restaurantes</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
-        <Link to="/shop" className="quick-tile quick-tile-shop"><span className="quick-icon blue"><ShoppingBag size={19} /></span><strong>Loja</strong><small>Catálogo oficial quando disponível</small><ArrowUpRight size={16} className="quick-arrow" /></Link>
+      <div className="module-catalog-heading">
+        <span className="eyebrow">SEU UNIVERSO DE BEM-ESTAR</span>
+        <h2>Explore a Fortalfy</h2>
+        <p>Movimento, inspiração, alimentação e produtos em um só lugar.</p>
+      </div>
+      <div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">
+        <Link to="/pass" className="module-card module-card-pass">
+          <img src={fortalfyAsset("publicidade", "03-fortalpass-academia.jpg")} alt="" loading="eager" decoding="async" />
+          <span className="module-card-shade" aria-hidden="true" />
+          <span className="module-card-top"><span>DESCUBRA PERTO DE VOCÊ</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
+          <span className="module-card-copy"><small>FORTALPASS</small><strong>Seu próximo treino começa aqui.</strong><span>Encontre academias e profissionais aprovados.</span></span>
+        </Link>
+        <Link to="/reels" className="module-card module-card-reels">
+          <img src={fortalfyAsset("treino", "08-treino-cardio.jpg")} alt="" loading="eager" decoding="async" />
+          <span className="module-card-shade" aria-hidden="true" />
+          <span className="module-card-top"><span>VÍDEOS DA COMUNIDADE</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
+          <span className="module-card-copy"><small>FORTALREELS</small><strong>Inspire-se em movimento.</strong><span>Conteúdo fitness em formato vertical.</span></span>
+        </Link>
+        <Link to="/food" className="module-card module-card-food">
+          <img src={fortalfyAsset("publicidade", "banner-fortalfood.jpg")} alt="" loading="lazy" decoding="async" />
+          <span className="module-card-shade" aria-hidden="true" />
+          <span className="module-card-top"><span>COMER BEM, COM LEVEZA</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
+          <span className="module-card-copy"><small>FORTALFOOD</small><strong>Seu próximo prato favorito.</strong><span>Conheça cardápios publicados por parceiros.</span></span>
+        </Link>
+        <Link to="/shop" className="module-card module-card-shop">
+          <img src={fortalfyAsset("publicidade", "banner-nova-colecao.jpg")} alt="" loading="lazy" decoding="async" />
+          <span className="module-card-shade" aria-hidden="true" />
+          <span className="module-card-top"><span>SEU RITUAL DE BEM-ESTAR</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
+          <span className="module-card-copy"><small>FORTALSHOP</small><strong>Encontre o que move você.</strong><span>Explore o catálogo Fortalfy.</span></span>
+        </Link>
       </div>
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
@@ -791,26 +854,15 @@ function NutritionScreen({ notify, onActivity, activity, client, session, activi
   </Screen>;
 }
 
-function ProgressScreen({ activity, activityStatus, activityError }) {
-  const meals = [...activity.mealEntries].sort((left, right) => right.date.localeCompare(left.date)).slice(0, 5);
-  const workouts = [...activity.workoutEntries].reverse().slice(0, 5);
-  return <Screen title="Meus registros" subtitle="DADOS INFORMADOS POR VOCÊ" className="progress-screen">
-    <section className="performance-card progress-summary">
-      <div className="section-title-row"><div><span className="eyebrow">SUA ROTINA</span><h2>Resumo da rotina</h2></div></div>
-      <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span><span><strong>{activity.waterMl.toLocaleString("pt-BR")} ml</strong> de água registrados</span></div>
-    </section>
-    <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
-    <p className="reference-disclosure">Peso, medidas, sono e atividade de sensores não estão conectados.</p>
-    <SectionTitle title="Treinos recentes" action="Registrar treino" to="/workout" />
-    {workouts.length ? <div className="exercise-list">{workouts.map(entry => <article className="exercise-card" key={entry.id}><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><h3>{entry.name}</h3><p>{entry.minutes} min · {entry.date}</p></div></article>)}</div> : <div className="empty-state"><Dumbbell size={24} /><h3>Nenhum treino registrado</h3><Link className="button subtle" to="/workout">Registrar treino</Link></div>}
-    <SectionTitle title="Refeições recentes" action="Abrir diário" to="/nutrition" />
-    {meals.length ? <div className="meal-list">{meals.map(meal => <div className="meal-row" key={meal.id}><span className="meal-icon"><Utensils size={17} /></span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · {meal.date}</small></div></div>)}</div> : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><Link className="button subtle" to="/nutrition">Abrir diário</Link></div>}
+function ProgressScreen({ client, session }) {
+  return <Screen title="Meu desempenho" subtitle="EVOLUÇÃO DOS SEUS TREINOS" className="progress-screen">
+    <PerformanceDashboard client={client} session={session} />
   </Screen>;
 }
 
 function EarningsScreen({ session }) {
-  return <Screen title="Meus rendimentos" subtitle="INFORMACOES FINANCEIRAS REAIS" className="earnings-screen">
-    <section className="weekly-empty earnings-empty"><span className="weekly-empty-icon"><Wallet size={24} /></span><h2>Nenhum rendimento disponivel</h2><p>{session?.user?.id ? "A Fortalfy ainda nao tem um provedor de pagamentos ativo nem registros de repasse nesta conta. Nenhum saldo ou transacao e simulado." : "Entre em uma conta real para consultar informacoes financeiras quando esse servico estiver disponivel."}</p>{session?.user?.id ? <Link className="button subtle" to="/trainer">Ver area profissional <ArrowRight size={16} /></Link> : <Link className="button primary" to="/profile">Entrar na conta <ArrowRight size={16} /></Link>}<Link className="text-link" to="/progress">Ver registros de atividade <ArrowRight size={15} /></Link></section>
+  return <Screen title="Rendimentos" subtitle="INFORMAÇÕES FINANCEIRAS REAIS" className="earnings-screen">
+    <section className="weekly-empty earnings-empty"><span className="weekly-empty-icon"><Wallet size={24} /></span><h2>Nenhum rendimento disponível</h2><p>{session?.user?.id ? "A Fortalfy ainda não tem um provedor de pagamentos ativo nem registros de repasse nesta conta. Nenhum saldo ou transação é simulado." : "Entre em uma conta real para consultar informações financeiras quando esse serviço estiver disponível."}</p>{session?.user?.id ? <Link className="button subtle" to="/trainer">Ver área profissional <ArrowRight size={16} /></Link> : <Link className="button primary" to="/profile">Entrar na conta <ArrowRight size={16} /></Link>}<Link className="text-link" to="/progress">Ver meu desempenho <ArrowRight size={15} /></Link></section>
   </Screen>;
 }
 
@@ -1278,8 +1330,14 @@ function LivePartnerScreen({ client }) {
 
 function AppContent() {
   const [toast, setToast] = useState("");
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [notifications, setNotifications] = useState(() => {
+    const saved = loadLocalValue(NOTIFICATIONS_STORAGE_KEY, []);
+    return Array.isArray(saved) ? saved.filter(item => item && APP_NOTIFICATION_TYPES.has(item.type) && typeof item.id === "string" && typeof item.message === "string" && typeof item.createdAt === "string").slice(-50) : [];
+  });
   const [authSession, setAuthSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [themePreference, setThemePreference] = useState(() => readThemePreference());
   const [socialProfile, setSocialProfile] = useState(null);
   const [socialProfileError, setSocialProfileError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
@@ -1301,7 +1359,34 @@ function AppContent() {
     return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   });
   const location = useLocation();
-  const notify = message => setToast(message);
+  const notify = useCallback(message => {
+    const text = String(message || "").trim();
+    if (text) setToast(text);
+  }, []);
+  const pushNotification = useCallback(({ type, title, message } = {}) => {
+    const text = String(message || "").trim();
+    if (!APP_NOTIFICATION_TYPES.has(type) || !text) return;
+    setNotifications(current => [...current, {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      title: String(title || APP_NOTIFICATION_LABELS[type]).trim(),
+      message: text,
+      createdAt: new Date().toISOString(),
+      read: false,
+    }].slice(-50));
+  }, []);
+  const unreadNotificationCount = notifications.reduce((count, item) => count + (item.read ? 0 : 1), 0);
+  const markNotificationRead = id => setNotifications(current => current.map(item => item.id === id ? { ...item, read: true } : item));
+  const markAllNotificationsRead = () => setNotifications(current => current.map(item => ({ ...item, read: true })));
+  const clearNotifications = () => setNotifications([]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
+    } catch (error) {
+      console.error("Não foi possível salvar as notificações neste aparelho.", error);
+    }
+  }, [notifications]);
 
   useEffect(() => {
     try {
@@ -1311,6 +1396,32 @@ function AppContent() {
     }
   }, []);
   const accountUserId = authSession?.user?.id && !isDemoUser(authSession.user.id) ? authSession.user.id : null;
+  useEffect(() => {
+    if (!authReady) return;
+    setThemePreference(accountUserId ? getAccountThemePreference(authSession?.user) : readThemePreference());
+  }, [accountUserId, authReady, authSession?.user?.user_metadata]);
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!media) { applyThemePreference(themePreference, true); return undefined; }
+    const update = () => applyThemePreference(themePreference, media.matches);
+    update();
+    if (media.addEventListener) media.addEventListener("change", update);
+    else media.addListener?.(update);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener("change", update);
+      else media.removeListener?.(update);
+    };
+  }, [themePreference]);
+  const changeThemePreference = async preference => {
+    setThemePreference(preference);
+    try {
+      const result = await saveThemePreference(supabase, accountUserId, preference);
+      notify(result.synced ? `Tema ${preference === "system" ? "automático" : preference === "light" ? "claro" : "escuro"} ativado e salvo na sua conta.` : `Tema ${preference === "system" ? "automático" : preference === "light" ? "claro" : "escuro"} ativado neste aparelho.`);
+    } catch (error) {
+      console.error("Não foi possível sincronizar a preferência de aparência.", error);
+      notify(error.localSaved ? "Tema ativado e salvo neste aparelho. A sincronização será tentada novamente ao entrar na conta." : "Tema alterado nesta sessão, mas não foi possível salvar a preferência. Verifique o espaço disponível no navegador e sua conexão.");
+    }
+  };
   useEffect(() => {
     if (!authReady) return undefined;
     if (!accountUserId) {
@@ -1516,10 +1627,15 @@ function AppContent() {
     return true;
   };
   useEffect(() => {
-    const listener = event => setToast(event.detail);
+    const listener = event => notify(event.detail);
     window.addEventListener("fortalfy-toast", listener);
     return () => window.removeEventListener("fortalfy-toast", listener);
-  }, []);
+  }, [notify]);
+  useEffect(() => {
+    const listener = event => pushNotification(event.detail);
+    window.addEventListener("fortalfy-notification", listener);
+    return () => window.removeEventListener("fortalfy-notification", listener);
+  }, [pushNotification]);
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => setShowSplash(false), reducedMotion ? 900 : 6500);
@@ -1546,6 +1662,7 @@ function AppContent() {
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id && socialProfile);
   return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
+    <NotificationContext.Provider value={{ open: () => setNotificationCenterOpen(true), unreadCount: unreadNotificationCount, push: pushNotification }}>
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} activityStatus={activityStatus} activityError={activityError} notify={notify} />} />
@@ -1553,7 +1670,7 @@ function AppContent() {
       <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
-      <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
+      <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
       <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
       <Route path="/checkin/:publicId" element={<Screen title="Validar presença" subtitle="FORTALPASS · ACESSO SEGURO" className="gym-access-screen"><GymCheckInPage client={supabase} session={authSession} /></Screen>} />
@@ -1565,7 +1682,7 @@ function AppContent() {
       <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
       <Route path="/curated" element={<Navigate to="/food" replace />} />
-      <Route path="/progress" element={<ProgressScreen activity={activity} activityStatus={activityStatus} activityError={activityError} />} />
+      <Route path="/progress" element={<ProgressScreen client={supabase} session={authSession} />} />
       <Route path="/earnings" element={<EarningsScreen session={authSession} />} />
       <Route path="/academy" element={<AcademyScreen />} />
       <Route path="/live" element={<LiveScreen />} />
@@ -1576,7 +1693,7 @@ function AppContent() {
       <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
       <Route path="/restaurants" element={<Navigate to="/food" replace />} />
       <Route path="/results" element={<Navigate to="/progress" replace />} />
-      <Route path="/settings" element={<Navigate to="/profile" replace />} />
+      <Route path="/settings" element={<Screen title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /></Screen>} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional/manage" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
@@ -1589,6 +1706,8 @@ function AppContent() {
       <Route path="/nutritionist" element={<Dashboard key="nutritionist" role="nutritionist" client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} onRetryProfile={retrySocialProfile} />} />
       <Route path="*" element={<Screen title="Página não encontrada" subtitle="FORTALFY"><div className="empty-state"><CircleHelp size={24} /><h3>Este endereço não existe</h3><p>Escolha uma área disponível para continuar.</p><Link className="button subtle" to="/home">Voltar ao início <ArrowRight size={16} /></Link></div></Screen>} />
     </Routes>
+    {notificationCenterOpen && <NotificationCenter notifications={notifications} onClose={() => setNotificationCenterOpen(false)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onClear={clearNotifications} />}
+    </NotificationContext.Provider>
     {supabase && authSession?.user?.id && !isDemoUser(authSession.user.id) && (
       <OnboardingGate
         client={supabase}

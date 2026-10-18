@@ -35,6 +35,20 @@ test("training plan requires seven complete days and HTTPS video links", () => {
   })), /HTTPS/);
 });
 
+test("training plan accepts prescribed rest days and exercises without mandatory load or video", () => {
+  const days = createTrainingDays().map((day, index) => index === 6
+    ? { ...day, is_rest_day: true, exercises: [] }
+    : {
+      ...day,
+      workout_name: `Treino ${index + 1}`,
+      exercises: [{ name: "Corrida leve", duration: "20 min", reps: "", load: "", video_url: "" }],
+    });
+  assert.equal(validateTrainingPlan(days), "");
+  assert.match(validateTrainingPlan(days.map((day, index) => index === 6
+    ? { ...day, exercises: [{ name: "Agachamento", sets: "3" }] }
+    : day)), /descanso/);
+});
+
 test("nutrition plan requires all meals and real restaurant details", () => {
   const days = createNutritionDays().map((day, index) => ({
     ...day,

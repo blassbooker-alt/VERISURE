@@ -1,4 +1,4 @@
-import { ArrowRight, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, Utensils, Wallet, X, Ticket, UserRound, Users } from "lucide-react";
+import { Activity, ArrowRight, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -12,13 +12,15 @@ const primaryTabs = [
 ];
 
 const drawerItems = [
-  { to: "/reels", label: "FortalReels", detail: "Vídeos verticais fitness", icon: Clapperboard },
-  { to: "/pass", label: "Fortalpass", detail: "Academias e modalidades", icon: Ticket },
-  { to: "/shop", label: "Fortalshop", detail: "Produtos oficiais", icon: ShoppingBag },
-  { to: "/nutrition", label: "Nutricionista", detail: "Plano alimentar semanal", icon: Utensils },
-  { to: "/workout", label: "Personal", detail: "Treino semanal", icon: Dumbbell },
-  { to: "/messages", label: "Chat", detail: "Conversas privadas", icon: MessageCircle },
-  { to: "/earnings", label: "Meus Rendimentos", detail: "Resumo financeiro", icon: Wallet },
+  { to: "/reels", label: "FortalReels", detail: "Vídeos verticais fitness", icon: Clapperboard, image: "/assets/search-bars/fortalreels_barra.png", theme: "reels" },
+  { to: "/pass", label: "FortalPass", detail: "Academias e modalidades", icon: Ticket, image: "/assets/search-bars/fortalpass_barra.png", theme: "pass" },
+  { to: "/shop", label: "FortalShop", detail: "Produtos oficiais", icon: ShoppingBag, image: "/assets/search-bars/fortalshop_barra.png", theme: "shop" },
+  { to: "/nutrition", label: "Nutricionista", detail: "Plano alimentar semanal", icon: Utensils, image: "/assets/search-bars/nutricionista_barra.png", theme: "food" },
+  { to: "/workout", label: "Personal", detail: "Treino semanal", icon: Dumbbell, image: "/assets/search-bars/personal_barra.png", theme: "training" },
+  { to: "/progress", label: "Meu desempenho", detail: "Evolução e histórico de treinos", icon: Activity, image: "/assets/search-bars/personal_barra.png", theme: "training" },
+  { to: "/messages", label: "Chat", detail: "Conversas privadas", icon: MessageCircle, image: "/assets/search-bars/chat_barra.png", theme: "community" },
+  { to: "/earnings", label: "Rendimentos", detail: "Informações financeiras", icon: Wallet, image: "/assets/search-bars/meus_rendimentos_barra.png", theme: "earnings" },
+  { to: "/settings", label: "Configurações", detail: "Aparência do aplicativo", icon: Settings2, image: "/assets/search-bars/personal_barra.png", theme: "settings" },
 ];
 
 export function NavigationDrawer() {
@@ -40,7 +42,7 @@ export function NavigationDrawer() {
     <aside id="fortalfy-navigation-drawer" className="navigation-drawer" role="dialog" aria-modal="true" aria-label="Menu principal">
       <div className="drawer-heading"><div><span className="eyebrow">FORTALFY</span><h2>Seu espaço</h2></div><button className="icon-button" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><X size={19} /></button></div>
       <nav aria-label="Menu principal">
-        {drawerItems.map(({ to, label, detail, icon: Icon }) => <Link key={to} to={to} className="drawer-link" onClick={() => setOpen(false)}>
+        {drawerItems.map(({ to, label, detail, icon: Icon, image, theme }) => <Link key={to} to={to} className={`drawer-link drawer-link-${theme}`} style={{ "--drawer-image": `url("${image}")` }} onClick={() => setOpen(false)}>
           <span className="drawer-link-icon"><Icon size={19} /></span><span><strong>{label}</strong><small>{detail}</small></span>
         </Link>)}
       </nav>

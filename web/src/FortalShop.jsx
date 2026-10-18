@@ -125,7 +125,7 @@ export default function FortalShop({ cart, setCart, initialDialog = "", notify }
     <header className="mobile-header shop-header">
       <NavigationDrawer />
       <Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
-      <div className="shop-header-actions"><Link className="button subtle small-button shop-history-button" to="/studio">Studio</Link><button className="shop-bag-button" aria-label="Abrir sacola; compras indisponíveis" onClick={() => setDialog("cart")}><ShoppingBag size={20} />{itemCount > 0 && <span className="shop-cart-count" aria-label={`${itemCount} itens antigos na sacola`}>{itemCount}</span>}</button></div>
+      <div className="shop-header-actions"><Link className="button subtle small-button shop-history-button" to="/studio">Studio</Link><button className="shop-bag-button" aria-label="Abrir sacola de compras" onClick={() => setDialog("cart")}><ShoppingBag size={20} />{itemCount > 0 && <span className="shop-cart-count" aria-label={`${itemCount} itens na sacola`}>{itemCount}</span>}</button></div>
     </header>
     <main className="screen-content shop-content">
       <section className="shop-search-panel" aria-label="Buscar produtos">
