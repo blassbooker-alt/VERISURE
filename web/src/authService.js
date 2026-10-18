@@ -158,6 +158,30 @@ export async function createAccount(client, fields, emailRedirectTo) {
   return data;
 }
 
+export async function verifySignupOtp(client, email, token) {
+  const normalizedEmail = String(email || "").trim();
+  const normalizedToken = String(token || "").trim().replace(/\s+/g, "");
+  if (!normalizedEmail || !normalizedToken) throw new Error("Informe o e-mail e o código recebido.");
+  const { data, error } = await client.auth.verifyOtp({
+    email: normalizedEmail,
+    token: normalizedToken,
+    type: "signup",
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function resendSignupOtp(client, email) {
+  const normalizedEmail = String(email || "").trim();
+  if (!normalizedEmail) throw new Error("Informe o e-mail usado no cadastro.");
+  const { data, error } = await client.auth.resend({
+    type: "signup",
+    email: normalizedEmail,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function signInWithGoogle(client, redirectTo) {
   const { error } = await client.auth.signInWithOAuth({
     provider: "google",

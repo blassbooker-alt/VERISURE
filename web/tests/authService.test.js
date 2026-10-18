@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createAccount, isDemoUser, isExistingEmailSignup, isUsernameAvailabilityFunctionMissing, loadUserPreferences, saveOnboarding, signInWithGoogle,
-  validateOnboarding, validateSignup,
+  resendSignupOtp, validateOnboarding, validateSignup, verifySignupOtp,
 } from "../src/authService.js";
 
 const validFields = {
@@ -70,6 +70,22 @@ test("Google OAuth uses the official provider without collecting provider creden
     provider: "google",
     options: { redirectTo: "https://fortalfy.example/" },
   });
+});
+
+test("signup verification delegates OTP validation to Supabase without fixing its length", async () => {
+  let received;
+  const client = { auth: { verifyOtp: async value => { received = value; return { data: { session: { access_token: "verified" } }, error: null }; } } };
+  const result = await verifySignupOtp(client, " ana@example.com ", "12 345678");
+  assert.deepEqual(received, { email: "ana@example.com", token: "12345678", type: "signup" });
+  assert.equal(result.session.access_token, "verified");
+  await assert.rejects(verifySignupOtp(client, "", "123456"), /Informe o e-mail/);
+});
+
+test("signup confirmation resend uses Supabase Auth and the signup email type", async () => {
+  let received;
+  await resendSignupOtp({ auth: { resend: async value => { received = value; return { data: {}, error: null }; } } }, " ana@example.com ");
+  assert.deepEqual(received, { type: "signup", email: "ana@example.com" });
+  await assert.rejects(resendSignupOtp({ auth: { resend: async () => ({ error: null }) } }, ""), /Informe o e-mail/);
 });
 
 test("missing username availability RPC falls back only to the database uniqueness constraint", () => {

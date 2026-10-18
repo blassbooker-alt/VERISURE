@@ -24,7 +24,7 @@ import {
   updateComment, updatePost, uploadProfileImage,
 } from "./socialService.js";
 import {
-  createAccount, isExistingEmailSignup, isUsernameAvailabilityFunctionMissing, loadUserPreferences, saveOnboarding, signInWithGoogle,
+  createAccount, isExistingEmailSignup, isUsernameAvailabilityFunctionMissing, loadUserPreferences, resendSignupOtp, saveOnboarding, signInWithGoogle, verifySignupOtp,
   validateOnboarding, validateSignup,
 } from "./authService.js";
 import {
@@ -165,13 +165,16 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedKind = searchParams.get("professionalKind") || "";
+  const authCallbackError = searchParams.get("authError");
   const professionalKind = PROFESSIONAL_CATEGORIES.some(category => category.id === requestedKind) ? requestedKind : "";
   const [mode, setMode] = useState(recovery ? "update" : professionalKind ? "signup" : "login");
   const [busy, setBusy] = useState(false);
+  const [otpToken, setOtpToken] = useState("");
+  const [resendSeconds, setResendSeconds] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [googleHelpOpen, setGoogleHelpOpen] = useState(false);
   const [fields, setFields] = useState({
-    name: "", username: "", email: "", password: "", birthDate: "", city: "", kind: professionalKind || "cliente",
+    name: "", username: "", email: "", password: "", confirmPassword: "", birthDate: "", city: "", kind: professionalKind || "cliente",
     goals: ["emagrecimento", "forca"], interests: ["feed", "treinos"], acceptedTerms: false,
     acceptedBenefitsTerms: false,
   });
@@ -203,6 +206,20 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
       setMessage("");
     }
   }, [recovery]);
+
+  useEffect(() => {
+    if (authCallbackError === "expired") {
+      setMode("reset");
+      setMessage("O link expirou ou já foi usado. Informe seu e-mail para solicitar outro.");
+      setMessageType("error");
+    }
+  }, [authCallbackError]);
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return undefined;
+    const timer = window.setTimeout(() => setResendSeconds(seconds => Math.max(0, seconds - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendSeconds]);
 
   useEffect(() => {
     if (mode !== "signup" || !/^[a-z0-9._]{3,30}$/.test(signupUsername) || !client) {
@@ -244,20 +261,41 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         return;
       }
     }
-    if (mode !== "reset" && fields.password.length < 8) {
+    if (["signup", "update"].includes(mode) && fields.password.length < 8) {
       setMessage("Use uma senha com pelo menos 8 caracteres.");
+      setMessageType("error");
+      return;
+    }
+    if (mode === "update" && fields.password !== fields.confirmPassword) {
+      setMessage("As duas senhas precisam ser iguais.");
       setMessageType("error");
       return;
     }
     setBusy(true);
     try {
-      if (mode === "update") {
+      if (mode === "confirm") {
+        if (!configured || !client) throw new Error("A conexão com o servidor de autenticação ainda não foi configurada.");
+        const data = await verifySignupOtp(client, fields.email, otpToken);
+        setMessage("E-mail confirmado. Sua conta está ativa.");
+        setMessageType("success");
+        if (data?.session) {
+          if (fields.kind !== "cliente") navigate(`/professional/manage?category=${encodeURIComponent(fields.kind)}`);
+          else navigate("/home");
+        } else {
+          setMode("login");
+        }
+      } else if (mode === "update") {
         if (!configured || !client) throw new Error("Supabase não configurado.");
+        if (!recovery) throw new Error("Abra o link de recuperação mais recente para continuar.");
+        const { data: sessionData, error: sessionError } = await client.auth.getSession();
+        if (sessionError || !sessionData?.session) throw new Error("O link de recuperação expirou ou já foi usado. Solicite outro.");
         const { error } = await client.auth.updateUser({ password: fields.password });
         if (error) throw error;
-        setMessage("Senha atualizada com sucesso! Você já pode entrar.");
-        setMessageType("success");
+        notify?.("Senha atualizada. Entre novamente com sua nova senha.");
+        setFields(current => ({ ...current, password: "", confirmPassword: "" }));
+        await client.auth.signOut();
         onRecovered?.();
+        navigate("/profile");
       } else if (mode === "signup") {
         if (!configured || !client) throw new Error("A conexão com o servidor de autenticação ainda não foi configurada.");
         try {
@@ -275,7 +313,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
           : `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(fields.kind)}`;
         const data = await createAccount(client, fields, redirectTo);
         if (isExistingEmailSignup(data)) {
-          setMessage("Este e-mail já está cadastrado. Se você acabou de solicitar a criação da conta, confira se há uma mensagem de confirmação na caixa de entrada ou no spam. Se já confirmou, entre ou use “Esqueceu a senha?”.");
+          setMessage("Se este endereço puder receber uma confirmação, enviaremos instruções. Se você já tem uma conta, entre ou solicite a recuperação da senha.");
           setMessageType("info");
           setMode("login");
           return;
@@ -288,9 +326,12 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
           return;
         }
         if (data?.user) {
-          setMessage("Conta criada com sucesso! Verifique a mensagem enviada ao seu e-mail para confirmar seu cadastro e acesse sua conta.");
+          setFields(current => ({ ...current, password: "" }));
+          setOtpToken("");
+          setResendSeconds(60);
+          setMessage("Enviamos um código de confirmação. Informe-o abaixo para ativar sua conta.");
           setMessageType("success");
-          setMode("login");
+          setMode("confirm");
           return;
         }
         setMessage("Conta criada com sucesso! Você já pode entrar.");
@@ -298,9 +339,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         setMode("login");
       } else if (mode === "reset") {
         if (!configured || !client) throw new Error("Supabase não configurado.");
-        const redirectTo = professionalKind
-          ? `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(professionalKind)}`
-          : `${window.location.origin}${window.location.pathname}`;
+        const redirectTo = `${window.location.origin}${window.location.pathname}#/profile`;
         const { error } = await client.auth.resetPasswordForEmail(fields.email.trim(), { redirectTo });
         if (error) throw error;
         setMessage("Se o e-mail estiver cadastrado, você receberá um link seguro para redefinir sua senha.");
@@ -317,7 +356,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
           if (errText.includes("invalid login credentials") || error.code === "invalid_credentials") {
             setMessage("O Supabase não aceitou este e-mail e senha. Se a conta acabou de ser criada, confirme o e-mail primeiro; se já confirmou, confira o endereço ou use “Esqueceu a senha?”.");
           } else if (errText.includes("email not confirmed")) {
-            setMessage("Seu e-mail ainda não foi confirmado. Verifique o link de confirmação enviado para sua caixa de entrada.");
+            setMessage("Seu e-mail ainda precisa de confirmação. Informe o código recebido ou solicite outro.");
+            setMode("confirm");
+            setResendSeconds(0);
           } else {
             setMessage(getErrorMessage(error, "Não foi possível autenticar. Verifique seus dados de acesso."));
           }
@@ -330,7 +371,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         }
       }
     } catch (error) {
-      console.error("Falha na autenticação.", error);
+      console.error("Falha na autenticação.", { code: error?.code || "unknown" });
       const errText = (error?.message || "").toLowerCase();
       const duplicateUsername = error?.code === "23505"
         || /profiles_username_lower_unique|duplicate key/i.test(error?.message || "");
@@ -338,12 +379,38 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
       if (duplicateUsername || error?.code === "fortalfy_username_unavailable") {
         setMessage("Esse nome de usuário já está em uso. Escolha outro.");
       } else if (userExists) {
-        setMessage("Este e-mail já está cadastrado. Alterne para 'Entrar' para acessar sua conta.");
+        setMessage("Se este endereço puder ser usado, enviaremos instruções. Tente entrar ou solicitar a recuperação da senha.");
       } else if (errText.includes("rate limit")) {
         setMessage("Limite temporário de requisições de e-mail atingido. Se já tem conta, utilize o login.");
+      } else if (mode === "confirm") {
+        setMessage("O código não foi aceito ou expirou. Confira o e-mail e solicite outro código se necessário.");
+      } else if (mode === "update") {
+        setMessage("O link de recuperação expirou ou já foi usado. Solicite um novo link para continuar.");
       } else {
         setMessage(getErrorMessage(error, "Não foi possível concluir a ação. Verifique seus dados."));
       }
+      setMessageType("error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resendConfirmation = async () => {
+    if (busy || resendSeconds > 0) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      if (!configured || !client) throw new Error("A conexão com o servidor de autenticação ainda não foi configurada.");
+      await resendSignupOtp(client, fields.email);
+      setResendSeconds(60);
+      setMessage("Se este cadastro ainda precisar de confirmação, enviaremos um novo código para esse e-mail.");
+      setMessageType("success");
+    } catch (error) {
+      const code = error?.code || "";
+      console.error("Falha ao reenviar confirmação de e-mail.", { code });
+      setMessage(code === "over_email_send_rate_limit" || /rate limit/i.test(error?.message || "")
+        ? "Aguarde antes de pedir outro código. O limite de envio do serviço foi atingido."
+        : "Não foi possível reenviar agora. Confira o endereço e tente novamente mais tarde.");
       setMessageType("error");
     } finally {
       setBusy(false);
@@ -448,9 +515,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
         </aside>
 
         {/* Right Column: Interactive Auth Hub */}
-        <section className="social-auth-form-card">
+        <section className={`social-auth-form-card${mode === "confirm" ? " auth-confirm-mode" : ""}`}>
           {/* Segmented Mode Selector */}
-          <div className="auth-tab-switch" role="tablist">
+          {!['confirm', 'update'].includes(mode) && <div className="auth-tab-switch" role="tablist">
             <button
               type="button"
               role="tab"
@@ -469,9 +536,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
             >
               Criar Conta
             </button>
-          </div>
+          </div>}
 
-          <div className="auth-card-header">
+          {!['confirm', 'update'].includes(mode) && <div className="auth-card-header">
             <span className="auth-badge-pill">
               <Sparkles size={13} />
               {mode === "signup" ? "Novo por aqui?" : mode === "reset" ? "Recuperação segura" : mode === "update" ? "Nova senha" : "Bem-vindo(a) de volta"}
@@ -492,7 +559,15 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                 ? "Informe seu e-mail cadastrado para receber instruções de recuperação."
                 : "Entre para acompanhar seus treinos, publicações e contatos."}
             </p>
-          </div>
+          </div>}
+
+          {mode === "confirm" && (
+            <div className="auth-confirm-intro">
+              <span className="auth-badge-pill"><ShieldCheck size={13} /> CONFIRMAÇÃO DE CONTA</span>
+              <h3>Confirme seu e-mail</h3>
+              <p>Digite o código enviado para ativar sua conta. Você pode colar o código completo no campo.</p>
+            </div>
+          )}
 
           {!configured && (
             <div className="social-config-warning">
@@ -647,7 +722,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
               </div>
             )}
 
-            {mode !== "update" && (
+            {['signup', 'login', 'reset'].includes(mode) && (
               <div className="auth-field">
                 <label htmlFor="auth-field-email">E-mail</label>
                 <div className="auth-input-box">
@@ -665,7 +740,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
               </div>
             )}
 
-            {mode !== "reset" && (
+            {['signup', 'login', 'update'].includes(mode) && (
               <div className="auth-field">
                 <div className="auth-label-row">
                   <label htmlFor="auth-field-password">Senha</label>
@@ -699,6 +774,51 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {mode === "confirm" && (
+              <div className="auth-field">
+                <label htmlFor="auth-field-otp">Código de confirmação</label>
+                <div className="auth-input-box">
+                  <ShieldCheck size={16} className="auth-box-icon" />
+                  <input
+                    id="auth-field-otp"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="Cole o código recebido"
+                    value={otpToken}
+                    onChange={event => setOtpToken(event.target.value.replace(/\s+/g, ""))}
+                    required
+                    aria-describedby="auth-otp-help"
+                  />
+                </div>
+                <small id="auth-otp-help" className="auth-hint-text">O Supabase valida o código e a validade antes de ativar sua conta.</small>
+              </div>
+            )}
+
+            {mode === "update" && (
+              <div className="auth-field">
+                <label htmlFor="auth-field-confirm-password">Confirme a nova senha</label>
+                <div className="auth-input-box">
+                  <Lock size={16} className="auth-box-icon" />
+                  <input
+                    id="auth-field-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Digite a nova senha novamente"
+                    minLength={8}
+                    value={fields.confirmPassword}
+                    onChange={event => setFields(current => ({ ...current, confirmPassword: event.target.value }))}
+                    required
+                  />
+                </div>
+                <small className="auth-hint-text">Use pelo menos 8 caracteres. O link precisa estar válido e ainda não utilizado.</small>
+                <div className="auth-password-rules" id="auth-password-rules" aria-live="polite">
+                  <span className={fields.password.length >= 8 ? "is-valid" : ""}>{fields.password.length >= 8 ? "✓" : "○"} Pelo menos 8 caracteres</span>
+                  <span className={fields.confirmPassword && fields.password === fields.confirmPassword ? "is-valid" : ""}>{fields.confirmPassword && fields.password === fields.confirmPassword ? "✓" : "○"} As duas senhas coincidem</span>
                 </div>
               </div>
             )}
@@ -803,7 +923,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
               ) : (
                 <>
                   <span>
-                    {mode === "signup"
+                    {mode === "confirm" ? "Confirmar meu e-mail" : mode === "signup"
                       ? "Criar Conta & Começar"
                       : mode === "reset"
                       ? "Enviar Link de Recuperação"
@@ -819,6 +939,11 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
 
           {/* Bottom Switch Links */}
           <div className="auth-bottom-switch">
+            {mode === "confirm" && (
+              <button type="button" className="auth-link-btn" onClick={resendConfirmation} disabled={busy || resendSeconds > 0}>
+                {resendSeconds > 0 ? `Solicite outro código em ${resendSeconds}s` : "Reenviar código de confirmação"}
+              </button>
+            )}
             {mode !== "login" && mode !== "update" && (
               <button
                 type="button"

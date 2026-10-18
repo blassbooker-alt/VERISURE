@@ -1328,6 +1328,15 @@ function LivePartnerScreen({ client }) {
   </Screen>;
 }
 
+function hasInvalidAuthCallback() {
+  const hash = window.location.hash.replace(/^#/, "");
+  const candidates = [window.location.search, hash, hash.includes("?") ? hash.slice(hash.indexOf("?") + 1) : ""];
+  return candidates.some(value => {
+    const params = new URLSearchParams(value.replace(/^\?/, ""));
+    return Boolean(params.get("error") || params.get("error_code"));
+  });
+}
+
 function AppContent() {
   const [toast, setToast] = useState("");
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
@@ -1341,6 +1350,7 @@ function AppContent() {
   const [socialProfile, setSocialProfile] = useState(null);
   const [socialProfileError, setSocialProfileError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [invalidAuthCallback, setInvalidAuthCallback] = useState(() => hasInvalidAuthCallback());
   const [showSplash, setShowSplash] = useState(true);
   const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
   const [activityOwnerId, setActivityOwnerId] = useState(null);
@@ -1359,6 +1369,10 @@ function AppContent() {
     return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   });
   const location = useLocation();
+  useEffect(() => {
+    if (!invalidAuthCallback || location.search.includes("authError=expired")) return;
+    window.location.hash = "/profile?authError=expired";
+  }, [invalidAuthCallback, location.search]);
   const notify = useCallback(message => {
     const text = String(message || "").trim();
     if (text) setToast(text);

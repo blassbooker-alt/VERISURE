@@ -2809,6 +2809,13 @@ img { display: block; max-width: 100%; }
   flex-direction: column;
 }
 
+.auth-confirm-mode .auth-card-header { display: none; }
+.auth-confirm-intro { margin: 0 0 18px; padding: 17px; border: 1px solid var(--color-border, #dce8dc); border-radius: 15px; background: var(--color-surface-soft, #f4f8f2); }
+.auth-confirm-intro h3 { margin: 2px 0 6px; color: var(--color-text-primary, #173b2d); font-size: 21px; }
+.auth-confirm-intro p { margin: 0; color: var(--color-text-secondary, #52645a); font-size: 13px; line-height: 1.55; }
+.auth-password-rules { display: grid; gap: 5px; margin-top: 8px; color: #6a786e; font-size: 11px; }
+.auth-password-rules .is-valid { color: #176548; font-weight: 750; }
+
 .auth-tab-switch {
   display: flex;
   gap: 5px;
@@ -4580,6 +4587,10 @@ html { color-scheme: dark; }
 .social-auth-form-card h1, .social-auth-form-card h2, .social-auth-form-card h3,
 .social-auth-form-card label { color: #eef4ed; }
 .social-auth-form-card p, .social-auth-form-card small { color: #a7b2a8; }
+.social-auth-form-card .auth-confirm-intro { background: #1a261c; border-color: #344438; }
+.social-auth-form-card .auth-confirm-intro h3 { color: #edf4ed; }
+.social-auth-form-card .auth-confirm-intro p, .social-auth-form-card .auth-password-rules { color: #b3beb4; }
+.social-auth-form-card .auth-password-rules .is-valid { color: #c7e842; }
 .auth-tab-btn { color: #bac6bb; }
 .auth-tab-btn.active { color: #17200d; background: #c5e642; }
 .social-auth-google-button, .social-google-button { color: #e8eee8; background: #1b241d; border-color: #3b483d; }
