@@ -3469,8 +3469,8 @@ img { display: block; max-width: 100%; }
 .drawer-link-icon { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; color: #24613d; background: #f5faf0ed; border: 1px solid #ffffffd9; border-radius: 13px; box-shadow: 0 3px 9px #102f1d2b, 0 0 0 2px #ffffff5c; }
 .drawer-link-icon svg { filter: drop-shadow(0 1px 1px #ffffffa6) drop-shadow(0 1px 2px #0c32131f); }
 .drawer-link > span:last-child { position: relative; display: grid; gap: 4px; width: fit-content; max-width: calc(100% - 52px); min-width: 0; }
-.drawer-link strong { color: #153a27; font-size: 13px; letter-spacing: -.01em; text-shadow: 0 2px 3px #00160d80, 0 0 4px #ffffffed; }
-.drawer-link small { color: #405d49; font-size: 10px; text-shadow: 0 1px 2px #00160d73, 0 0 3px #fffffffa; }
+.drawer-link strong { color: #153a27; font-size: 13px; font-weight: 650; letter-spacing: -.01em; }
+.drawer-link small { color: #405d49; font-size: 10px; line-height: 1.4; }
 .drawer-account-link { margin-top: auto; padding: 14px 10px; display: flex; align-items: center; justify-content: space-between; color: #30553d; border-top: 1px solid #e9efe9; font-size: 12px; font-weight: 800; }
 @keyframes drawer-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 
