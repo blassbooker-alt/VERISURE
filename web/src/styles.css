@@ -4406,6 +4406,26 @@ body { color: #172b20; background: var(--canvas); }
 .shop-screen .shop-sort > span { display: inline; }
 .shop-screen .shop-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
+/* Balanced layouts for tablets and desktop while preserving the compact phone view. */
+@media (min-width: 700px) {
+  .shop-screen .shop-catalog-toolbar { align-items: center; flex-direction: row; gap: 14px; }
+  .shop-screen .shop-categories { width: auto; min-width: 0; flex: 1 1 auto; }
+  .shop-screen .shop-sort { flex: 0 0 auto; }
+  .shop-screen .shop-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .shop-screen .shop-editorial-copy { width: min(58%, 520px); }
+  .shop-screen .shop-editorial-copy p { max-width: 390px; font-size: 12px; }
+  .settings-screen { max-width: 860px; }
+  .settings-screen .theme-settings-card { padding: 24px; }
+  .settings-screen .theme-choice-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+}
+
+@media (min-width: 1200px) {
+  .shop-screen .shop-product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .shop-screen .shop-department-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .shop-screen .shop-department-card { min-height: 72px; grid-template-columns: 42px minmax(0, 1fr) 14px; gap: 10px; padding: 9px 11px; }
+  .shop-screen .shop-department-card > img { width: 42px; height: 42px; }
+}
+
 @media (max-width: 699px) {
   .shop-screen .screen-content { padding: 10px 14px 100px; }
   .shop-screen .shop-header { height: 58px; padding-inline: 12px; }

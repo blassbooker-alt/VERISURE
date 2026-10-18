@@ -1722,7 +1722,7 @@ function AppContent() {
       <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
       <Route path="/restaurants" element={<Navigate to="/food" replace />} />
       <Route path="/results" element={<Navigate to="/progress" replace />} />
-      <Route path="/settings" element={<Screen title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /></Screen>} />
+      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /></Screen>} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional/manage" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
