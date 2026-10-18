@@ -158,8 +158,8 @@ function SplashScreen({ onClose }) {
   </div>;
 }
 
-function MobileHeader({ location = false, action, onNotificationsOpen, notificationCount = 0 }) {
-  return <header className="mobile-header"><NavigationDrawer /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
+function MobileHeader({ location = false, action, onNotificationsOpen, notificationCount = 0, desktopMenuOpen, onDesktopMenuOpenChange }) {
+  return <header className="mobile-header"><NavigationDrawer onNotificationsOpen={onNotificationsOpen} desktopOpen={desktopMenuOpen} onDesktopOpenChange={onDesktopMenuOpenChange} /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
     {location && <button className="location-chip" onClick={action}><MapPin size={15} /><span>Aldeota, Fortaleza</span><ChevronDown size={14} /></button>}
     <button className="icon-button notification-bell" aria-label={notificationCount ? `Notificações, ${notificationCount} não lidas` : "Notificações"} onClick={onNotificationsOpen}><Bell size={20} />{notificationCount > 0 && <span className="notification-bell-count">{notificationCount > 9 ? "9+" : notificationCount}</span>}</button>
   </header>;
@@ -167,13 +167,14 @@ function MobileHeader({ location = false, action, onNotificationsOpen, notificat
 
 function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false }) {
   const notifications = useContext(NotificationContext);
-  return <div className={`app-screen${immersive ? " immersive-screen" : ""}`}>
-    {!immersive && <MobileHeader location={location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} />}
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  return <div className={`app-screen${immersive ? " immersive-screen" : ""}${desktopMenuOpen ? " navigation-expanded" : ""}`}>
+    {!immersive && <MobileHeader location={location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} />}
     <main className={`screen-content ${className}`}>
       {title && !immersive && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
       {children}
     </main>
-    {!immersive && <BottomNav />}
+    {!immersive && <BottomNav desktopExpanded={desktopMenuOpen} onNotificationsOpen={notifications.open} />}
   </div>;
 }
 
@@ -1705,8 +1706,8 @@ function AppContent() {
       <Route path="/checkin/:publicId" element={<Screen title="Validar presença" subtitle="FORTALPASS · ACESSO SEGURO" className="gym-access-screen"><GymCheckInPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/partner/checkins" element={<Screen title="Acessos FortalPass" subtitle="PAINEL DA ACADEMIA" className="gym-admin-screen"><GymPartnerCheckinsPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/admin/gym-plates" element={<Screen title="Placas oficiais" subtitle="ADMINISTRAÇÃO FORTALFY" className="gym-admin-screen"><GymPlateAdminPage client={supabase} session={authSession} /></Screen>} />
-      <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
-      <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
+      <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE" className="social-profile-screen"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
+      <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY" className="social-profile-screen"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
       <Route path="/profile/local" element={<Navigate to="/profile" replace />} />
       <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
