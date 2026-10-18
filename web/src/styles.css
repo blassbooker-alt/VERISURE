@@ -5712,6 +5712,77 @@ html[data-theme="dark"] .mobile-app :is(.studio-controls, .studio-preview-column
 .social-profile-bio p { margin-top: 10px; color: var(--color-text-secondary); font-size: 12px; }
 .social-profile-metrics { gap: 12px 18px; color: var(--color-text-secondary); }
 .social-profile-metrics strong { color: var(--color-text-primary); }
+
+/* Shared product polish: calm surfaces, clear hierarchy, and consistent contrast. */
+:root[data-theme="light"] {
+  --color-background: #edf5ed;
+  --color-background-secondary: #e5efe4;
+  --color-surface: #f8fbf7;
+  --color-surface-secondary: #edf4ec;
+  --color-surface-elevated: #fbfdfb;
+  --color-text-primary: #172a20;
+  --color-text-secondary: #52645a;
+  --color-border: #d7e3d6;
+  --color-primary: #17633f;
+  --color-primary-foreground: #fff;
+  --color-input-background: #f5f9f4;
+  --color-navigation-background: #f8fbf7;
+  --brand-shadow-sm: 0 2px 10px #173a240a;
+  --brand-shadow-md: 0 8px 24px #173a2412;
+}
+
+html, body, #root, .mobile-app, .app-screen { text-shadow: none !important; }
+.mobile-app {
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-background-secondary) 44%, var(--color-background)), var(--color-background) 260px) !important;
+}
+.mobile-header {
+  background: color-mix(in srgb, var(--color-navigation-background) 94%, transparent);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 1px 0 #173a2405;
+}
+.screen-content { padding-top: 22px; }
+.screen-heading h1 { letter-spacing: -.8px; }
+.home-hello :is(h1, p) { text-shadow: none !important; }
+.eyebrow { letter-spacing: 1.05px; }
+.section-title-row h2 { letter-spacing: -.2px; }
+.bottom-nav {
+  border-color: var(--color-border);
+  box-shadow: 0 6px 22px #173a2412;
+}
+.quick-tile {
+  box-shadow: 0 2px 9px #173a2409;
+  border-radius: 16px;
+}
+.quick-tile-community, .quick-tile-partners, .quick-tile-food, .quick-tile-shop {
+  background-image: none;
+}
+.quick-tile::before { display: none; }
+.button.primary { box-shadow: none; }
+.button:hover { box-shadow: 0 4px 12px #173a2414; }
+.button.primary:hover { background: color-mix(in srgb, var(--forest) 88%, #000); }
+.icon-button { transition: color .16s ease, background-color .16s ease, border-color .16s ease, transform .16s ease; }
+.icon-button:hover { transform: translateY(-1px); }
+.mobile-app :is(.quick-tile, .action-row a, .action-row button, .feed-post,
+  .food-card, .gym-card, .profile-content-section, .weekly-plan-card,
+  .shop-product-card, .theme-settings-card, .pass-discovery, .nutrition-summary) {
+  border-radius: 16px;
+}
+.mobile-app :is(input, textarea, select) { border-radius: 12px; }
+.mobile-app :is(input, textarea, select)::placeholder { color: #68796d; opacity: 1; }
+.mobile-app :is(button, a) { -webkit-tap-highlight-color: transparent; }
+
+html[data-theme="dark"] .mobile-app {
+  background-image: linear-gradient(180deg, #111a13 0, var(--color-background) 300px) !important;
+}
+html[data-theme="dark"] .mobile-header { box-shadow: 0 1px 0 #ffffff08; }
+html[data-theme="dark"] .mobile-app :is(.quick-tile-community, .quick-tile-partners, .quick-tile-food, .quick-tile-shop) {
+  background-image: none;
+}
+html[data-theme="dark"] .mobile-app :is(input, textarea, select)::placeholder { color: #a3afa5; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
 .social-profile-metrics button { color: var(--color-primary); }
 @media (max-width: 600px) {
   .social-profile-card { padding: 0 14px 16px; }
