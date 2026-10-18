@@ -3,6 +3,24 @@ import { createSecureId } from "./secureId.js";
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
 
+function isMissingCommercialContentColumn(error) {
+  return Boolean(
+    error
+    && (error.code === "42703" || error.code === "PGRST204")
+    && /commercial_content/i.test(`${error.message || ""} ${error.details || ""} ${error.hint || ""}`),
+  );
+}
+
+async function queryWithoutCommercialContentOnMissingColumn(queryFactory) {
+  const firstResult = await queryFactory(true);
+  if (!isMissingCommercialContentColumn(firstResult.error)) {
+    return { ...firstResult, commercialContentAvailable: true };
+  }
+
+  const fallbackResult = await queryFactory(false);
+  return { ...fallbackResult, commercialContentAvailable: false };
+}
+
 export function isDemoUser(userId) {
   if (!userId || typeof userId !== "string") return false;
   return userId === "demo-user-fortalfy" || userId.startsWith("demo-") || userId.startsWith("local-");
@@ -234,24 +252,30 @@ export async function loadFeed(client, userId, {
   const engagementRelations = mediaType === "video"
     ? ""
     : ",\n    likes:post_likes(count),\n    comments:post_comments(count)";
-  let query = client.from("posts").select(`
-    id,author_id,body,visibility,shared_post_id,published_at,commercial_content,
-    author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
-    ${mediaRelation}(id,storage_path,media_type,sort_order)
-    ${engagementRelations}
-  `, mediaType === "video" ? undefined : { count: "exact" })
-    .order("published_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + pageLimit);
-  if (followedIds) query = query.in("author_id", followedIds);
-  if (authorId) query = query.eq("author_id", authorId);
-  if (mediaType) query = query.eq("post_media.media_type", mediaType);
-  if (mediaType === "video") query = query.eq("is_reel", true).eq("post_media.reel_validated", true);
+  const createFeedQuery = includeCommercialContent => {
+    let query = client.from("posts").select(`
+      id,author_id,body,visibility,shared_post_id,published_at,sponsored${includeCommercialContent ? ",commercial_content" : ""},
+      author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
+      ${mediaRelation}(id,storage_path,media_type,sort_order)
+      ${engagementRelations}
+    `, mediaType === "video" ? undefined : { count: "exact" })
+      .order("published_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + pageLimit);
+    if (followedIds) query = query.in("author_id", followedIds);
+    if (authorId) query = query.eq("author_id", authorId);
+    if (mediaType) query = query.eq("post_media.media_type", mediaType);
+    if (mediaType === "video") query = query.eq("is_reel", true).eq("post_media.reel_validated", true);
+    return query;
+  };
 
-  const { data, error, count } = await query;
+  const { data, error, count, commercialContentAvailable } = await queryWithoutCommercialContentOnMissingColumn(createFeedQuery);
   if (error) throw error;
   const fetchedRows = data || [];
-  const rows = fetchedRows.slice(0, pageLimit);
+  const rows = fetchedRows.slice(0, pageLimit).map(post => ({
+    ...post,
+    commercial_content: commercialContentAvailable ? Boolean(post.commercial_content) : Boolean(post.sponsored),
+  }));
   const hasMore = mediaType === "video" || count == null
     ? fetchedRows.length > pageLimit
     : offset + rows.length < count;
@@ -265,18 +289,21 @@ export async function loadFeed(client, userId, {
   let posts = [];
   let relatedPromise = Promise.resolve({ results: [] });
   if (rows.length) {
-    const originalFields = `
-      id,author_id,body,published_at,media_path,commercial_content,
-      author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
-      post_media(id,storage_path,media_type,sort_order)
-    `;
+    const loadOriginals = () => queryWithoutCommercialContentOnMissingColumn(includeCommercialContent => {
+      const originalFields = `
+        id,author_id,body,published_at,media_path,sponsored${includeCommercialContent ? ",commercial_content" : ""},
+        author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
+        post_media(id,storage_path,media_type,sort_order)
+      `;
+      return sharedPostIds.length
+        ? client.from("posts").select(originalFields).in("id", sharedPostIds)
+        : Promise.resolve({ data: [], error: null });
+    });
     relatedPromise = Promise.all([
       client.from("post_likes").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("saved_posts").select("post_id").eq("user_id", userId).in("post_id", rows.map(post => post.id)),
       client.from("posts").select("shared_post_id").in("shared_post_id", rows.map(post => post.id)),
-      sharedPostIds.length
-        ? client.from("posts").select(originalFields).in("id", sharedPostIds)
-        : Promise.resolve({ data: [], error: null }),
+      loadOriginals(),
       mediaType === "video"
         ? client.rpc("get_fortalfy_reel_view_counts", { p_post_ids: rows.map(post => post.id) })
         : Promise.resolve({ data: [], error: null }),
@@ -344,7 +371,10 @@ export async function loadFeed(client, userId, {
       if (share.shared_post_id) shareCounts.set(share.shared_post_id, (shareCounts.get(share.shared_post_id) || 0) + 1);
     });
     (reelViewsResult.data || []).forEach(view => reelViewCounts.set(view.post_id, Number(view.view_count) || 0));
-    (originalsResult.data || []).forEach(original => originals.set(original.id, original));
+    (originalsResult.data || []).forEach(original => originals.set(original.id, {
+      ...original,
+      commercial_content: originalsResult.commercialContentAvailable ? Boolean(original.commercial_content) : Boolean(original.sponsored),
+    }));
     (engagementResult.data || []).forEach(item => engagementCounts.set(item.id, {
       likeCount: item.likes?.[0]?.count || 0,
       commentCount: item.comments?.[0]?.count || 0,

@@ -434,7 +434,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
 
           <img
             className="showcase-banner"
-            src={fortalfyAsset("publicidade", "banner-app-papagaio-a.jpg")}
+            src={fortalfyAsset("publicidade", "banner-comunidade.jpg")}
             alt=""
             aria-hidden="true"
           />
@@ -1757,7 +1757,7 @@ export function SocialPeople({ client, session, configured, notify }) {
   </div>;
 }
 
-export function SocialMessages({ client, session, configured, notify }) {
+export function SocialMessages({ client, session, configured, notify, onNotification }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [conversation, setConversation] = useState(null);
@@ -1771,6 +1771,8 @@ export function SocialMessages({ client, session, configured, notify }) {
   const [following, setFollowing] = useState(false);
   const [error, setError] = useState("");
   const [conversationSearch, setConversationSearch] = useState("");
+  const knownMessageIds = useRef(new Set());
+  const initializedConversationIds = useRef(new Set());
   const userId = session?.user?.id;
   const targetId = searchParams.get("to");
 
@@ -1841,6 +1843,23 @@ export function SocialMessages({ client, session, configured, notify }) {
         setConversationAccess(access);
         const rows = await loadDirectMessages(client, userId, conversation.id);
         if (!active) return;
+        const firstLoad = !initializedConversationIds.current.has(conversation.id);
+        initializedConversationIds.current.add(conversation.id);
+        const incoming = firstLoad ? [] : rows.filter(row => row.sender_id !== userId && !knownMessageIds.current.has(row.id));
+        rows.forEach(row => knownMessageIds.current.add(row.id));
+        incoming.forEach(row => {
+          const senderKind = conversation.person?.kind;
+          const type = senderKind === "nutricionista" ? "nutritionist_message"
+            : senderKind === "personal" ? "personal_message"
+              : ["marca", "academia", "restaurante"].includes(senderKind) ? "shop" : "message";
+          onNotification?.({
+          type,
+          title: type === "nutritionist_message" ? "Mensagem da nutricionista"
+            : type === "personal_message" ? "Mensagem do personal"
+              : type === "shop" ? "Mensagem de parceiro" : "Nova mensagem",
+          message: `${conversation.person?.name || "Nova mensagem"}: ${String(row.body || "Mensagem recebida").slice(0, 180)}`,
+          });
+        });
         setMessages(rows);
         await markConversationRead(client, userId, conversation);
         if (active) await refreshConversations();
@@ -1876,7 +1895,7 @@ export function SocialMessages({ client, session, configured, notify }) {
         })
         .catch(failure => console.error("Não foi possível encerrar o canal de mensagens em tempo real.", failure));
     };
-  }, [client, userId, conversation?.id]);
+  }, [client, userId, conversation?.id, conversation?.person?.name, onNotification]);
 
   const openConversation = item => {
     setConversation(item);
@@ -2552,7 +2571,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         <div className="social-profile-avatar-wrap"><AuthorLink author={author} ownId={userId} />
           {isOwn && <label className="social-profile-avatar-edit" title="Alterar foto do perfil"><Camera size={14} /><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Escolher foto do perfil" onChange={event => updateProfileImage(event, "avatar_path")} disabled={busy} /></label>}
         </div>
-        <div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span><p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}
+        <div className="social-profile-bio"><h2>{person.name}{person.verified && <VerificationBadge size={18} />}</h2><span>@{person.username || "fortalfy"}</span>{person.isPrivate && <small className="social-profile-privacy-badge"><LockKeyhole size={12} /> Perfil privado</small>}<p>{person.bio || "Bem-estar no seu ritmo."}</p>{person.city && <small>{person.city}</small>}
           {linksLoading && <small className="profile-links-loading">Carregando links…</small>}
           {!linksLoading && linksError && isOwn && <small className="profile-links-error" role="alert">{linksError}</small>}
           {!linksLoading && !linksError && visibleProfileLinks.length > 0 && <div className="social-profile-links" aria-label="Links externos">
@@ -2638,7 +2657,10 @@ export function SocialProfile({ client, session, profile, profileError = "", con
             {draftLinks.length > 0 && <div className="profile-link-preview"><strong>Prévia pública</strong>{draftLinks.filter(link => link.isPublic !== false && link.label.trim() && link.url.trim()).map((link, index) => <span key={`${link.label}-${index}`}><LinkIcon size={13} /> {link.label}</span>)}</div>}
           </fieldset>
           {(person.avatar || person.cover) && <div className="social-remove-image-actions">{person.avatar && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("avatar_path")}>Remover foto do perfil</button>}{person.cover && <button className="social-remove-image" type="button" disabled={busy} onClick={() => clearProfileImage("cover_path")}>Remover foto de capa</button>}</div>}
-          <label className="social-private-toggle"><input type="checkbox" checked={draft.isPrivate} onChange={event => setDraft(current => ({ ...current, isPrivate: event.target.checked }))} /> Perfil privado — aprovo quem pode me seguir</label>
+          <fieldset className="profile-privacy-choice"><legend>Visibilidade do perfil</legend>
+            <label><input type="radio" name="profile-visibility" value="public" checked={!draft.isPrivate} onChange={() => setDraft(current => ({ ...current, isPrivate: false }))} /><span><strong>Perfil público</strong><small>Qualquer pessoa pode ver suas publicações.</small></span></label>
+            <label><input type="radio" name="profile-visibility" value="private" checked={draft.isPrivate} onChange={() => setDraft(current => ({ ...current, isPrivate: true }))} /><span><strong>Perfil privado</strong><small>Somente seguidores aprovados podem ver suas publicações.</small></span></label>
+          </fieldset>
           <button className="button primary wide-button" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</button>
         </form>
       </section>
