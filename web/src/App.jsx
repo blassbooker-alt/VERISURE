@@ -158,9 +158,9 @@ function SplashScreen({ onClose }) {
   </div>;
 }
 
-function MobileHeader({ location = false, action, onNotificationsOpen, notificationCount = 0, desktopMenuOpen, onDesktopMenuOpenChange }) {
+function MobileHeader({ location = "", action, onNotificationsOpen, notificationCount = 0, desktopMenuOpen, onDesktopMenuOpenChange }) {
   return <header className="mobile-header"><NavigationDrawer onNotificationsOpen={onNotificationsOpen} desktopOpen={desktopMenuOpen} onDesktopOpenChange={onDesktopMenuOpenChange} /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
-    {location && <button className="location-chip" onClick={action}><MapPin size={15} /><span>Aldeota, Fortaleza</span><ChevronDown size={14} /></button>}
+    {location && <button type="button" className="location-chip" onClick={action} aria-label={location ? `Alterar região: ${location}` : "Definir região"}><MapPin size={15} /><span>{location}</span><ChevronDown size={14} /></button>}
     <button className="icon-button notification-bell" aria-label={notificationCount ? `Notificações, ${notificationCount} não lidas` : "Notificações"} onClick={onNotificationsOpen}><Bell size={20} />{notificationCount > 0 && <span className="notification-bell-count">{notificationCount > 9 ? "9+" : notificationCount}</span>}</button>
   </header>;
 }
@@ -169,7 +169,7 @@ function Screen({ children, title, subtitle, location = false, className = "", a
   const notifications = useContext(NotificationContext);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   return <div className={`app-screen${immersive ? " immersive-screen" : ""}${desktopMenuOpen ? " navigation-expanded" : ""}`}>
-    {!immersive && <MobileHeader location={location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} />}
+    {!immersive && <MobileHeader location={location === true ? "" : location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} />}
     <main className={`screen-content ${className}`}>
       {title && !immersive && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
       {children}
