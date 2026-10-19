@@ -6710,3 +6710,36 @@ html[data-theme] .public-routine-section h2 {
   .reels-app .social-reel-card .social-reel-view-count { display: none; }
   .reels-app .social-reel-card .social-comments { width: min(100%, 510px); max-height: 58%; right: 0; bottom: 0; left: 50%; transform: translateX(-50%); }
 }
+
+/* Final overrides keep only the accessible back control above the full-screen Reel. */
+.reels-app .social-reels-page .social-reels-intro {
+  top: calc(12px + env(safe-area-inset-top));
+  right: auto;
+  bottom: auto;
+  left: 12px;
+  width: max-content;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  pointer-events: none;
+}
+.reels-app .social-reels-page .social-reels-intro > :not(.social-reels-back) { display: none !important; }
+.reels-app .social-reels-page .social-reels-back {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #ffffff55;
+  border-radius: 50%;
+  color: #fff;
+  background: #07120f70;
+  box-shadow: 0 2px 12px #0005;
+  pointer-events: auto;
+}
+.reels-app .social-reels-page .social-reels-toolbar,
+.reels-app .social-reel-card .social-reel-info,
+.reels-app .social-reel-card .social-reel-sound { display: none !important; }
