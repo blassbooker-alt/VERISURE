@@ -1739,7 +1739,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     </div>}
   </div>;
   const authorHeader = <header className={`social-post-header${reelMode ? " social-reel-author-header" : ""}`}>
-    {!reelMode && <AuthorLink author={post.author} ownId={userId} />}
+    <AuthorLink author={post.author} ownId={userId} />
     <div className="social-post-author">
       <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
       {reelMode
@@ -1747,6 +1747,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
         : <span>{post.commercial_content && <><strong className="social-author-role">Publicidade</strong> · </>}{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
     </div>
     {!reelMode && !own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
+    {reelMode && !own && <button type="button" className={`social-reel-follow-inline${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? "Deixar de seguir criador" : "Seguir criador"}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? "Seguindo" : "+ Seguir"}</button>}
     {postMenu}
   </header>;
   const postDescription = !!post.body && <div className="social-post-text"><LinkifiedText text={displayBody} />{longBody && <button className="social-text-toggle" onClick={() => setExpanded(value => !value)}>{expanded ? "Ver menos" : "Ver mais"}</button>}</div>;
@@ -1759,25 +1760,29 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     ? "Cancelar solicitação para seguir"
     : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`;
 
+  const reelInfo = <aside className="social-reel-info">
+    <div className="social-reel-caption">{authorHeader}{postDescription}</div>
+    <div className="social-reel-side-rail">
+      <div className="social-reel-creator-action">
+        <AuthorLink author={post.author} ownId={userId} />
+        {!own && <button type="button" className={`social-reel-follow-badge${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={reelFollowLabel} title={reelFollowLabel}>
+          {followingAuthor || authorFollowRequest === "pending" ? <Check size={14} /> : <UserPlus size={14} />}
+        </button>}
+      </div>
+      {postActions}
+    </div>
+    <div className="social-reel-view-count"><Eye size={15} /> {formatCompactCount(reelViewCount)} visualizaÃ§Ãµes</div>
+  </aside>;
+
   return <article className={`social-post-card${reelMode ? " social-reel-card" : ""}`} id={`post-${post.id}`}>
     {post.shared_post_id && <div className="social-shared-label"><Share2 size={14} /> {post.author?.name || "Uma pessoa"} compartilhou</div>}
     {reelMode
-      ? <div className="social-reel-caption">{authorHeader}{postDescription}</div>
+      ? reelInfo
       : <>{authorHeader}{postDescription}</>}
     {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
     {post.original && <div className="social-original-post"><div className="social-original-author"><AuthorLink author={post.original.author} ownId={userId} /><span><strong>{post.original.author?.name}</strong><small>{formatDate(post.original.published_at)}</small></span></div><LinkifiedText text={post.original.body} /><PostMedia media={post.original.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} /></div>}
     <div className="social-post-stats"><span>{likeCount > 0 && <><Heart size={14} fill="currentColor" /> {likeCount} curtida{likeCount === 1 ? "" : "s"}</>}</span><span>{reelMode && <><Eye size={14} /> {reelViewCount} visualizaç{reelViewCount === 1 ? "ão" : "ões"} · </>}{post.commentCount} comentário{post.commentCount === 1 ? "" : "s"} · {post.shareCount} compartilhamento{post.shareCount === 1 ? "" : "s"}</span></div>
-    {reelMode
-      ? <div className="social-reel-side-rail">
-        <div className="social-reel-creator-action">
-          <AuthorLink author={post.author} ownId={userId} />
-          {!own && <button type="button" className={`social-reel-follow-badge${followingAuthor ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={reelFollowLabel} title={reelFollowLabel}>
-            {followingAuthor || authorFollowRequest === "pending" ? <Check size={14} /> : <UserPlus size={14} />}
-          </button>}
-        </div>
-        {postActions}
-      </div>
-      : postActions}
+    {!reelMode && postActions}
     {commentsOpen && <section className="social-comments" ref={commentsPanelRef}>
       {commentsLoading ? <p className="social-inline-status"><LoaderCircle className="spin" size={16} /> Carregando comentários…</p>
         : commentsError ? <p className="social-inline-error">{commentsError}<button onClick={async () => { setCommentsLoading(true); await refreshComments(); setCommentsLoading(false); }}>Tentar novamente</button></p>
