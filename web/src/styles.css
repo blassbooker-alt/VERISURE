@@ -6066,6 +6066,61 @@ html[data-theme="dark"] .mobile-app :is(.quick-tile-community, .quick-tile-partn
 }
 html[data-theme="dark"] .mobile-app :is(input, textarea, select)::placeholder { color: #a3afa5; }
 
+/* Notification center: keep readable contrast when the app uses the light theme. */
+html[data-theme="light"] .mobile-app .notification-center {
+  color: #17251b;
+  background: #fff;
+  border-color: #dce5dc;
+}
+html[data-theme="light"] .mobile-app .notification-center > header h2 { color: #17251b; }
+html[data-theme="light"] .mobile-app .notification-center > header p,
+html[data-theme="light"] .mobile-app .notification-center-note { color: #59695d; }
+html[data-theme="light"] .mobile-app .notification-center-actions { border-color: #e5ebe4; }
+html[data-theme="light"] .mobile-app .notification-center-actions button,
+html[data-theme="light"] .mobile-app .notification-full-page-link { color: #12633f; }
+html[data-theme="light"] .mobile-app .notification-center-list li,
+html[data-theme="light"] .mobile-app .notification-center-list li.is-read {
+  color: #17251b;
+  background: #f8faf7;
+  border-color: #e2e9e1;
+  opacity: 1;
+}
+html[data-theme="light"] .mobile-app .notification-center-list li.is-unread {
+  background: #f2f8ef;
+  border-color: #d5e5cf;
+  box-shadow: inset 3px 0 #23734b;
+}
+html[data-theme="light"] .mobile-app .notification-center-list li strong,
+html[data-theme="light"] .mobile-app .notification-content-button { color: #17251b; }
+html[data-theme="light"] .mobile-app .notification-center-list li p { color: #405347; }
+html[data-theme="light"] .mobile-app .notification-center-list li small { color: #286243; }
+html[data-theme="light"] .mobile-app .notification-center-list time { color: #66756a; }
+html[data-theme="light"] .mobile-app .notification-center-icon { color: #176344; background: #e7f1e4; }
+html[data-theme="light"] .mobile-app .notification-center-list li > button span { background: #23734b; }
+html[data-theme="light"] .mobile-app .notification-center-filters button {
+  color: #405347;
+  background: #fff;
+  border-color: #d7e1d7;
+}
+html[data-theme="light"] .mobile-app .notification-center-filters button.is-active {
+  color: #fff;
+  background: #176344;
+  border-color: #176344;
+}
+.notification-center-list { gap: 10px; }
+.notification-center-list li { padding: 13px 12px; border-radius: 15px; }
+.notification-content-button { gap: 5px; }
+.notification-content-button strong { font-size: 13px; line-height: 1.4; }
+.notification-content-button p { font-size: 12px; line-height: 1.5; }
+.notification-content-button small { font-size: 10px; font-weight: 700; }
+.notification-content-button time { margin-top: 2px; font-size: 10px; }
+.notification-center-note { margin-top: 16px; padding-top: 12px; }
+@media (max-width: 640px) {
+  .notification-center-list li { grid-template-columns: 34px minmax(0, 1fr) 18px; gap: 9px; padding: 12px 10px; }
+  .notification-content-button strong { font-size: 12px; }
+  .notification-content-button p { font-size: 12px; }
+}
+
 /* Desktop app shell: replace the phone tab bar with a full-height navigation rail. */
 @media (min-width: 1024px) and (max-width: 1199px) {
   .mobile-app .app-screen:not(.immersive-screen) {
