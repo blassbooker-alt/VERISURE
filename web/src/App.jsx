@@ -1429,6 +1429,33 @@ function AppContent() {
   });
   const location = useLocation();
   const navigate = useNavigate();
+  useEffect(() => {
+    const publicDescription = "Descubra academias e profissionais aprovados, explore conteúdos de bem-estar e acompanhe sua rotina com a Fortalfy.";
+    const routeTitles = [
+      ["/home", "Início"], ["/feed", "Feed"], ["/reels", "FortalReels"], ["/people", "Pessoas"],
+      ["/messages", "Mensagens"], ["/food", "FortalFood"], ["/pass", "FortalPass"], ["/profile", "Perfil"],
+      ["/workout", "Treinos"], ["/nutrition", "Diário alimentar"], ["/progress", "Meu desempenho"],
+      ["/earnings", "Rendimentos"], ["/academy", "Fortalfy Academy"], ["/live", "Fortalfy Live"],
+      ["/shop", "FortalShop"], ["/professional", "Área profissional"], ["/partner", "Parceiros"],
+      ["/settings", "Configurações"], ["/notifications", "Notificações"],
+    ];
+    const match = routeTitles.find(([path]) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+    const title = location.pathname === "/" ? "Fortalfy — bem-estar no seu ritmo" : `${match?.[1] || "Fortalfy"} | Fortalfy`;
+    document.title = title;
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.content = location.pathname === "/" ? publicDescription : "Acesse sua experiência Fortalfy com informações e recursos disponíveis para sua conta.";
+    const robots = document.querySelector('meta[name="robots"]');
+    if (robots) robots.content = location.pathname === "/" ? "index,follow" : "noindex,nofollow";
+    for (const [selector, content] of [
+      ['meta[property="og:title"]', title],
+      ['meta[property="og:description"]', description?.content || publicDescription],
+      ['meta[name="twitter:title"]', title],
+      ['meta[name="twitter:description"]', description?.content || publicDescription],
+    ]) {
+      const tag = document.querySelector(selector);
+      if (tag) tag.content = content;
+    }
+  }, [location.pathname]);
   const notificationViewRef = useRef({ pathname: location.pathname, search: location.search, preferences: notificationPreferences });
   notificationViewRef.current = { pathname: location.pathname, search: location.search, preferences: notificationPreferences };
   const openNotificationTarget = route => {

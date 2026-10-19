@@ -470,9 +470,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
           </div>
 
           <div className="showcase-content">
-            <h2>Conecte-se com seu melhor ritmo.</h2>
+            <h2>Bem-estar no seu ritmo.</h2>
             <p>
-              Treinos consistentes, alimentação sob medida e uma rede real de pessoas que apoiam sua evolução diária.
+              Encontre parceiros e profissionais aprovados, consulte conteúdos publicados e acompanhe os registros da sua rotina.
             </p>
 
             <div className="showcase-perks">
@@ -480,21 +480,21 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
                 <span className="perk-icon perk-mint"><Dumbbell size={18} /></span>
                 <div>
                   <strong>Fortalfy Pass</strong>
-                  <small>Academias, estúdios e modalidades flexíveis</small>
+                  <small>Academias e profissionais aprovados, quando disponíveis</small>
                 </div>
               </div>
               <div className="showcase-perk-item">
                 <span className="perk-icon perk-orange"><Sparkles size={18} /></span>
                 <div>
                   <strong>Nutrição & Food</strong>
-                  <small>Cardápios curados, contagem calórica e restaurantes</small>
+                  <small>Cardápios publicados por restaurantes parceiros</small>
                 </div>
               </div>
               <div className="showcase-perk-item">
                 <span className="perk-icon perk-lime"><Users size={18} /></span>
                 <div>
                   <strong>Feed & Conexão</strong>
-                  <small>Stories, trocas reais de rotina e motivação diária</small>
+                  <small>Publicações e conversas da comunidade Fortalfy</small>
                 </div>
               </div>
             </div>
@@ -2195,6 +2195,21 @@ export function SocialFeed({ client, configured, session, profile, profileError 
     }
   };
 
+  const changeFeedFilter = nextFilter => {
+    if (nextFilter === filter) return;
+    if (mediaType === "video") {
+      try {
+        sessionStorage.removeItem("fortalfy.reels.scroll");
+      } catch (failure) {
+        console.error("Falha ao limpar a posição salva do FortalReels.", failure);
+      }
+      reelListRef.current?.scrollTo({ top: 0 });
+      setPosts([]);
+      setHasMore(false);
+    }
+    setFilter(nextFilter);
+  };
+
   useEffect(() => {
     if (!client || !userId) return undefined;
     let active = true;
@@ -2281,6 +2296,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
       setComposerOpen(value => !value);
     }}><Video size={15} />{composerOpen ? "Fechar criação" : "Criar Reel"}</button></div>}
     {!reelMode && <div className="social-feed-toolbar"><div className="social-filter-tabs">{filters.map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}</div><button className="social-refresh" onClick={refresh} disabled={refreshing}>{refreshing ? <LoaderCircle className="spin" size={15} /> : "Atualizar"}</button></div>}
+    {reelMode && <div className="social-feed-toolbar social-reels-toolbar" role="group" aria-label="Escolher vídeos do FortalReels"><div className="social-filter-tabs">{[["latest", "Recentes"], ["following", "Seguindo"]].map(([value, label]) => <button key={value} type="button" className={filter === value ? "active" : ""} aria-pressed={filter === value} onClick={() => changeFeedFilter(value)}>{label}</button>)}</div><button className="social-refresh" type="button" onClick={refresh} disabled={refreshing} aria-label="Atualizar vídeos">{refreshing ? <LoaderCircle className="spin" size={15} /> : "Atualizar"}</button></div>}
     {(!reelMode || composerOpen) && <CreatePost client={client} userId={userId} onPublished={async () => { setComposerOpen(false); await refresh(); }} notify={notify} videosOnly={reelMode} soundtrackByDefault={reelMode && profile.username?.toLowerCase() === "fortalfy"} />}
     {!reelMode && feedArts.length > 0 && <section className="social-local-creations"><h3>Criações deste aparelho</h3><p>Essas peças ainda não foram publicadas para outras contas.</p><div>{feedArts.map(art => <article key={art.id}><img src={art.dataUrl} alt={`Criação local: ${art.title}`} /><span>SOMENTE NESTE APARELHO</span><strong>{art.title}</strong></article>)}</div></section>}
     {reelMode
@@ -2297,7 +2313,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
       }}>
         {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
         {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando Reels…</p>}
-        {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>Ainda não há Reels</h2><p>Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui.</p></div>}
+        {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Ainda não há Reels de perfis seguidos" : "Ainda não há Reels"}</h2><p>{filter === "following" ? "Siga criadores para ver os vídeos deles aqui." : "Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui."}</p></div>}
         {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode />)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais Reels"}</button>}
       </section>

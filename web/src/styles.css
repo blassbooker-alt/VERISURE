@@ -21,7 +21,7 @@
 }
 
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink-950);
   background: var(--cream-50);
   font-synthesis: none;
@@ -1168,14 +1168,19 @@ img { display: block; max-width: 100%; }
 .professional-application-status strong { font-size: 11px; }
 .professional-application-status p { margin: 3px 0; font-size: 10px; }
 .professional-application-status small { color: #8b5b3c; font-size: 10px; }
+.professional-status-timeline { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 0; padding: 0; list-style: none; }
+.professional-status-timeline li { display: inline-flex; align-items: center; gap: 5px; color: #87928a; font-size: 9px; }
+.professional-status-timeline li span { display: grid; width: 17px; height: 17px; place-items: center; border: 1px solid #ccd8cd; border-radius: 50%; font-size: 8px; }
+.professional-status-timeline li.complete { color: #286446; font-weight: 750; }
+.professional-status-timeline li.complete span { color: #fff; background: #286446; border-color: #286446; }
 .status-under_review { color: #795d24; background: #fff8e9; border-color: #f0e3bd; }
 .status-rejected, .status-suspended { color: #8c4541; background: #fff2f0; border-color: #f0d8d4; }
 .professional-readonly-note, .professional-portal-safety { color: #758277; font-size: 10px; line-height: 1.6; }
 .professional-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .professional-form-field { display: grid; gap: 6px; color: #4f6354; font-size: 10px; font-weight: 750; }
 .professional-form-field > span { color: #9c4d43; }
-.professional-form-field input, .professional-form-field textarea { width: 100%; min-width: 0; padding: 10px 11px; color: #294b37; background: #fbfcfb; border: 1px solid #dfe8e0; border-radius: 10px; font: inherit; font-size: 11px; }
-.professional-form-field input { min-height: 41px; }
+.professional-form-field input, .professional-form-field textarea, .professional-form-field select { width: 100%; min-width: 0; padding: 10px 11px; color: #294b37; background: #fbfcfb; border: 1px solid #dfe8e0; border-radius: 10px; font: inherit; font-size: 11px; }
+.professional-form-field input, .professional-form-field select { min-height: 41px; }
 .professional-form-field textarea { resize: vertical; line-height: 1.5; }
 .professional-review-preview { padding: 14px; background: #f7faf7; border-radius: 12px; }
 .professional-review-preview h3 { margin: 0 0 10px; color: #244633; font-size: 14px; }
@@ -6501,6 +6506,34 @@ html[data-theme="light"] .mobile-app .notification-center-filters button.is-acti
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Keep glyphs inside their line boxes across platform font fallbacks. */
+html[data-theme] .screen-heading h1,
+html[data-theme] .home-hello h1,
+html[data-theme] .food-promo h2,
+html[data-theme] .shop-screen .shop-editorial-copy h1,
+html[data-theme] .public-hero-copy h1,
+html[data-theme] .public-section-heading h2,
+html[data-theme] .public-routine-section h2 {
+  line-height: 1.16;
+  overflow: visible;
+}
+
+html[data-theme] .screen-heading h1,
+html[data-theme] .food-promo h2,
+html[data-theme] .shop-screen .shop-editorial-copy h1,
+html[data-theme] .public-hero-copy h1,
+html[data-theme] .public-section-heading h2,
+html[data-theme] .public-routine-section h2 {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 699px) {
+  html[data-theme] .home-screen .home-hello h1 {
+    max-width: 12ch;
+    font-size: clamp(33px, 9vw, 44px);
+  }
 }
 .social-profile-metrics button { color: var(--color-primary); }
 .social-profile-desktop-create { display: none; }
