@@ -44,6 +44,21 @@ self.addEventListener("activate", event => {
   );
 });
 
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const route = event.notification.data?.route || "/notifications";
+  const target = new URL(`./#${route}`, self.location.href).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async clients => {
+    const existing = clients.find(client => client.url.startsWith(self.location.origin));
+    if (existing) {
+      await existing.navigate(target);
+      await existing.focus();
+      return;
+    }
+    await self.clients.openWindow(target);
+  }));
+});
+
 self.addEventListener("fetch", event => {
   const request = event.request;
   const requestUrl = new URL(request.url);

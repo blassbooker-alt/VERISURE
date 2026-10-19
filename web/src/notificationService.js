@@ -151,6 +151,24 @@ export async function disableWebPush(client) {
   await subscription.unsubscribe();
 }
 
+export async function sendTestNotification() {
+  if (typeof Notification === "undefined" || !("serviceWorker" in navigator)) {
+    throw new Error("Este navegador não oferece notificações do sistema.");
+  }
+  if (Notification.permission !== "granted") {
+    throw new Error("Ative as notificações deste site nas configurações do navegador e tente novamente.");
+  }
+  const registration = await navigator.serviceWorker.ready;
+  await registration.showNotification("Fortalfy · teste de notificação", {
+    body: "Tudo certo! As notificações do Fortalfy aparecem na barra do seu telefone.",
+    icon: publicAsset("assets/fortalfy-app-icon.svg"),
+    badge: publicAsset("assets/fortalfy-app-icon.svg"),
+    tag: "fortalfy-notification-test",
+    renotify: true,
+    data: { route: "/settings/notifications", test: true },
+  });
+}
+
 export async function playNotificationSound() {
   try {
     const audio = new Audio(publicAsset("fortalfy-notificacao-profissional.mp3"));

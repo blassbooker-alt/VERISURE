@@ -5163,6 +5163,9 @@ html[data-theme="light"] .mobile-app :is(.performance-hero, .pass-discovery, .tr
 .notification-settings-heading h2 { margin: 3px 0 5px; font-size: 22px; }
 .notification-settings-heading p, .notification-push-card p { margin: 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
 .notification-push-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: #f2f7ef; border: 1px solid #e4ecdf; border-radius: 16px; }
+.notification-test-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; padding: 14px 16px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; }
+.notification-test-card strong { display: block; color: var(--color-text-primary); font-size: 13px; }
+.notification-test-card p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: 11px; line-height: 1.45; }
 .notification-push-card strong, .notification-quiet-hours strong, .notification-sound-row strong { display: block; color: var(--color-text-primary); font-size: 13px; }
 .notification-push-card p { margin-top: 5px; }
 .notification-permission-label { color: #9a4e34; font-size: 11px; font-weight: 700; }
