@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { restaurants, workoutCategories } from "../src/data.js";
@@ -22,16 +22,30 @@ function assertPublicAsset(url) {
   assert.equal(existsSync(path), true, `Missing public asset: ${url}`);
 }
 
-test("the supplied 82-image pack is present, optimized, and organized by category", () => {
+test("the supplied 82-image product pack is present, optimized, and organized by category", () => {
   const files = listFiles(assetRoot);
-  assert.equal(files.length, 82);
-  assert.ok(files.every(path => path.endsWith(".jpg")));
-  assert.ok(files.every(path => statSync(path).size < 1024 * 1024));
-  assert.ok(files.reduce((total, path) => total + statSync(path).size, 0) < 15 * 1024 * 1024);
+  const productFiles = files.filter(path => !path.toLowerCase().replaceAll("\\", "/").includes("/campaign/"));
+  assert.equal(productFiles.length, 82);
+  assert.equal(files.length, 90);
+  assert.ok(productFiles.every(path => path.endsWith(".jpg")));
+  assert.ok(productFiles.every(path => statSync(path).size < 1024 * 1024));
+  assert.ok(productFiles.reduce((total, path) => total + statSync(path).size, 0) < 15 * 1024 * 1024);
   assert.deepEqual(
     readdirSync(assetRoot).sort(),
-    ["food", "ofertas", "produtos", "publicidade", "treino"],
+    ["campaign", "food", "ofertas", "produtos", "publicidade", "treino"],
   );
+});
+
+test("approved Fortalfy campaigns and email artwork retain their original PNG assets", () => {
+  const campaignRoot = resolve(assetRoot, "campaign");
+  const files = listFiles(campaignRoot);
+  assert.equal(files.length, 8);
+  assert.ok(files.every(path => path.endsWith(".png")));
+  assert.ok(files.every(path => statSync(path).size < 2 * 1024 * 1024));
+  assert.ok(files.every(path => {
+    const png = readFileSync(path);
+    return png.readUInt32BE(16) === 768 && png.readUInt32BE(20) === 960;
+  }));
 });
 
 test("catalog, food, workout, and shop-offer records point to packaged assets", () => {

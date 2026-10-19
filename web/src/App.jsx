@@ -30,7 +30,7 @@ import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
 } from "./partnerService.js";
-import { fortalfyAsset, visualPackAsset } from "./assetPath.js";
+import { fortalfyAsset, publicAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { gyms, profile } from "./data.js";
@@ -209,6 +209,14 @@ function PublicLanding() {
     { title: "FortalFood", image: "fortalfy-pack-food-card.jpg", alt: "Prato equilibrado com vegetais, quinoa e frango", description: "Descubra cardápios e escolhas para a rotina.", to: "/food" },
     { title: "FortalShop", image: "fortalfy-pack-wellness-product.jpg", alt: "Acessórios de bem-estar em tons naturais", description: "Conheça o catálogo de produtos Fortalfy.", to: "/shop" },
   ];
+  const campaigns = [
+    { image: "fortalfy-v2-tapete.png", alt: "Campanha Fortalfy com atleta alongando sobre um tapete de treino", label: "Movimento e conforto" },
+    { image: "fortalfy-v2-whey.png", alt: "Campanha Fortalfy Whey com atleta e embalagem do produto", label: "Fortalfy Whey" },
+    { image: "fortalfy-v2-creatina.png", alt: "Campanha Fortalfy Creatina com atleta e embalagem do produto", label: "Fortalfy Creatina" },
+    { image: "fortalfy-v2-pre-treino.png", alt: "Campanha Fortalfy pré-treino com atleta e embalagem do produto", label: "Pré-treino" },
+    { image: "fortalfy-v2-smartwatch.png", alt: "Campanha Fortalfy com atleta usando smartwatch esportivo", label: "Tecnologia e movimento" },
+    { image: "fortalfy-v2-acessorios.png", alt: "Campanha Fortalfy de acessórios para treino com atleta e equipamentos", label: "Acessórios de treino" },
+  ];
   return <main className="public-landing">
     <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link><Link to="/feed" className="button primary">Começar agora <ArrowRight size={16} /></Link></div></header>
     <section className="public-hero">
@@ -218,6 +226,7 @@ function PublicLanding() {
     <section className="public-how-section" id="como-funciona"><div className="public-section-heading"><span className="eyebrow">UMA ROTINA QUE CABE EM VOCÊ</span><h2>Um espaço para cuidar do seu ritmo.</h2><p>Descubra o que faz sentido para a sua jornada, sem promessas ou metas prontas.</p></div><div className="public-benefit-grid"><article><span className="public-benefit-icon"><Activity size={20} /></span><h3>Movimento</h3><p>Encontre espaços e atividades para diferentes momentos.</p></article><article><span className="public-benefit-icon"><BadgeCheck size={20} /></span><h3>Cuidado profissional</h3><p>Conheça profissionais e informações fornecidas por parceiros.</p></article><article><span className="public-benefit-icon"><Users size={20} /></span><h3>Comunidade</h3><p>Compartilhe experiências com pessoas que também estão em movimento.</p></article><article><span className="public-benefit-icon"><HeartPulse size={20} /></span><h3>Evolução pessoal</h3><p>Acompanhe os registros que você escolhe fazer, no seu tempo.</p></article></div></section>
     <section className="public-experiences-section" id="experiencias"><div className="public-section-heading"><span className="eyebrow">EXPERIÊNCIAS FORTALFY</span><h2>Escolha por onde começar.</h2><p>Áreas conectadas para apoiar movimento, alimentação e bem-estar.</p></div><div className="public-experience-grid">{experiences.map(item => <Link to={item.to} className="public-experience-card" key={item.title}><img src={visualPackAsset(item.image)} alt={item.alt} loading="lazy" /><span><small>{item.title.toUpperCase()}</small><strong>{item.description}</strong><i aria-hidden="true"><ArrowUpRight size={17} /></i></span></Link>)}</div></section>
     <section className="public-routine-section" id="sobre"><img src={visualPackAsset("fortalfy-pack-wellness-morning.jpg")} alt="Mulher alongando em casa pela manhã" loading="lazy" /><div><span className="eyebrow">NO SEU RITMO</span><h2>Pequenos passos também contam.</h2><p>A Fortalfy reúne ferramentas e experiências para você construir uma rotina possível, com mais clareza e apoio.</p><Link to="/feed" className="button primary">Conhecer a plataforma <ArrowRight size={16} /></Link></div></section>
+    <section className="public-campaigns-section" aria-labelledby="campaigns-title"><div className="public-section-heading"><span className="eyebrow">CAMPANHAS FORTALFY</span><h2 id="campaigns-title">Inspiração para acompanhar seu ritmo.</h2><p>Conheça as campanhas Fortalfy e explore o catálogo.</p></div><div className="public-campaign-grid">{campaigns.map(item => <Link to="/shop" className="public-campaign-card" key={item.image} aria-label={`${item.label}. Explorar Fortalfy Shop.`}><img src={publicAsset(`fortalfy/campaign/${item.image}`)} alt={item.alt} loading="lazy" decoding="async" onError={event => { event.currentTarget.onerror = null; event.currentTarget.alt = "Imagem de campanha Fortalfy indisponível; fotografia alternativa de bem-estar."; event.currentTarget.src = visualPackAsset("fortalfy-pack-wellness-product.jpg"); }} /></Link>)}</div></section>
     <footer className="public-footer"><Link to="/" aria-label="Fortalfy, início"><Brand /></Link><span>Seu bem-estar, no seu ritmo.</span><nav aria-label="Links institucionais"><a href="#sobre">Sobre</a><Link to="/benefits-terms">Termos e benefícios</Link><a href="mailto:fortalfy@gmail.com">Suporte</a></nav><small>© {new Date().getFullYear()} Fortalfy</small></footer>
   </main>;
 }
