@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
@@ -1429,6 +1429,8 @@ function AppContent() {
   });
   const location = useLocation();
   const navigate = useNavigate();
+  const notificationViewRef = useRef({ pathname: location.pathname, search: location.search, preferences: notificationPreferences });
+  notificationViewRef.current = { pathname: location.pathname, search: location.search, preferences: notificationPreferences };
   const openNotificationTarget = route => {
     const safeRoute = typeof route === "string" && route.startsWith("/") && !route.startsWith("//") ? route : "/home";
     navigate(safeRoute);
@@ -1523,12 +1525,31 @@ function AppContent() {
     }
     let active = true;
     setNotifications([]);
-    setNotificationPreferences(null);
     setNotificationLoading(true);
+    const areSameNotifications = (left, right) => left.length === right.length && left.every((item, index) => {
+      const next = right[index];
+      return item.id === next.id && item.read === next.read && item.groupCount === next.groupCount
+        && item.createdAt === next.createdAt && item.message === next.message;
+    });
+    const mergeFetchedNotifications = (current, rows) => {
+      const fetchedIds = new Set(rows.map(item => item.id));
+      const recentRealtime = current.filter(item => !fetchedIds.has(item.id)
+        && Date.now() - new Date(item.createdAt).getTime() < 60000);
+      const merged = [...recentRealtime, ...rows].slice(0, 60);
+      return areSameNotifications(current, merged) ? current : merged;
+    };
+    const syncNotifications = async () => {
+      try {
+        const rows = await loadNotifications(supabase, accountUserId);
+        if (active) setNotifications(current => mergeFetchedNotifications(current, rows));
+      } catch (error) {
+        if (active) setNotificationError(notificationErrorMessage(error, "Falha ao atualizar avisos."));
+      }
+    };
     Promise.all([loadNotifications(supabase, accountUserId), loadNotificationPreferences(supabase, accountUserId)])
       .then(([rows, preferences]) => {
         if (!active) return;
-        setNotifications(rows);
+        setNotifications(current => mergeFetchedNotifications(current, rows));
         setNotificationPreferences(preferences);
         setNotificationError("");
       })
@@ -1539,19 +1560,32 @@ function AppContent() {
         const item = notificationFromRow(payload.new);
         setNotifications(current => [item, ...current.filter(entry => entry.id !== item.id)].slice(0, 60));
         const targetParams = new URLSearchParams(item.targetRoute?.split("?")[1] || "");
-        const currentParams = new URLSearchParams(location.search);
-        const sameActiveConversation = item.type === "chat.message" && location.pathname === "/messages"
+        const currentParams = new URLSearchParams(notificationViewRef.current.search);
+        const sameActiveConversation = item.type === "chat.message" && notificationViewRef.current.pathname === "/messages"
           && targetParams.get("conversation") && targetParams.get("conversation") === currentParams.get("conversation");
         if (!sameActiveConversation) setLiveNotification(item);
-        if (item.type !== "chat.message" && notificationPreferences?.sound_enabled && document.visibilityState === "visible" && location.pathname !== item.targetRoute?.split("?")[0]) playNotificationSound();
+        if (item.type !== "chat.message" && notificationViewRef.current.preferences?.sound_enabled && document.visibilityState === "visible" && notificationViewRef.current.pathname !== item.targetRoute?.split("?")[0]) playNotificationSound();
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
         const item = notificationFromRow(payload.new);
         setNotifications(current => current.map(entry => entry.id === item.id ? item : entry));
       })
-      .subscribe();
-    return () => { active = false; if (channel) supabase.removeChannel(channel); };
-  }, [accountUserId, authReady, refreshNotifications, location.pathname, location.search, notificationPreferences?.sound_enabled]);
+      .subscribe(status => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("Canal de notificações desconectado; a sincronização periódica continuará ativa.");
+        }
+        if (status === "SUBSCRIBED") void syncNotifications();
+      });
+    const poll = window.setInterval(() => { if (document.visibilityState === "visible") void syncNotifications(); }, 15000);
+    const refreshOnFocus = () => { if (document.visibilityState === "visible") void syncNotifications(); };
+    document.addEventListener("visibilitychange", refreshOnFocus);
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [accountUserId, authReady]);
   useEffect(() => {
     if (!authReady) return;
     setThemePreference(accountUserId ? getAccountThemePreference(authSession?.user) : readThemePreference());
@@ -1803,7 +1837,7 @@ function AppContent() {
   useEffect(() => {
     const listener = event => {
       if (event.data?.type === "FORTALFY_PUSH_NOTIFICATION") {
-        if (event.data.notificationType === "chat.message") {
+        if (event.data.notificationType === "chat.message" && event.data.soundEnabled !== false) {
           const targetParams = new URLSearchParams(event.data.route?.split("?")[1] || "");
           const currentParams = new URLSearchParams(location.search);
           const sameActiveConversation = location.pathname === "/messages"

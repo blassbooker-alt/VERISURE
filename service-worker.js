@@ -1,4 +1,4 @@
-const CACHE_NAME = "fortalfy-app-v5";
+const CACHE_NAME = "fortalfy-app-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -44,6 +44,43 @@ self.addEventListener("activate", event => {
   );
 });
 
+self.addEventListener("push", event => {
+  event.waitUntil((async () => {
+    let payload = {};
+    try { payload = event.data?.json() || {}; } catch { payload = { body: event.data?.text() || "Você tem uma nova atualização." }; }
+    const title = String(payload.title || "Fortalfy").slice(0, 120);
+    const body = String(payload.body || "Você tem uma nova atualização.").slice(0, 240);
+    const route = typeof payload.route === "string" && payload.route.startsWith("/") ? payload.route : "/notifications";
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) {
+      client.postMessage({
+        type: "FORTALFY_PUSH_NOTIFICATION",
+        id: payload.id,
+        route,
+        notificationType: payload.type,
+        soundEnabled: payload.soundEnabled !== false,
+      });
+    }
+    const targetConversation = new URLSearchParams(route.split("?")[1] || "").get("conversation");
+    const alreadyInConversation = payload.type === "chat.message" && targetConversation && windows.some(client => {
+      if (!client.focused) return false;
+      const hashRoute = new URL(client.url).hash.replace(/^#\/?/, "");
+      const [pathname, query = ""] = hashRoute.split("?");
+      return pathname === "messages" && new URLSearchParams(query).get("conversation") === targetConversation;
+    });
+    if (alreadyInConversation) return;
+    await self.registration.showNotification(title, {
+      body,
+      icon: "./assets/fortalfy-app-icon.svg",
+      badge: "./assets/fortalfy-app-icon.svg",
+      tag: payload.tag || String(payload.id || "fortalfy-notification").slice(0, 80),
+      renotify: true,
+      data: { id: payload.id, route, type: payload.type },
+      ...(Array.isArray(payload.vibration) ? { vibrate: payload.vibration } : {}),
+    });
+  })());
+});
+
 self.addEventListener("notificationclick", event => {
   event.notification.close();
   const route = event.notification.data?.route || "/notifications";
@@ -51,7 +88,7 @@ self.addEventListener("notificationclick", event => {
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async clients => {
     const existing = clients.find(client => client.url.startsWith(self.location.origin));
     if (existing) {
-      await existing.navigate(target);
+      existing.postMessage({ type: "FORTALFY_NOTIFICATION_OPEN", id: event.notification.data?.id, route });
       await existing.focus();
       return;
     }

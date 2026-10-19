@@ -1899,16 +1899,30 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
   const [conversationSearch, setConversationSearch] = useState("");
   const knownMessageIds = useRef(new Set());
   const initializedConversationIds = useRef(new Set());
+  const messageRuntimeRef = useRef({ onNotification, messagePreferences });
+  messageRuntimeRef.current = { onNotification, messagePreferences };
   const userId = session?.user?.id;
   const targetId = searchParams.get("to");
   const requestedConversationId = searchParams.get("conversation");
 
   const refreshConversations = async () => {
     const rows = await loadConversations(client, userId);
-    setConversations(rows);
+    setConversations(current => {
+      const unchanged = current.length === rows.length && current.every((item, index) => {
+        const next = rows[index];
+        return item.id === next.id && item.last_message_at === next.last_message_at
+          && item.latestMessage?.id === next.latestMessage?.id
+          && item.latestMessage?.body === next.latestMessage?.body;
+      });
+      return unchanged ? current : rows;
+    });
     if (conversation) {
       const updated = rows.find(item => item.id === conversation.id);
-      if (updated) setConversation(updated);
+      if (updated && (updated.last_message_at !== conversation.last_message_at
+        || updated.latestMessage?.id !== conversation.latestMessage?.id
+        || updated.latestMessage?.body !== conversation.latestMessage?.body
+        || updated.person?.avatar !== conversation.person?.avatar
+        || updated.person?.name !== conversation.person?.name)) setConversation(updated);
     }
   };
 
@@ -1987,14 +2001,14 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         rows.forEach(row => knownMessageIds.current.add(row.id));
         if (incoming.length && document.visibilityState === "visible") {
           const latestIncoming = incoming[incoming.length - 1];
-          void playMessageSound("inapp-recebida", { messageId: latestIncoming.id, preferences: messagePreferences });
+          void playMessageSound("inapp-recebida", { messageId: latestIncoming.id, preferences: messageRuntimeRef.current.messagePreferences });
         }
         incoming.forEach(row => {
           const senderKind = conversation.person?.kind;
           const type = senderKind === "nutricionista" ? "nutritionist_message"
             : senderKind === "personal" ? "personal_message"
               : ["marca", "academia", "restaurante"].includes(senderKind) ? "shop" : "message";
-          onNotification?.({
+          messageRuntimeRef.current.onNotification?.({
           type,
           title: type === "nutritionist_message" ? "Mensagem da nutricionista"
             : type === "personal_message" ? "Mensagem do personal"
@@ -2002,8 +2016,8 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
           message: `${conversation.person?.name || "Nova mensagem"}: ${String(row.body || "Mensagem recebida").slice(0, 180)}`,
           });
         });
-        setMessages(rows);
-        await markConversationRead(client, userId, conversation);
+        setMessages(current => current.length === rows.length && current.every((item, index) => item.id === rows[index]?.id && item.body === rows[index]?.body && item.created_at === rows[index]?.created_at) ? current : rows);
+        if (firstLoad || incoming.length) await markConversationRead(client, userId, conversation);
         if (active) await refreshConversations();
         setError("");
       } catch (failure) {
@@ -2037,7 +2051,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         })
         .catch(failure => console.error("Não foi possível encerrar o canal de mensagens em tempo real.", failure));
     };
-  }, [client, userId, conversation?.id, conversation?.person?.name, onNotification, messagePreferences]);
+  }, [client, userId, conversation?.id, conversation?.person?.name]);
 
   const openConversation = item => {
     setConversation(item);
