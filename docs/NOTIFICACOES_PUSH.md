@@ -8,9 +8,9 @@
 - Gatilhos para curtidas, comentários, respostas, menções, novos seguidores, mensagens diretas, agendamentos, aprovação/revisão profissional e atualização de pedidos FortalShop/FortalFood.
 - Fila assíncrona Supabase, tentativas com espera progressiva, deduplicação em grupos de atividade, auditoria e revogação de assinaturas expiradas.
 
-## Implantação Supabase necessária
+## Banco de dados e implantação
 
-A migração ainda precisa ser aplicada ao projeto antes de a central por conta e a entrega real funcionarem. Execute `FORTALFY_NOTIFICATIONS_V1.sql` no SQL Editor depois das migrações de base indicadas no cabeçalho do arquivo. A migração cria extensões/tabelas, políticas RLS e agenda o dispatcher do `pg_cron`.
+Para um projeto ainda sem notificações, execute `FORTALFY_NOTIFICATIONS_V1.sql` depois das migrações de base indicadas no cabeçalho. Em projetos que já têm as tabelas e funções da Fortalfy, não reaplique a migração inicial: execute `FORTALFY_NOTIFICATIONS_V1_2_PUSH_PAYLOAD_FIX.sql`. Essa migração é aditiva, preserva os registros e corrige os metadados que o push worker precisa para respeitar o som, identificar mensagens e abrir o destino certo. Ela também corrige os gatilhos de status somente quando a definição estiver ausente ou divergente.
 
 O envio real requer os seguintes segredos na Edge Function `fortalfy-push-worker`:
 
@@ -44,7 +44,9 @@ cd web
 npm run build
 ```
 
-A publicação da função, migração do banco, configuração de Vault/segredos e rebuild não foram executados nesta alteração. Até essas etapas serem concluídas, o app continua utilizável; a central da conta informa que falta aplicar a migração e o push não pode ser ativado.
+No projeto Fortalfy, a migração V1.2 foi aplicada em 19/10/2026. As consultas de verificação confirmaram os campos enviados ao worker, os gatilhos de status e o processamento da fila. Os nomes dos segredos do worker e do Vault estão configurados; seus valores permanecem mascarados no painel.
+
+Ainda não foi possível confirmar a entrega em um telefone: a tabela de subscriptions estava sem dispositivos ativos na última verificação. Ative notificações em um aparelho autenticado e confirme a permissão do sistema antes do teste real. A chave VAPID pública do build também precisa corresponder à chave privada do worker; como os valores permanecem mascarados, faça essa validação no fluxo seguro de configuração, sem copiá-los para logs ou código.
 
 ## Áudio e limitações de plataforma
 
