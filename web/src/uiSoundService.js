@@ -1,3 +1,5 @@
+import { primeMessageSounds } from "./messageSoundService.js";
+
 export const UI_SOUND_PREFERENCE_KEY = "fortalfy.interface-sounds.v1";
 
 let audioContext;
@@ -66,6 +68,7 @@ function isInteractiveControl(target) {
 
 export function installInterfaceSoundInteractions(root = document) {
   const onPointerDown = event => {
+    if (event.isTrusted) primeMessageSounds();
     if (event.button !== undefined && event.button !== 0) return;
     const control = isInteractiveControl(event.target);
     if (!control || control.disabled || control.getAttribute("aria-disabled") === "true" || control.dataset.uiSound === "off") return;
@@ -76,6 +79,7 @@ export function installInterfaceSoundInteractions(root = document) {
     if (field && field.dataset.uiSound !== "off" && !field.disabled) playInterfaceSound("click");
   };
   const onKeyDown = event => {
+    if (event.isTrusted) primeMessageSounds();
     if (!event.repeat && ["Enter", " "].includes(event.key) && isInteractiveControl(event.target) && !isTypingSurface(event.target)) {
       const control = isInteractiveControl(event.target);
       if (!control.disabled && control.getAttribute("aria-disabled") !== "true" && control.dataset.uiSound !== "off") playInterfaceSound("click");

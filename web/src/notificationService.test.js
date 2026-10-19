@@ -15,6 +15,26 @@ test("notification rows map persisted read state, destination, and grouped count
   assert.equal(notification.read, false);
 });
 
+test("notification rows preserve Brazilian Portuguese copy and user names exactly", () => {
+  const samples = [
+    ["Nova mensagem", "Você recebeu uma nova mensagem."],
+    ["João D’Ávila comentou na sua publicação.", "Você recebeu um novo comentário."],
+    ["François Çelik começou a seguir você.", "Você tem um novo seguidor na Fortalfy."],
+    ["Nova conexão", "Você tem uma nova conexão na Fortalfy."],
+  ];
+  for (const [title, body] of samples) {
+    const notification = notificationFromRow({
+      id: title, type: "social.activity", title, body,
+      created_at: "2026-10-19T12:00:00.000Z", read_at: null,
+      target_route: "/notifications", priority: "normal", group_count: 1,
+    });
+    assert.equal(notification.title, title);
+    assert.equal(notification.message, body);
+  }
+  const accentedWords = "Você Publicação Comentário Começou Conexão Notificação Coração Ação Informação Usuário";
+  assert.match(accentedWords, /Você.*Publicação.*Comentário.*Começou.*Conexão.*Notificação.*Coração.*Ação.*Informação.*Usuário/);
+});
+
 test("notification preferences default to opt-in for activity and opt-out for promotions", () => {
   assert.equal(NOTIFICATION_PREFERENCES_DEFAULTS.likes_enabled, true);
   assert.equal(NOTIFICATION_PREFERENCES_DEFAULTS.messages_enabled, true);

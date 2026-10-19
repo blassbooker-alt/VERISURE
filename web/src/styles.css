@@ -5184,6 +5184,7 @@ html[data-theme="light"] .mobile-app :is(.performance-hero, .pass-discovery, .tr
 .notification-settings-saved, .notification-settings-error { display: flex; align-items: center; gap: 7px; margin: 13px 0 0; font-size: 12px; }
 .notification-settings-saved { color: #24724c; }
 .notification-settings-error { color: #aa492f; }
+.notification-sound-preview { flex: 0 0 auto; }
 .notification-center-page { width: 100%; padding: 20px 16px 35px; }
 .notification-center-full-page { width: min(100%, 800px); max-height: none; margin: 0 auto; overflow: visible; box-shadow: 0 12px 38px #10271c12; }
 .notification-full-page-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 0; color: #176344; background: none; border: 0; font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; }
@@ -5215,6 +5216,7 @@ html[data-theme="light"] .mobile-app :is(.performance-hero, .pass-discovery, .tr
   .notification-quiet-hours { align-items: flex-start; flex-wrap: wrap; }
   .notification-quiet-hours > div { flex: 1 0 100%; }
   .notification-quiet-hours label { margin-left: 27px; }
+  .notification-sound-preview { margin-left: auto; }
 }
 html[data-theme="light"] .mobile-app :is(.performance-hero h2, .performance-hero h3, .training-session-panel h2,
   .training-session-panel h3, .training-execution-exercise h4, .training-client-session-list strong,

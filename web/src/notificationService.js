@@ -1,4 +1,5 @@
 import { publicAsset } from "./assetPath.js";
+import { isWithinMessageQuietHours, playNotificationCue } from "./messageSoundService.js";
 
 export const NOTIFICATION_PREFERENCES_DEFAULTS = Object.freeze({
   likes_enabled: true,
@@ -169,12 +170,9 @@ export async function sendTestNotification() {
   });
 }
 
-export async function playNotificationSound() {
-  try {
-    const audio = new Audio(publicAsset("fortalfy-notificacao-profissional.mp3"));
-    audio.volume = 0.52;
-    await audio.play();
-  } catch {
-    // Browsers may block playback until the user interacts with the page.
-  }
+export async function playNotificationSound(preferences, { preview = false } = {}) {
+  const effectivePreferences = preferences || NOTIFICATION_PREFERENCES_DEFAULTS;
+  if (effectivePreferences.sound_enabled === false) return false;
+  if (!preview && isWithinMessageQuietHours(effectivePreferences)) return false;
+  return playNotificationCue();
 }

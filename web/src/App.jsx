@@ -1564,7 +1564,7 @@ function AppContent() {
         const sameActiveConversation = item.type === "chat.message" && notificationViewRef.current.pathname === "/messages"
           && targetParams.get("conversation") && targetParams.get("conversation") === currentParams.get("conversation");
         if (!sameActiveConversation) setLiveNotification(item);
-        if (item.type !== "chat.message" && notificationViewRef.current.preferences?.sound_enabled && document.visibilityState === "visible" && notificationViewRef.current.pathname !== item.targetRoute?.split("?")[0]) playNotificationSound();
+        if (item.type !== "chat.message" && document.visibilityState === "visible" && notificationViewRef.current.pathname !== item.targetRoute?.split("?")[0]) void playNotificationSound(notificationViewRef.current.preferences);
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
         const item = notificationFromRow(payload.new);
