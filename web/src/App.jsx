@@ -39,6 +39,7 @@ import { loadAvailableFoodMenu } from "./foodService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
 import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
 import { playMessageSound } from "./messageSoundService.js";
+import { installInterfaceSoundInteractions } from "./uiSoundService.js";
 
 function Toast({ message, onClose }) {
   useEffect(() => {
@@ -1396,6 +1397,7 @@ function AppContent() {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationError, setNotificationError] = useState("");
   const [notificationPreferences, setNotificationPreferences] = useState(null);
+  useEffect(() => installInterfaceSoundInteractions(document), []);
   const [liveNotification, setLiveNotification] = useState(null);
   const [notifications, setNotifications] = useState(() => {
     const saved = loadLocalValue(NOTIFICATIONS_STORAGE_KEY, []);
