@@ -575,7 +575,7 @@ export async function loadComments(client, userId, postId, { offset = 0, limit =
   requireRealUser(userId);
   const { data, error, count } = await client.from("post_comments").select(`
     id,post_id,author_id,parent_comment_id,body,created_at,updated_at,
-    author:profiles!post_comments_author_id_fkey(id,display_name,username,avatar_path),
+    author:profiles!post_comments_author_id_fkey(id,display_name,username,avatar_path,verified_at,partner_approved_at),
     likes:post_comment_likes(count)
   `, { count: "exact" })
     .eq("post_id", postId)

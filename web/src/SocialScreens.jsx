@@ -36,6 +36,8 @@ import { reportCommercialContent } from "./commercialService.js";
 
 const mediaUrl = path => path || "";
 const REEL_SOUND_EVENT = "fortalfy:reel-sound";
+const REEL_AUTO_ADVANCE_EVENT = "fortalfy:reel-auto-advance";
+const REEL_SPEED_EVENT = "fortalfy:reel-speed";
 const FOLLOW_STATE_EVENT = "fortalfy:follow-state";
 let reelSoundEnabled = (() => {
   try {
@@ -1130,7 +1132,7 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
     <AuthorLink author={comment.author} ownId={userId} />
     <div className="social-comment-main">
       <div className="social-comment-bubble">
-        <Link className="social-comment-author" to={own ? "/profile" : `/profile/${comment.author?.id}`}>{comment.author?.name || "Pessoa Fortalfy"}</Link>
+        <Link className="social-comment-author" to={own ? "/profile" : `/profile/${comment.author?.id}`}>{comment.author?.name || "Pessoa Fortalfy"}{comment.author?.verified && <VerificationBadge size={12} />}</Link>
         {editing ? <form className="social-inline-edit" onSubmit={async event => { event.preventDefault(); await onEdit(draft); setEditing(false); }}><textarea value={draft} maxLength={2000} onChange={event => setDraft(event.target.value)} required /><button className="button primary small-button" disabled={busy}>Salvar</button><button className="button subtle small-button" type="button" onClick={() => { setDraft(comment.body); setEditing(false); }}>Cancelar</button></form> : <p>{comment.body}</p>}
       </div>
       <div className="social-comment-meta">
@@ -1146,7 +1148,7 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
   </article>;
 }
 
-function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
+function PostMedia({ media, onOpen, reelMode = false, onReelWatch, autoAdvance = false, playbackRate = 1, onCaptionsAvailable }) {
   const watchedMedia = useRef(new Set());
   const containerRef = useRef(null);
   const audioTrackCheckRef = useRef({ path: "", promise: null, hasAudio: null });
@@ -1163,6 +1165,20 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
     window.addEventListener(REEL_SOUND_EVENT, syncSoundPreference);
     return () => window.removeEventListener(REEL_SOUND_EVENT, syncSoundPreference);
   }, []);
+  useEffect(() => {
+    if (!reelMode || !containerRef.current) return undefined;
+    const video = containerRef.current.querySelector("video");
+    if (!video) return undefined;
+    const syncCaptions = () => onCaptionsAvailable?.(video.textTracks.length > 0);
+    video.addEventListener("loadedmetadata", syncCaptions);
+    syncCaptions();
+    return () => video.removeEventListener("loadedmetadata", syncCaptions);
+  }, [media, onCaptionsAvailable, reelMode]);
+  useEffect(() => {
+    if (!reelMode || !containerRef.current) return;
+    const video = containerRef.current.querySelector("video");
+    if (video) video.playbackRate = playbackRate;
+  }, [media, playbackRate, reelMode]);
   useEffect(() => {
     if (!reelMode || !containerRef.current || typeof IntersectionObserver === "undefined") return undefined;
     const video = containerRef.current.querySelector("video");
@@ -1326,7 +1342,7 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch }) {
   return <div ref={containerRef} className={`social-media-grid count-${Math.min(media.length, 4)}${hasVideo && !reelMode ? " has-landscape-video" : ""}`}>
     {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className={`social-media-item${item.media_type === "video" && !reelMode ? " is-landscape-video" : ""}`}>
       {item.media_type === "video"
-        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode} muted={reelMode ? true : undefined} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onPlay={reelMode ? () => setIsPlaying(true) : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
+        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode && !autoAdvance} muted={reelMode ? true : undefined} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onEnded={reelMode && autoAdvance ? event => event.currentTarget.closest(".social-reel-card")?.nextElementSibling?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined} onPlay={reelMode ? () => setIsPlaying(true) : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
           const video = event.currentTarget;
           if (video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
           else video.pause();
@@ -1478,7 +1494,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false, s
   </>;
 }
 
-function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false }) {
+function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false, onCreateReel }) {
   const [comments, setComments] = useState([]);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -1490,6 +1506,8 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const [expanded, setExpanded] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareText, setShareText] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Spam ou conteúdo enganoso");
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [lightboxMedia, setLightboxMedia] = useState([]);
   const [followingAuthor, setFollowingAuthor] = useState(false);
@@ -1499,11 +1517,22 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
   const [saved, setSaved] = useState(Boolean(post.savedByMe));
   const [liked, setLiked] = useState(Boolean(post.likedByMe));
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
+  const [playbackRate, setPlaybackRate] = useState(() => {
+    try {
+      const storedRate = Number(window.localStorage.getItem("fortalfy.reels.playbackRate"));
+      return [0.75, 1, 1.25, 1.5, 2].includes(storedRate) ? storedRate : 1;
+    } catch { return 1; }
+  });
+  const [autoAdvance, setAutoAdvance] = useState(() => {
+    try { return window.localStorage.getItem("fortalfy.reels.autoAdvance") === "true"; } catch { return false; }
+  });
+  const [captionsAvailable, setCaptionsAvailable] = useState(false);
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [reelViewCount, setReelViewCount] = useState(Number(post.reelViewCount) || 0);
   const reportedReelViews = useRef(new Set());
   const commentsPanelRef = useRef(null);
   const own = post.author_id === userId;
-  const longBody = post.body.length > 500;
+  const longBody = post.body.length > 150;
   const displayBody = expanded || !longBody ? post.body : `${post.body.slice(0, 500)}…`;
   const childComments = useMemo(() => {
     const roots = comments.filter(comment => !comment.parent_comment_id);
@@ -1560,6 +1589,16 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     window.addEventListener(FOLLOW_STATE_EVENT, syncFollowState);
     return () => window.removeEventListener(FOLLOW_STATE_EVENT, syncFollowState);
   }, [userId, post.author_id]);
+  useEffect(() => {
+    const syncAutoAdvance = event => setAutoAdvance(Boolean(event.detail));
+    const syncPlaybackRate = event => setPlaybackRate(Number(event.detail) || 1);
+    window.addEventListener(REEL_AUTO_ADVANCE_EVENT, syncAutoAdvance);
+    window.addEventListener(REEL_SPEED_EVENT, syncPlaybackRate);
+    return () => {
+      window.removeEventListener(REEL_AUTO_ADVANCE_EVENT, syncAutoAdvance);
+      window.removeEventListener(REEL_SPEED_EVENT, syncPlaybackRate);
+    };
+  }, []);
 
   const doAction = async (action, successMessage) => {
     setBusy(true);
@@ -1668,6 +1707,34 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       setMenuOpen(false);
     }
   };
+  const choosePlaybackRate = rate => {
+    setPlaybackRate(rate);
+    try { window.localStorage.setItem("fortalfy.reels.playbackRate", String(rate)); } catch (error) {
+      console.error("Não foi possível salvar a velocidade de reprodução do FortalReels.", error);
+    }
+    window.dispatchEvent(new CustomEvent(REEL_SPEED_EVENT, { detail: rate }));
+    const video = document.getElementById(`post-${post.id}`)?.querySelector("video");
+    if (video) video.playbackRate = rate;
+  };
+  const toggleAutoAdvance = () => {
+    const next = !autoAdvance;
+    setAutoAdvance(next);
+    try { window.localStorage.setItem("fortalfy.reels.autoAdvance", String(next)); } catch (error) {
+      console.error("Não foi possível salvar a preferência de rolagem do FortalReels.", error);
+    }
+    window.dispatchEvent(new CustomEvent(REEL_AUTO_ADVANCE_EVENT, { detail: next }));
+  };
+  const toggleCaptions = () => {
+    const video = document.getElementById(`post-${post.id}`)?.querySelector("video");
+    const tracks = Array.from(video?.textTracks || []);
+    if (!tracks.length) {
+      notify("Este Reel não oferece legendas.");
+      return;
+    }
+    const next = !captionsEnabled;
+    tracks.forEach(track => { track.mode = next ? "showing" : "hidden"; });
+    setCaptionsEnabled(next);
+  };
   const toggleFollow = async () => {
     const result = await doAction(() => authorFollowRequest === "pending"
       ? cancelFollowRequest(client, userId, post.author_id)
@@ -1703,16 +1770,15 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     if (await doAction(() => deletePost(client, post.id), "Publicação excluída.")) await onRefresh();
   };
   const report = async () => {
-    const reason = window.prompt("Por que deseja denunciar esta publicação? (mínimo de 3 caracteres)");
-    if (reason == null) return;
-    if (reason.trim().length < 3) {
-      notify("Descreva o motivo da denúncia.");
-      return;
-    }
-    await doAction(() => post.commercial_content
-      ? reportCommercialContent(client, "post", post.id, reason.trim())
-      : reportPost(client, userId, post.id, reason.trim()), "Denúncia enviada à moderação.");
+    setReportReason("Spam ou conteúdo enganoso");
+    setReportOpen(true);
     setMenuOpen(false);
+  };
+  const submitReport = async event => {
+    event.preventDefault();
+    if (await doAction(() => post.commercial_content
+      ? reportCommercialContent(client, "post", post.id, reportReason)
+      : reportPost(client, userId, post.id, reportReason), "Denúncia enviada à moderação.")) setReportOpen(false);
   };
   const reportAComment = async comment => {
     const reason = window.prompt("Por que deseja denunciar este comentário? (mínimo de 3 caracteres)");
@@ -1728,13 +1794,21 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     setMenuOpen(false);
   };
 
-  const postMenu = <div className="social-post-menu-wrap">
+  const postMenu = <div className={`social-post-menu-wrap${reelMode ? " social-reel-settings-wrap" : ""}`}>
     <button className="social-icon-button" aria-label="Opções da publicação" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><MoreHorizontal size={20} /></button>
-    {menuOpen && <div className="social-post-menu">
+    {menuOpen && <div className={`social-post-menu${reelMode ? " social-reel-settings-menu" : ""}`}>
+      {reelMode && <section className="social-reel-player-settings" aria-label="Configurações de reprodução">
+        <strong>Velocidade</strong>
+        <div role="group" aria-label="Velocidade de reprodução">{[0.75, 1, 1.25, 1.5, 2].map(rate => <button type="button" key={rate} className={playbackRate === rate ? "is-selected" : ""} aria-pressed={playbackRate === rate} onClick={() => choosePlaybackRate(rate)}>{`${rate.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}x`}</button>)}</div>
+        <strong>Qualidade</strong><p>Automática <span>Este Reel não oferece versões em outras resoluções.</span></p>
+        <button type="button" onClick={toggleAutoAdvance}>{autoAdvance ? <Check size={14} /> : <Play size={14} />}{`Rolagem automática: ${autoAdvance ? "ativada" : "desativada"}`}</button>
+        <button type="button" onClick={toggleCaptions} disabled={!captionsAvailable}>{captionsEnabled ? <Check size={14} /> : <MessageCircle size={14} />}{captionsAvailable ? (captionsEnabled ? "Desativar legendas" : "Ativar legendas") : "Legendas indisponíveis"}</button>
+      </section>}
+      {reelMode && onCreateReel && <button type="button" onClick={() => { setMenuOpen(false); onCreateReel(); }}><Video size={14} /> Criar Reel</button>}
       {own && <><button onClick={editPost}>Editar publicação</button><button className="danger-action" onClick={removePost}>Excluir publicação</button></>}
       <button onClick={bookmark}><Bookmark size={14} /> {saved ? "Remover dos salvos" : "Salvar publicação"}</button>
       <button onClick={copyLink}>Copiar link</button>
-      {!own && <button onClick={hide}>Ocultar publicação</button>}
+      {!own && <button onClick={hide}>{reelMode ? "Não tenho interesse" : "Ocultar publicação"}</button>}
       {!own && <><button onClick={toggleFollow}>{followingAuthor ? <UserMinus size={14} /> : <UserPlus size={14} />}{authorFollowRequest === "pending" ? "Cancelar solicitação" : followingAuthor ? "Deixar de seguir" : post.author?.isPrivate ? "Solicitar para seguir" : "Seguir autor"}</button><button className="danger-action" onClick={report}><CircleAlert size={14} /> Denunciar</button></>}
     </div>}
   </div>;
@@ -1743,18 +1817,19 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     <div className="social-post-author">
       <Link to={own ? "/profile" : `/profile/${post.author?.id}`}><strong>{post.author?.name || "Pessoa Fortalfy"}</strong>{post.author?.verified && <VerificationBadge />}</Link>
       {reelMode
-        ? <span className="social-reel-author-meta">{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}{post.commercial_content && <><span aria-hidden="true">·</span>Publicidade</>}</span>
+        ? <span className="social-reel-author-meta">{post.author?.username && <><span className="social-reel-handle">@{post.author.username}</span><span aria-hidden="true">·</span></>}{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}{post.commercial_content && <><span aria-hidden="true">·</span>Publicidade</>}</span>
         : <span>{post.commercial_content && <><strong className="social-author-role">Publicidade</strong> · </>}{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
     </div>
     {!reelMode && !own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
     {reelMode && !own && <button type="button" className={`social-reel-follow-inline${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? "Deixar de seguir criador" : "Seguir criador"}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? "Seguindo" : "+ Seguir"}</button>}
-    {postMenu}
+    {!reelMode && postMenu}
   </header>;
-  const postDescription = !!post.body && <div className="social-post-text"><LinkifiedText text={displayBody} />{longBody && <button className="social-text-toggle" onClick={() => setExpanded(value => !value)}>{expanded ? "Ver menos" : "Ver mais"}</button>}</div>;
+  const postDescription = !!post.body && <div className={`social-post-text${expanded ? " is-expanded" : " is-collapsed"}`}><LinkifiedText text={displayBody} />{longBody && <button className="social-text-toggle" onClick={() => setExpanded(value => !value)}>{expanded ? "menos" : "mais"}</button>}</div>;
   const postActions = <div className={`social-post-actions${reelMode ? " social-reel-actions" : ""}`}>
     <button className={liked ? "is-liked" : ""} aria-pressed={liked} aria-label={reelMode ? `${liked ? "Descurtir" : "Curtir"} · ${formatCompactCount(likeCount)} curtidas` : undefined} onClick={toggleLike} disabled={busy}><Heart size={reelMode ? 25 : 18} fill={liked ? "currentColor" : "none"} /><span>{reelMode ? formatCompactCount(likeCount) : "Curtir"}</span></button>
     <button aria-label={reelMode ? `Comentar · ${formatCompactCount(post.commentCount)} comentários` : undefined} onClick={openComments}><MessageCircle size={reelMode ? 25 : 18} /><span>{reelMode ? formatCompactCount(post.commentCount) : "Comentar"}</span></button>
     <button aria-label={reelMode ? `Compartilhar · ${formatCompactCount(post.shareCount)} compartilhamentos` : undefined} onClick={() => setShareOpen(true)}><Share2 size={reelMode ? 24 : 18} /><span>{reelMode ? formatCompactCount(post.shareCount) : "Compartilhar"}</span></button>
+    {reelMode && <button className={saved ? "is-liked" : ""} aria-pressed={saved} aria-label={saved ? "Remover Reel dos salvos" : "Salvar Reel"} onClick={bookmark} disabled={busy}><Bookmark size={23} fill={saved ? "currentColor" : "none"} /><span>{saved ? "Salvo" : "Salvar"}</span></button>}
   </div>;
   const reelFollowLabel = authorFollowRequest === "pending"
     ? "Cancelar solicitação para seguir"
@@ -1779,11 +1854,12 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
     {reelMode
       ? reelInfo
       : <>{authorHeader}{postDescription}</>}
-    {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
+    {reelMode && <div className="social-reel-top-menu">{postMenu}</div>}
+    {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} autoAdvance={autoAdvance} playbackRate={playbackRate} onCaptionsAvailable={setCaptionsAvailable} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
     {post.original && <div className="social-original-post"><div className="social-original-author"><AuthorLink author={post.original.author} ownId={userId} /><span><strong>{post.original.author?.name}</strong><small>{formatDate(post.original.published_at)}</small></span></div><LinkifiedText text={post.original.body} /><PostMedia media={post.original.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} /></div>}
     <div className="social-post-stats"><span>{likeCount > 0 && <><Heart size={14} fill="currentColor" /> {likeCount} curtida{likeCount === 1 ? "" : "s"}</>}</span><span>{reelMode && <><Eye size={14} /> {reelViewCount} visualizaç{reelViewCount === 1 ? "ão" : "ões"} · </>}{post.commentCount} comentário{post.commentCount === 1 ? "" : "s"} · {post.shareCount} compartilhamento{post.shareCount === 1 ? "" : "s"}</span></div>
     {!reelMode && postActions}
-    {commentsOpen && <section className="social-comments" ref={commentsPanelRef}>
+    {commentsOpen && <section className="social-comments" ref={commentsPanelRef}><header className="social-reel-comments-header"><strong>Comentários</strong><span>{formatCompactCount(post.commentCount)}</span><button type="button" onClick={() => setCommentsOpen(false)} aria-label="Fechar comentários"><X size={18} /></button></header>
       {commentsLoading ? <p className="social-inline-status"><LoaderCircle className="spin" size={16} /> Carregando comentários…</p>
         : commentsError ? <p className="social-inline-error">{commentsError}<button onClick={async () => { setCommentsLoading(true); await refreshComments(); setCommentsLoading(false); }}>Tentar novamente</button></p>
           : !childComments.length ? <p className="social-empty-comments">Seja a primeira pessoa a comentar.</p>
@@ -1806,6 +1882,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       <form className="social-comment-form" onSubmit={submitComment}><textarea value={commentText} maxLength={2000} rows={1} onChange={event => setCommentText(event.target.value)} placeholder="Escreva um comentário..." required /><button className="button primary small-button" disabled={busy || !commentText.trim()} aria-label="Enviar comentário"><Send size={15} /></button></form>
     </section>}
     {shareOpen && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && setShareOpen(false)}><section className="social-share-dialog" role="dialog" aria-modal="true" aria-label="Compartilhar publicação"><header><strong>Compartilhar no Feed</strong><button className="social-icon-button" onClick={() => setShareOpen(false)} aria-label="Fechar"><X size={18} /></button></header><textarea value={shareText} maxLength={2000} onChange={event => setShareText(event.target.value)} placeholder="Escreva algo sobre esta publicação (opcional)" /><button className="button primary wide-button" onClick={handleShare}>Compartilhar agora <Share2 size={16} /></button><button className="social-native-share" onClick={async () => { try { if (navigator.share) await navigator.share({ title: "Publicação Fortalfy", text: post.body, url: window.location.href }); else await copyLink(); } catch (error) { if (error.name !== "AbortError") { console.error("Falha ao compartilhar pelo dispositivo.", error); notify("Não foi possível abrir o compartilhamento do dispositivo."); } } }}>Compartilhar por outro app</button></section></div>}
+    {reportOpen && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && setReportOpen(false)}><form className="social-share-dialog social-reel-report-dialog" role="dialog" aria-modal="true" aria-label="Denunciar Reel" onSubmit={submitReport}><header><strong>Denunciar publicação</strong><button type="button" className="social-icon-button" onClick={() => setReportOpen(false)} aria-label="Fechar"><X size={18} /></button></header><p>Selecione o motivo. A denúncia será enviada à moderação do Fortalfy.</p><label>Motivo<select value={reportReason} onChange={event => setReportReason(event.target.value)}><option value="Spam ou conteúdo enganoso">Spam ou conteúdo enganoso</option><option value="Assédio ou discurso de ódio">Assédio ou discurso de ódio</option><option value="Conteúdo perigoso">Conteúdo perigoso</option><option value="Conteúdo sexual">Conteúdo sexual</option><option value="Violação de direitos autorais">Violação de direitos autorais</option><option value="Outro motivo">Outro motivo</option></select></label><footer><button type="button" className="button subtle" onClick={() => setReportOpen(false)}>Cancelar</button><button type="submit" className="button primary" disabled={busy}>Enviar denúncia</button></footer></form></div>}
     {lightboxIndex != null && lightboxMedia[lightboxIndex] && <div className="social-lightbox" role="dialog" aria-modal="true" aria-label="Visualizar mídia"><button className="social-lightbox-close" onClick={() => setLightboxIndex(null)} aria-label="Fechar"><X size={22} /></button>{lightboxMedia[lightboxIndex].media_type === "video" ? <video controls autoPlay src={lightboxMedia[lightboxIndex].url} /> : <img src={lightboxMedia[lightboxIndex].url} alt="Mídia ampliada" />}{lightboxMedia.length > 1 && <div className="social-lightbox-nav"><button disabled={lightboxIndex === 0} onClick={() => setLightboxIndex(index => index - 1)}><ArrowLeft size={18} /> Anterior</button><span>{lightboxIndex + 1} / {lightboxMedia.length}</span><button disabled={lightboxIndex >= lightboxMedia.length - 1} onClick={() => setLightboxIndex(index => index + 1)}>Próxima <ChevronRight size={18} /></button></div>}</div>}
   </article>;
 }
@@ -2319,7 +2396,7 @@ export function SocialFeed({ client, configured, session, profile, profileError 
         {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
         {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando Reels…</p>}
         {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Ainda não há Reels de perfis seguidos" : "Ainda não há Reels"}</h2><p>{filter === "following" ? "Siga criadores para ver os vídeos deles aqui." : "Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui."}</p></div>}
-        {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode />)}
+        {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode onCreateReel={canPublishReels ? () => setComposerOpen(true) : undefined} />)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais Reels"}</button>}
       </section>
       : <>
