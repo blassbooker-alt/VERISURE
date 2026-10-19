@@ -38,6 +38,7 @@ import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } fro
 import { loadAvailableFoodMenu } from "./foodService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
 import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
+import { playMessageSound } from "./messageSoundService.js";
 
 function Toast({ message, onClose }) {
   useEffect(() => {
@@ -1535,8 +1536,12 @@ function AppContent() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
         const item = notificationFromRow(payload.new);
         setNotifications(current => [item, ...current.filter(entry => entry.id !== item.id)].slice(0, 60));
-        setLiveNotification(item);
-        if (notificationPreferences?.sound_enabled && document.visibilityState === "visible" && location.pathname !== item.targetRoute?.split("?")[0]) playNotificationSound();
+        const targetParams = new URLSearchParams(item.targetRoute?.split("?")[1] || "");
+        const currentParams = new URLSearchParams(location.search);
+        const sameActiveConversation = item.type === "chat.message" && location.pathname === "/messages"
+          && targetParams.get("conversation") && targetParams.get("conversation") === currentParams.get("conversation");
+        if (!sameActiveConversation) setLiveNotification(item);
+        if (item.type !== "chat.message" && notificationPreferences?.sound_enabled && document.visibilityState === "visible" && location.pathname !== item.targetRoute?.split("?")[0]) playNotificationSound();
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
         const item = notificationFromRow(payload.new);
@@ -1544,7 +1549,7 @@ function AppContent() {
       })
       .subscribe();
     return () => { active = false; if (channel) supabase.removeChannel(channel); };
-  }, [accountUserId, authReady, refreshNotifications, location.pathname, notificationPreferences?.sound_enabled]);
+  }, [accountUserId, authReady, refreshNotifications, location.pathname, location.search, notificationPreferences?.sound_enabled]);
   useEffect(() => {
     if (!authReady) return;
     setThemePreference(accountUserId ? getAccountThemePreference(authSession?.user) : readThemePreference());
@@ -1795,6 +1800,16 @@ function AppContent() {
   }, [liveNotification]);
   useEffect(() => {
     const listener = event => {
+      if (event.data?.type === "FORTALFY_PUSH_NOTIFICATION") {
+        if (event.data.notificationType === "chat.message") {
+          const targetParams = new URLSearchParams(event.data.route?.split("?")[1] || "");
+          const currentParams = new URLSearchParams(location.search);
+          const sameActiveConversation = location.pathname === "/messages"
+            && targetParams.get("conversation") && targetParams.get("conversation") === currentParams.get("conversation");
+          if (!sameActiveConversation) void playMessageSound("push-recebida", { messageId: event.data.id, preferences: notificationPreferences });
+        }
+        return;
+      }
       if (event.data?.type !== "FORTALFY_NOTIFICATION_OPEN") return;
       const route = event.data.route;
       if (event.data.id && accountUserId) markNotificationRead(event.data.id);
@@ -1802,7 +1817,7 @@ function AppContent() {
     };
     navigator.serviceWorker?.addEventListener("message", listener);
     return () => navigator.serviceWorker?.removeEventListener("message", listener);
-  }, [accountUserId]);
+  }, [accountUserId, location.pathname, location.search, notificationPreferences]);
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => setShowSplash(false), reducedMotion ? 900 : 6500);
@@ -1837,7 +1852,7 @@ function AppContent() {
       <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
-      <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} /></Screen>} />
+      <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} messagePreferences={notificationPreferences} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
       <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
       <Route path="/checkin/:publicId" element={<Screen title="Validar presença" subtitle="FORTALPASS · ACESSO SEGURO" className="gym-access-screen"><GymCheckInPage client={supabase} session={authSession} /></Screen>} />

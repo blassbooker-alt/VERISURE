@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Brand from "./Brand.jsx";
 import { fortalfyAsset, visualPackAsset } from "./assetPath.js";
+import { playMessageSound } from "./messageSoundService.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
 import { createSecureId } from "./secureId.js";
@@ -1882,7 +1883,7 @@ export function SocialPeople({ client, session, configured, notify }) {
   </div>;
 }
 
-export function SocialMessages({ client, session, configured, notify, onNotification }) {
+export function SocialMessages({ client, session, configured, notify, onNotification, messagePreferences }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [conversation, setConversation] = useState(null);
@@ -1900,6 +1901,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
   const initializedConversationIds = useRef(new Set());
   const userId = session?.user?.id;
   const targetId = searchParams.get("to");
+  const requestedConversationId = searchParams.get("conversation");
 
   const refreshConversations = async () => {
     const rows = await loadConversations(client, userId);
@@ -1919,6 +1921,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         const rows = await loadConversations(client, userId);
         if (!active) return;
         setConversations(rows);
+        setError("");
         if (targetId && targetId !== userId) {
           const person = await loadProfile(client, targetId);
           const access = await loadMutualFollowState(client, userId, targetId);
@@ -1940,11 +1943,21 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
           setPendingTarget(null);
           const nextParams = new URLSearchParams(searchParams);
           nextParams.delete("to");
+          nextParams.set("conversation", started.id);
           setSearchParams(nextParams, { replace: true });
+        } else if (requestedConversationId) {
+          const match = rows.find(item => item.id === requestedConversationId);
+          if (match) {
+            setConversation(match);
+            setPendingTarget(null);
+            setConversationAccess(await loadMutualFollowState(client, userId, match.person.id));
+          } else {
+            setConversation(null);
+            setError("Esta conversa não está disponível para sua conta.");
+          }
         } else if (conversation) {
           setConversation(rows.find(item => item.id === conversation.id) || null);
         }
-        setError("");
       } catch (failure) {
         if (!active) return;
         console.error("Falha ao carregar as conversas.", failure);
@@ -1955,7 +1968,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
     };
     open();
     return () => { active = false; };
-  }, [client, userId, targetId]);
+  }, [client, userId, targetId, requestedConversationId]);
 
   useEffect(() => {
     if (!client || !userId || !conversation?.id) return undefined;
@@ -1972,6 +1985,10 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         initializedConversationIds.current.add(conversation.id);
         const incoming = firstLoad ? [] : rows.filter(row => row.sender_id !== userId && !knownMessageIds.current.has(row.id));
         rows.forEach(row => knownMessageIds.current.add(row.id));
+        if (incoming.length && document.visibilityState === "visible") {
+          const latestIncoming = incoming[incoming.length - 1];
+          void playMessageSound("inapp-recebida", { messageId: latestIncoming.id, preferences: messagePreferences });
+        }
         incoming.forEach(row => {
           const senderKind = conversation.person?.kind;
           const type = senderKind === "nutricionista" ? "nutritionist_message"
@@ -2020,7 +2037,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         })
         .catch(failure => console.error("Não foi possível encerrar o canal de mensagens em tempo real.", failure));
     };
-  }, [client, userId, conversation?.id, conversation?.person?.name, onNotification]);
+  }, [client, userId, conversation?.id, conversation?.person?.name, onNotification, messagePreferences]);
 
   const openConversation = item => {
     setConversation(item);
@@ -2028,6 +2045,10 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
     setConversationAccess({ canMessage: false });
     setMessages([]);
     setError("");
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("to");
+    nextParams.set("conversation", item.id);
+    setSearchParams(nextParams, { replace: true });
   };
 
   const followForConversation = async () => {
@@ -2045,6 +2066,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         setPendingTarget(null);
         const nextParams = new URLSearchParams(searchParams);
         nextParams.delete("to");
+        nextParams.set("conversation", started.id);
         setSearchParams(nextParams, { replace: true });
       } else if (access.requestPending || pendingTarget.person.isPrivate) {
         notify("Solicitação enviada. Aguarde a aprovação para conversar.");
@@ -2065,6 +2087,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
     setSending(true);
     try {
       const message = await sendDirectMessage(client, userId, conversation.id, draft);
+      void playMessageSound("inapp-enviada", { messageId: message.id, preferences: messagePreferences });
       setMessages(current => [...current, message]);
       setDraft("");
       await refreshConversations();

@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v14";
+const CACHE = "fortalfy-pwa-v15";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.add("./")).then(() => self.skipWaiting()));
 });
@@ -31,16 +31,32 @@ self.addEventListener("push", event => {
   try { message = event.data.json(); }
   catch { message = { title: "Fortalfy", body: event.data.text() }; }
   const route = typeof message.route === "string" && /^\/[A-Za-z0-9/_?=&.%+-]*$/.test(message.route) ? message.route : "/home";
+  const notificationType = String(message.type || "");
+  const id = String(message.id || "");
+  const soundEnabled = message.soundEnabled !== false;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async clients => {
+    const focusedClient = clients.find(client => client.focused && client.visibilityState === "visible");
+    if (focusedClient) {
+      const currentUrl = new URL(focusedClient.url);
+      const currentRoute = currentUrl.hash.replace(/^#/, "") || "/";
+      const targetConversation = new URLSearchParams(route.split("?")[1] || "").get("conversation");
+      const currentConversation = new URLSearchParams(currentRoute.split("?")[1] || "").get("conversation");
+      if (notificationType === "chat.message" && currentRoute.split("?")[0] === "/messages" && targetConversation && targetConversation === currentConversation) return;
+      focusedClient.postMessage({ type: "FORTALFY_PUSH_NOTIFICATION", id, notificationType, route, soundEnabled });
+      return;
+    }
   const options = {
     body: String(message.body || "Você tem uma nova atualização no Fortalfy.").slice(0, 240),
     icon: new URL("assets/fortalfy-icon-192.png", self.registration.scope).href,
     badge: new URL("assets/fortalfy-icon-192.png", self.registration.scope).href,
     tag: String(message.tag || message.id || "fortalfy-notification").slice(0, 100),
     renotify: false,
-    data: { id: String(message.id || ""), route },
+    silent: !soundEnabled,
+    data: { id, route },
   };
   if (Array.isArray(message.vibration) && message.vibration.length) options.vibrate = message.vibration.slice(0, 8);
-  event.waitUntil(self.registration.showNotification(String(message.title || "Fortalfy").slice(0, 120), options));
+    await self.registration.showNotification(String(message.title || "Fortalfy").slice(0, 120), options);
+  }));
 });
 
 self.addEventListener("notificationclick", event => {

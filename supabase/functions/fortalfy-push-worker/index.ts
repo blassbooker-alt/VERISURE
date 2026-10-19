@@ -51,6 +51,9 @@ Deno.serve(async request => {
           title: String(notification.title || "Fortalfy").slice(0, 120),
           body: String(notification.body || "Você tem uma nova atualização.").slice(0, 240),
           route: notification.targetRoute,
+          type: notification.notificationType,
+          entityId: notification.entityId,
+          soundEnabled: notification.soundEnabled !== false,
           tag,
           vibration: notification.vibration ? [120, 60, 120] : undefined,
         }), { TTL: 3600, urgency: notification.priority === "high" ? "high" : "normal", topic: tag.slice(0, 32) });
