@@ -1771,7 +1771,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false 
       </div>
       {postActions}
     </div>
-    <div className="social-reel-view-count"><Eye size={15} /> {formatCompactCount(reelViewCount)} visualizaÃ§Ãµes</div>
+    <div className="social-reel-view-count"><Eye size={15} /> {formatCompactCount(reelViewCount)} {"visualiza\u00e7\u00f5es"}</div>
   </aside>;
 
   return <article className={`social-post-card${reelMode ? " social-reel-card" : ""}`} id={`post-${post.id}`}>
