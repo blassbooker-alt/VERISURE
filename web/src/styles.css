@@ -6648,3 +6648,65 @@ html[data-theme] .public-routine-section h2 {
 .reels-app .social-reels-page .social-reels-toolbar {
   top: calc(56px + env(safe-area-inset-top));
 }
+
+/* Keep the Reel visible behind its navigation instead of placing it in an opaque panel. */
+.reels-app .social-reels-page .social-reels-intro,
+.reels-app .social-reels-page .social-reels-toolbar {
+  background: transparent !important;
+  border-bottom-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.reels-app .social-reels-page .social-reels-intro strong,
+.reels-app .social-reels-page .social-reels-intro small,
+.reels-app .social-reels-page .social-reels-intro > svg,
+.reels-app .social-reels-page .social-reels-back {
+  color: #fff;
+  text-shadow: 0 1px 5px #000b;
+}
+.reels-app .social-reels-page .social-reels-back {
+  border-color: #ffffff45;
+  background: #07120f30;
+}
+.reels-app .social-reels-page .social-reels-intro .button.primary {
+  border: 1px solid #c8eb59;
+  color: #fff;
+  background: #07120f30;
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+}
+.reels-app .social-reels-page .social-reels-intro .button.primary:hover {
+  color: #fff;
+  background: #c8eb5940;
+}
+.reels-app .social-reels-page .social-refresh { background: #07120f30; }
+
+@media (min-width: 761px) {
+  .reels-app .social-reels-page .social-reels-intro { inset: 16px 24px auto; min-height: 52px; padding: 0; }
+  .reels-app .social-reels-page .social-feed-toolbar { top: 68px; width: min(calc(100% - 48px), 1080px); padding: 0; }
+  .reels-app .social-reels-list { inset: 0; display: block; padding: 0; }
+  .reels-app .social-reel-card { --reel-frame-width: min(100vw, calc(100dvh * 9 / 16)); width: 100%; height: 100%; min-height: 100%; position: relative; display: block; overflow: hidden; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .reels-app .social-reel-card::after { display: block; width: var(--reel-frame-width); height: clamp(180px, 32dvh, 260px); }
+  .reels-app .social-reel-card .social-media-grid { position: absolute; inset: 0; display: block; overflow: hidden; padding: 0; border-radius: 0; background: #050806; }
+  .reels-app .social-reel-card .social-media-item { width: var(--reel-frame-width); height: auto; max-height: 100%; position: absolute; top: 50%; left: 50%; margin: 0; aspect-ratio: 9 / 16; border: 0; border-radius: 0; transform: translate(-50%, -50%); }
+  .reels-app .social-reel-card .social-media-item video { border-radius: 0; }
+  .reels-app .social-reel-card .social-media-item > .social-reel-sound { top: clamp(calc(74px + env(safe-area-inset-top)), 14dvh, 132px); right: 12px; }
+  .reels-app .social-reel-card .social-reel-info { position: absolute; z-index: 3; inset: 0; display: block; overflow: visible; border: 0; border-radius: 0; background: transparent; pointer-events: none; }
+  .reels-app .social-reel-card .social-reel-caption { width: min(calc(var(--reel-frame-width) - 104px), 510px); position: absolute; inset: auto auto calc(24px + env(safe-area-inset-bottom)) max(16px, calc((100% - var(--reel-frame-width)) / 2 + 16px)); display: grid; gap: 8px; padding: 8px 4px 8px 0; }
+  .reels-app .social-reel-card .social-reel-caption > *,
+  .reels-app .social-reel-card .social-reel-side-rail,
+  .reels-app .social-reel-card .social-reel-side-rail * { pointer-events: auto; }
+  .reels-app .social-reel-card .social-reel-author-header { padding: 0; }
+  .reels-app .social-reel-card .social-reel-author-header > .social-avatar { display: none; }
+  .reels-app .social-reel-card .social-reel-follow-inline { display: none; }
+  .reels-app .social-reel-card .social-reel-caption .social-post-text { color: #e7eee8; text-shadow: 0 1px 5px #000; pointer-events: auto; }
+  .reels-app .social-reel-card .social-post-copy { color: #fff; font-size: 13px; line-height: 1.45; }
+  .reels-app .social-reel-card .social-reel-side-rail { position: absolute; top: min(84%, calc(100% - 145px)); right: max(12px, calc((100% - var(--reel-frame-width)) / 2 + 12px)); display: grid; justify-items: center; gap: 13px; transform: translateY(-50%); }
+  .reels-app .social-reel-card .social-reel-creator-action { display: grid; }
+  .reels-app .social-reel-card .social-post-actions.social-reel-actions { width: auto; flex-direction: column; gap: 12px; }
+  .reels-app .social-reel-card .social-reel-actions button { min-width: 48px; min-height: 48px; display: grid; grid-auto-flow: row; justify-items: center; gap: 2px; padding: 1px; border: 1px solid #ffffff18; border-radius: 14px; color: #fff; background: #07120f66; font-size: 10px; text-shadow: 0 1px 5px #000b; }
+  .reels-app .social-reel-card .social-reel-actions button svg { width: 24px; height: 24px; filter: drop-shadow(0 1px 3px #0008); }
+  .reels-app .social-reel-card .social-reel-actions button.is-liked { color: #c8eb59; }
+  .reels-app .social-reel-card .social-reel-view-count { display: none; }
+  .reels-app .social-reel-card .social-comments { width: min(100%, 510px); max-height: 58%; right: 0; bottom: 0; left: 50%; transform: translateX(-50%); }
+}
