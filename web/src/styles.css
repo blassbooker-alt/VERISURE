@@ -6633,3 +6633,18 @@ html[data-theme] .public-routine-section h2 {
   .social-profile-main > button.button { margin-top: 10px; }
   .social-profile-metrics { gap: 10px 14px; }
 }
+
+/* FortalReels is immersive: only its own compact header and filter bar are shown. */
+.reels-app > .app-screen > .mobile-header,
+.reels-app > .app-screen > .screen-heading,
+.reels-app > .app-screen > .bottom-nav {
+  display: none !important;
+}
+.reels-app .social-reels-page .social-reels-intro {
+  box-sizing: border-box;
+  height: 56px;
+  min-height: 56px;
+}
+.reels-app .social-reels-page .social-reels-toolbar {
+  top: calc(56px + env(safe-area-inset-top));
+}
