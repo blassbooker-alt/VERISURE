@@ -6,7 +6,8 @@ export const NOTIFICATION_PREFERENCES_DEFAULTS = Object.freeze({
   comments_enabled: true,
   mentions_enabled: true,
   messages_enabled: true,
-  workout_reminders_enabled: true,
+  message_preview_mode: "sender_only",
+  workout_reminders_enabled: false,
   partner_updates_enabled: true,
   shop_updates_enabled: true,
   marketing_enabled: false,
@@ -22,6 +23,7 @@ const BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy
 export function notificationErrorMessage(error, fallback = "Não foi possível concluir esta ação.") {
   const code = String(error?.code || "");
   const message = String(error?.message || "");
+  if (code === "PGRST204" && /message_preview_mode/i.test(message)) return "Aplique a migra\u00e7\u00e3o FORTALFY_NOTIFICATIONS_V1_5_MESSAGE_PRIVACY.sql no Supabase.";
   if (["PGRST205", "42P01", "42883"].includes(code) || /could not find the table|relation .* does not exist|function .* does not exist/i.test(message)) {
     return "A central de notificações ainda não foi configurada no Supabase. Aplique FORTALFY_NOTIFICATIONS_V1.sql e publique a função fortalfy-push-worker.";
   }
@@ -90,10 +92,23 @@ export async function markAllNotificationsRead(client, userId) {
   if (error) throw error;
 }
 
+export async function markConversationNotificationsRead(client, userId, conversationId) {
+  if (!client || !userId || !conversationId) return [];
+  const { data, error } = await client.from("fortalfy_notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("recipient_user_id", userId)
+    .eq("type", "chat.message")
+    .eq("target_entity_id", conversationId)
+    .is("read_at", null)
+    .select("id");
+  if (error) throw error;
+  return (data || []).map(row => row.id);
+}
+
 export async function loadNotificationPreferences(client, userId) {
   if (!client || !userId) return { ...NOTIFICATION_PREFERENCES_DEFAULTS };
   const { data, error } = await client.from("fortalfy_notification_preferences")
-    .select("likes_enabled,comments_enabled,mentions_enabled,messages_enabled,workout_reminders_enabled,partner_updates_enabled,shop_updates_enabled,marketing_enabled,sound_enabled,vibration_enabled,quiet_hours_start,quiet_hours_end,timezone")
+    .select("likes_enabled,comments_enabled,mentions_enabled,messages_enabled,message_preview_mode,workout_reminders_enabled,partner_updates_enabled,shop_updates_enabled,marketing_enabled,sound_enabled,vibration_enabled,quiet_hours_start,quiet_hours_end,timezone")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -113,6 +128,10 @@ export async function saveNotificationPreferences(client, userId, preferences) {
 
 export async function enableWebPush(client, userId) {
   if (!client || !userId) throw new Error("Entre na sua conta para ativar as notificações.");
+  const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const isInstalled = navigator.standalone === true || window.matchMedia?.("(display-mode: standalone)").matches;
+  if (isIos && !isInstalled) return { supported: false, permission: typeof Notification === "undefined" ? "unsupported" : Notification.permission, reason: "ios-install-required" };
   if (!window.isSecureContext || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
     return { supported: false, permission: "unsupported" };
   }
@@ -129,7 +148,7 @@ export async function enableWebPush(client, userId) {
     || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeBase64Url(vapidPublicKey) });
   const subscriptionJson = subscription.toJSON();
   const userAgent = navigator.userAgent;
-  const platform = /iPhone|iPad|iPod/i.test(userAgent) ? "ios_pwa" : /Android/i.test(userAgent) ? "android_pwa" : "web";
+  const platform = isIos ? "ios_pwa" : /Android/i.test(userAgent) ? "android_pwa" : "web";
   const { error } = await client.rpc("register_fortal_push_subscription", {
     p_subscription: subscriptionJson,
     p_platform: platform,
@@ -162,8 +181,8 @@ export async function sendTestNotification() {
   const registration = await navigator.serviceWorker.ready;
   await registration.showNotification("Fortalfy · teste de notificação", {
     body: "Tudo certo! As notificações do Fortalfy aparecem na barra do seu telefone.",
-    icon: publicAsset("assets/fortalfy-app-icon.svg"),
-    badge: publicAsset("assets/fortalfy-app-icon.svg"),
+    icon: publicAsset("assets/fortalfy-icon-192.png"),
+    badge: publicAsset("assets/fortalfy-notification-badge.svg"),
     tag: "fortalfy-notification-test",
     renotify: true,
     data: { route: "/settings/notifications", test: true },

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
@@ -7,20 +7,26 @@ import {
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   Globe2, Phone, ShoppingBag, Sparkles, Star, Target, Ticket, Timer, Trash2, UserMinus, UserPlus, Users, Utensils, Wallet, X,
 } from "lucide-react";
-import Dashboard from "./Dashboards.jsx";
-import ProfessionalPortal from "./ProfessionalPortal.jsx";
-import BenefitsTerms from "./BenefitsTerms.jsx";
-import { GymCheckInPage, GymPartnerCheckinsPage, GymPlateAdminPage } from "./GymAccess.jsx";
+const Dashboard = lazy(() => import("./Dashboards.jsx"));
+const ProfessionalPortal = lazy(() => import("./ProfessionalPortal.jsx"));
+const BenefitsTerms = lazy(() => import("./BenefitsTerms.jsx"));
+const GymCheckInPage = lazy(() => import("./GymAccess.jsx").then(module => ({ default: module.GymCheckInPage })));
+const GymPartnerCheckinsPage = lazy(() => import("./GymAccess.jsx").then(module => ({ default: module.GymPartnerCheckinsPage })));
+const GymPlateAdminPage = lazy(() => import("./GymAccess.jsx").then(module => ({ default: module.GymPlateAdminPage })));
 import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
-import FortalShop from "./FortalShop.jsx";
-import FortalfyStudio from "./FortalfyStudio.jsx";
-import PerformanceDashboard from "./PerformanceDashboard.jsx";
-import ThemeSettings from "./ThemeSettings.jsx";
-import NotificationSettings from "./NotificationSettings.jsx";
-import StoryExperience from "./Stories.jsx";
-import { WeeklyClientPlan } from "./WeeklyPlans.jsx";
-import { OnboardingGate, SocialFeed, SocialMessages, SocialPeople, SocialProfile } from "./SocialScreens.jsx";
+const FortalShop = lazy(() => import("./FortalShop.jsx"));
+const FortalfyStudio = lazy(() => import("./FortalfyStudio.jsx"));
+const PerformanceDashboard = lazy(() => import("./PerformanceDashboard.jsx"));
+const ThemeSettings = lazy(() => import("./ThemeSettings.jsx"));
+const NotificationSettings = lazy(() => import("./NotificationSettings.jsx"));
+const StoryExperience = lazy(() => import("./Stories.jsx"));
+const WeeklyClientPlan = lazy(() => import("./WeeklyPlans.jsx").then(module => ({ default: module.WeeklyClientPlan })));
+const OnboardingGate = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.OnboardingGate })));
+const SocialFeed = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialFeed })));
+const SocialMessages = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialMessages })));
+const SocialPeople = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialPeople })));
+const SocialProfile = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialProfile })));
 import {
   cancelFollowRequest, getErrorMessage, isDemoUser, loadFollowStates, loadProfile,
   setFollow as persistFollow,
@@ -32,12 +38,11 @@ import {
 } from "./partnerService.js";
 import { fortalfyAsset, publicAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
-import splashVideo from "../../assets/splash_fortalfy_v3.mp4";
 import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
-import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
+import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markConversationNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
 import { playMessageSound } from "./messageSoundService.js";
 import { installInterfaceSoundInteractions } from "./uiSoundService.js";
 
@@ -171,14 +176,6 @@ function CommentThread({ comments = [], userName, userAvatar = "", onAdd, onTogg
         </div>
       </article>;
     })}</div>}
-  </div>;
-}
-
-function SplashScreen({ onClose }) {
-  return <div className="app-splash" role="status" aria-label="Fortalfy iniciando">
-    <video className="app-splash-video" src={splashVideo} autoPlay muted playsInline preload="auto" onEnded={onClose} onError={onClose} aria-hidden="true" />
-    <div className="app-splash-brand"><Brand light /><span>SEU BEM-ESTAR, NO SEU RITMO</span></div>
-    <button className="app-splash-skip" onClick={onClose}>Entrar no app <ArrowRight size={15} /></button>
   </div>;
 }
 
@@ -1419,7 +1416,6 @@ function AppContent() {
   const [socialProfileError, setSocialProfileError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(() => hasPasswordRecoveryCallback());
   const [invalidAuthCallback, setInvalidAuthCallback] = useState(() => hasInvalidAuthCallback());
-  const [showSplash, setShowSplash] = useState(true);
   const [activity, setActivity] = useState(() => normalizeActivity(loadLocalValue(ACTIVITY_STORAGE_KEY, null)));
   const [activityOwnerId, setActivityOwnerId] = useState(null);
   const [activityError, setActivityError] = useState("");
@@ -1517,6 +1513,9 @@ function AppContent() {
     }
   }, [accountUserId]);
   const markNotificationRead = id => {
+    if ("serviceWorker" in navigator) void navigator.serviceWorker.ready
+      .then(registration => registration.active?.postMessage({ type: "FORTALFY_NOTIFICATION_READ", id }))
+      .catch(() => {});
     if (accountUserId) {
       markRemoteNotificationRead(supabase, id).then(() => setNotifications(current => current.map(item => item.id === id ? { ...item, read: true } : item))).catch(error => setNotificationError(error.message || "Não foi possível atualizar este aviso."));
       return;
@@ -1524,12 +1523,42 @@ function AppContent() {
     setNotifications(current => current.map(item => item.id === id ? { ...item, read: true } : item));
   };
   const markAllNotificationsRead = () => {
+    if ("serviceWorker" in navigator) void navigator.serviceWorker.ready
+      .then(registration => registration.active?.postMessage({ type: "FORTALFY_NOTIFICATION_READ" }))
+      .catch(() => {});
     if (accountUserId) {
       markAllRemoteNotificationsRead(supabase, accountUserId).then(() => setNotifications(current => current.map(item => ({ ...item, read: true })))).catch(error => setNotificationError(error.message || "Não foi possível atualizar os avisos."));
       return;
     }
     setNotifications(current => current.map(item => ({ ...item, read: true })));
   };
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const notificationId = params.get("notificationId");
+    if (!authReady || !accountUserId || !notificationId || !/^[a-zA-Z0-9-]{1,80}$/.test(notificationId)) return;
+    markNotificationRead(notificationId);
+    params.delete("notificationId");
+    const remainingQuery = params.toString();
+    navigate(`${location.pathname}${remainingQuery ? `?${remainingQuery}` : ""}`, { replace: true });
+  }, [accountUserId, authReady, location.pathname, location.search, navigate]);
+  useEffect(() => {
+    if (!accountUserId || location.pathname !== "/messages") return;
+    const conversationId = new URLSearchParams(location.search).get("conversation");
+    if (!conversationId || !/^[a-zA-Z0-9-]{1,80}$/.test(conversationId)) return;
+    let active = true;
+    markConversationNotificationsRead(supabase, accountUserId, conversationId)
+      .then(ids => {
+        if (!active || !ids.length) return;
+        setNotifications(current => current.map(item => ids.includes(item.id) ? { ...item, read: true } : item));
+        for (const id of ids) {
+          if ("serviceWorker" in navigator) void navigator.serviceWorker.ready
+            .then(registration => registration.active?.postMessage({ type: "FORTALFY_NOTIFICATION_READ", id }))
+            .catch(() => {});
+        }
+      })
+      .catch(error => console.warn("Could not mark conversation notifications as read.", error?.code || "database_error"));
+    return () => { active = false; };
+  }, [accountUserId, location.pathname, location.search]);
   const clearNotifications = () => setNotifications([]);
 
   useEffect(() => {
@@ -1891,11 +1920,6 @@ function AppContent() {
     return () => navigator.serviceWorker?.removeEventListener("message", listener);
   }, [accountUserId, location.pathname, location.search, notificationPreferences]);
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timer = window.setTimeout(() => setShowSplash(false), reducedMotion ? 900 : 6500);
-    return () => window.clearTimeout(timer);
-  }, []);
-  useEffect(() => {
     if (!authReady || accountUserId) return;
     try {
       window.localStorage.setItem(ACTIVITY_STORAGE_KEY, JSON.stringify(activity));
@@ -1915,7 +1939,7 @@ function AppContent() {
   const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id);
-  return <div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
+  return <Suspense fallback={<div className="app-loading" role="status">Carregando Fortalfy…</div>}><div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
     <NotificationContext.Provider value={{ open: () => setNotificationCenterOpen(true), unreadCount: unreadNotificationCount, push: pushNotification }}>
     <Routes>
       <Route path="/" element={authSession?.user?.id ? <Navigate to="/home" replace /> : <PublicLanding />} />
@@ -1975,8 +1999,7 @@ function AppContent() {
     )}
     <Toast message={toast} onClose={() => setToast("")} />
     {liveNotification && <aside className="notification-live-toast" role="status"><span className="notification-live-icon"><Bell size={16} /></span><button type="button" className="notification-live-content" onClick={() => { markNotificationRead(liveNotification.id); openNotificationTarget(liveNotification.targetRoute); setLiveNotification(null); }}><strong>{liveNotification.title}</strong><span>{liveNotification.message}</span></button><button type="button" className="icon-button" aria-label="Dispensar notificação" onClick={() => setLiveNotification(null)}><X size={16} /></button></aside>}
-    {showSplash && <SplashScreen onClose={() => setShowSplash(false)} />}
-  </div>;
+  </div></Suspense>;
 }
 
 export default function App() {

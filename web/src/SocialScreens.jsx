@@ -173,6 +173,7 @@ function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
 }
 
 function SocialAuth({ client, configured, notify, recovery = false, onRecovered }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedKind = searchParams.get("professionalKind") || "";
@@ -451,7 +452,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
     try {
       const redirectTo = professionalKind
         ? `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(professionalKind)}`
-        : `${window.location.origin}${window.location.pathname}`;
+        : `${window.location.origin}${window.location.pathname}#${location.pathname}${location.search}`;
       await signInWithGoogle(client, redirectTo);
     } catch (error) {
       console.error("Falha ao iniciar autenticação com Google.", error);

@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v15";
+const CACHE = "fortalfy-pwa-v16";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.add("./")).then(() => self.skipWaiting()));
 });
@@ -48,7 +48,7 @@ self.addEventListener("push", event => {
   const options = {
     body: String(message.body || "Você tem uma nova atualização no Fortalfy.").slice(0, 240),
     icon: new URL("assets/fortalfy-icon-192.png", self.registration.scope).href,
-    badge: new URL("assets/fortalfy-icon-192.png", self.registration.scope).href,
+    badge: new URL("assets/fortalfy-notification-badge.svg", self.registration.scope).href,
     tag: String(message.tag || message.id || "fortalfy-notification").slice(0, 100),
     renotify: false,
     silent: !soundEnabled,
@@ -64,7 +64,10 @@ self.addEventListener("notificationclick", event => {
   const { id, route } = event.notification.data || {};
   const safeRoute = typeof route === "string" && /^\/[A-Za-z0-9/_?=&.%+-]*$/.test(route) ? route : "/home";
   const appUrl = new URL(self.registration.scope);
-  appUrl.hash = safeRoute;
+  const destination = new URLSearchParams(safeRoute.split("?")[1] || "");
+  if (id && /^[a-zA-Z0-9-]{1,80}$/.test(id)) destination.set("notificationId", id);
+  const destinationQuery = destination.toString();
+  appUrl.hash = `${safeRoute.split("?")[0]}${destinationQuery ? `?${destinationQuery}` : ""}`;
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async clients => {
     for (const client of clients) {
       if (new URL(client.url).origin !== appUrl.origin) continue;
@@ -74,5 +77,15 @@ self.addEventListener("notificationclick", event => {
       return;
     }
     await self.clients.openWindow(appUrl.href);
+  }));
+});
+
+self.addEventListener("message", event => {
+  if (event.data?.type !== "FORTALFY_NOTIFICATION_READ") return;
+  const id = String(event.data.id || "");
+  event.waitUntil(self.registration.getNotifications().then(notifications => {
+    for (const notification of notifications) {
+      if (id ? notification.data?.id === id : true) notification.close();
+    }
   }));
 });

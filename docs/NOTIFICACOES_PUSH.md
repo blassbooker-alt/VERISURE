@@ -12,6 +12,8 @@
 
 Para um projeto ainda sem notificações, execute `FORTALFY_NOTIFICATIONS_V1.sql` depois das migrações de base indicadas no cabeçalho. Em projetos que já têm as tabelas e funções da Fortalfy, não reaplique a migração inicial: execute `FORTALFY_NOTIFICATIONS_V1_2_PUSH_PAYLOAD_FIX.sql`. Essa migração é aditiva, preserva os registros e corrige os metadados que o push worker precisa para respeitar o som, identificar mensagens e abrir o destino certo. Ela também corrige os gatilhos de status somente quando a definição estiver ausente ou divergente.
 
+Para preferências de privacidade e agrupamento de mensagens, aplique `FORTALFY_NOTIFICATIONS_V1_5_MESSAGE_PRIVACY.sql` depois de `FORTALFY_NOTIFICATIONS_V1_4_FOLLOW_COPY.sql`. A prévia vem configurada como **somente remetente**; o usuário pode escolher prévia completa ou ocultar o conteúdo na tela bloqueada. A escolha é aplicada no servidor antes do payload sair para os dispositivos. A migração também agrupa mensagens por conversa e mantém o texto de prévia restrito ao próprio destinatário.
+
 O envio real requer os seguintes segredos na Edge Function `fortalfy-push-worker`:
 
 - `FORTALFY_PUSH_WORKER_SECRET`: segredo aleatório longo compartilhado com o dispatcher.
@@ -44,7 +46,7 @@ cd web
 npm run build
 ```
 
-No projeto Fortalfy, a migração V1.2 foi aplicada em 19/10/2026. As consultas de verificação confirmaram os campos enviados ao worker, os gatilhos de status e o processamento da fila. Os nomes dos segredos do worker e do Vault estão configurados; seus valores permanecem mascarados no painel.
+No projeto Fortalfy, a migração V1.2 foi aplicada em 19/10/2026. As consultas de verificação confirmaram os campos enviados ao worker, os gatilhos de status e o processamento da fila. Os nomes dos segredos do worker e do Vault estão configurados; seus valores permanecem mascarados no painel. Depois de aplicar V1.5, publique novamente o worker/migração conforme o fluxo normal e gere o build com a mesma chave pública VAPID.
 
 Ainda não foi possível confirmar a entrega em um telefone: a tabela de subscriptions estava sem dispositivos ativos na última verificação. Ative notificações em um aparelho autenticado e confirme a permissão do sistema antes do teste real. A chave VAPID pública do build também precisa corresponder à chave privada do worker; como os valores permanecem mascarados, faça essa validação no fluxo seguro de configuração, sem copiá-los para logs ou código.
 
@@ -53,6 +55,8 @@ Ainda não foi possível confirmar a entrega em um telefone: a tabela de subscri
 `web/public/assets/fortalfy-notificacao-profissional.mp3` é reproduzido somente quando uma nova notificação chega com o app aberto, a preferência de som ligada e a página fora do destino atual. O navegador pode bloquear áudio até existir interação do usuário.
 
 O padrão Web Push não oferece uma opção portátil para escolher um arquivo de som quando o app está fechado. Nesse estado, Android/iOS usam o som configurado pelo sistema/navegador. A vibração também depende do navegador; o iOS pode ignorar essa opção. No iOS, Web Push exige um web app instalado na tela inicial em versões compatíveis do sistema.
+
+Esta arquitetura envia **Web Push para navegadores e PWA instaladas**. Ela não é um binário Android/iOS nativo: canais Android configuráveis pelo app, categorias APNs, sons personalizados em background e ações rápidas nativas exigem empacotar clientes nativos e configurar Firebase/APNs. Não declarar esses recursos nativos como concluídos até existir esse cliente e eles serem validados em aparelhos reais.
 
 A central e os avisos dentro do app não dependem de permissão do sistema. Se o navegador não oferecer Push API, o usuário ainda pode consultar os avisos persistidos depois da migração.
 

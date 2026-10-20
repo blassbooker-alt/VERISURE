@@ -51,7 +51,7 @@ create table if not exists public.fortalfy_notification_preferences (
   comments_enabled boolean not null default true,
   mentions_enabled boolean not null default true,
   messages_enabled boolean not null default true,
-  workout_reminders_enabled boolean not null default true,
+  workout_reminders_enabled boolean not null default false,
   partner_updates_enabled boolean not null default true,
   shop_updates_enabled boolean not null default true,
   security_enabled boolean not null default true,
@@ -232,8 +232,10 @@ begin
     when 'account.security' then 'security_enabled'
     else null end;
   if v_preference_key is not null then
-    execute format('select coalesce((select %I from public.fortalfy_notification_preferences where user_id = $1), true)', v_preference_key)
-      into v_enabled using p_recipient;
+    execute format(
+      'select coalesce((select %I from public.fortalfy_notification_preferences where user_id = $1), $2)',
+      v_preference_key
+    ) into v_enabled using p_recipient, v_preference_key <> 'workout_reminders_enabled';
   end if;
   if not v_enabled then return null; end if;
 
