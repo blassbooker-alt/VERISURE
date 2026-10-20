@@ -45,6 +45,20 @@
         splash.append(retry);
       }, 10000);
     </script>
+    <script>
+      if ("serviceWorker" in navigator && location.protocol === "https:") {
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        let reloadingForUpdate = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!hadController || reloadingForUpdate) return;
+          reloadingForUpdate = true;
+          location.reload();
+        });
+        navigator.serviceWorker.register(new URL("./service-worker.js", document.baseURI), { updateViaCache: "none" })
+          .then(registration => registration.update())
+          .catch(() => {});
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

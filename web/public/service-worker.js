@@ -1,6 +1,13 @@
-const CACHE = "fortalfy-pwa-v17";
+const CACHE = "fortalfy-pwa-v18";
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.add("./")).then(() => self.skipWaiting()));
+  event.waitUntil((async () => {
+    const response = await fetch("./precache-manifest.json", { cache: "reload" });
+    if (!response.ok) throw new Error("Não foi possível carregar os arquivos de inicialização do Fortalfy.");
+    const files = await response.json();
+    const cache = await caches.open(CACHE);
+    await cache.addAll(Array.from(new Set(["./", ...files])));
+    await self.skipWaiting();
+  })());
 });
 self.addEventListener("activate", event => {
   event.waitUntil(
