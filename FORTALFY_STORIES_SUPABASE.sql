@@ -147,5 +147,5 @@ create policy "users upload their own story media" on storage.objects
     bucket_id = 'social-media'
     and split_part(name, '/', 1) = auth.uid()::text
     and split_part(name, '/', 2) = 'stories'
-    and name ~ ('^' || auth.uid()::text || '/stories/[0-9a-fA-F-]{36}\.(jpg|png|webp|mp4|webm)$')
+    and name ~ ('^' || auth.uid()::text || '/stories/[0-9a-fA-F-]{36}[.](jpg|png|webp|mp4|webm)$')
   );
