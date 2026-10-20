@@ -5698,7 +5698,9 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
 }
 @media (max-width: 900px) {
   .public-landing { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .mobile-app:not(.reels-app) { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
   .mobile-install-bar { width: min(100% - 28px, 520px); position: fixed; z-index: 25; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; display: block; margin-inline: auto; }
+  .mobile-install-bar.app-install-bar { bottom: calc(94px + env(safe-area-inset-bottom)); }
   .mobile-install-cta { width: 100%; min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; color: #14211c; background: #d3eb63; border: 1px solid #c7df58; border-radius: 16px; box-shadow: 0 10px 32px #102d1f38, 0 2px 6px #102d1f20; font-size: 14px; font-weight: 850; }
   .mobile-install-cta:hover, .mobile-install-cta:active { background: #e3f58d; transform: translateY(-1px); }
   .mobile-install-cta svg { width: 18px; height: 18px; }
@@ -7133,3 +7135,7 @@ html[data-theme] .public-routine-section h2 {
 
 .reels-app .social-reel-media-error { cursor: pointer; }
 .reels-app .social-reel-media-error:disabled { opacity: .7; cursor: progress; }
+
+@media (max-width: 900px) {
+  .mobile-app:not(.reels-app) { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
+}
