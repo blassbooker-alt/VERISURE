@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Camera, Check, Clock3, Eye, Heart, ImagePlus, LoaderCircle, Pause,
   Play, Plus, Trash2, Volume2, VolumeX, X,
@@ -142,7 +143,7 @@ function StoryComposer({ onClose, onPublish, notify }) {
     }
   };
 
-  return <div className="story-composer-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !saving && !validating && onClose()}>
+  return createPortal(<div className="story-composer-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !saving && !validating && onClose()}>
     <section className="story-composer" role="dialog" aria-modal="true" aria-labelledby="story-composer-title">
       <header className="story-composer-header"><div><span className="eyebrow">COMUNIDADE FORTALFY</span><h2 id="story-composer-title">Criar Story</h2></div><button type="button" className="icon-button" aria-label="Fechar janela" disabled={saving || validating} onClick={onClose}><X size={20} /></button></header>
       <form onSubmit={publish}>
@@ -161,7 +162,7 @@ function StoryComposer({ onClose, onPublish, notify }) {
         <footer className="story-composer-footer"><button type="button" className="button subtle" disabled={saving || validating} onClick={onClose}>Cancelar</button><button type="submit" className="button primary" disabled={saving || validating || !file}>{saving ? <><LoaderCircle className="story-spinner" size={16} /> Salvando…</> : validating ? "Conferindo vídeo…" : <>Publicar Story <Plus size={16} /></>}</button></footer>
       </form>
     </section>
-  </div>;
+  </div>, document.querySelector(".mobile-app") || document.body);
 }
 
 function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose, onView, onLoadViewers, onLike, onDelete, notify }) {
@@ -326,7 +327,7 @@ function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose
     }
   };
 
-  return <div className="story-viewer-backdrop" role="presentation">
+  return createPortal(<div className="story-viewer-backdrop" role="presentation">
     <section className="story-viewer" ref={stageRef} tabIndex={0} aria-label={`Story de ${profile.name}`} onKeyDown={event => event.key === " " && event.preventDefault()} onPointerDown={handlePress} onPointerUp={handleRelease} onPointerCancel={handleRelease} onClick={navigateTap}>
       <div className="story-viewer-media">
         {isVideo
@@ -358,7 +359,7 @@ function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose
       <button type="button" className="story-tap-zone previous" aria-label="Story anterior" onClick={event => { event.stopPropagation(); previous.current?.(); }} />
       <button type="button" className="story-tap-zone next" aria-label="Próximo Story" onClick={event => { event.stopPropagation(); next.current?.(); }} />
     </section>
-  </div>;
+  </div>, document.querySelector(".mobile-app") || document.body);
 }
 
 export default function StoryExperience({ client, configured, session, user, notify }) {
