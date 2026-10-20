@@ -102,6 +102,19 @@ export async function saveOnboarding(client, userId, fields) {
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0]);
   if (!client || !userId || isDemoUser(userId)) throw new Error("Entre com uma conta real para salvar suas preferências.");
 
+  // Use the identity from the same session whose JWT Supabase sends with the
+  // request. A stale userId prop can otherwise fail the user_preferences RLS
+  // check even when the signed-in account is valid.
+  let authenticatedUserId = userId;
+  if (typeof client.auth?.getSession === "function") {
+    const { data, error } = await client.auth.getSession();
+    if (error) throw error;
+    authenticatedUserId = data?.session?.user?.id || "";
+    if (!authenticatedUserId) {
+      throw new Error("Sua sessão expirou. Entre novamente para salvar suas preferências.");
+    }
+  }
+
   const payload = {
     birth_date: fields.birthDate,
     goals: fields.goals,
@@ -112,13 +125,13 @@ export async function saveOnboarding(client, userId, fields) {
   };
 
   const { data, error } = await client.from("user_preferences")
-    .upsert({ user_id: userId, ...payload }, { onConflict: "user_id" })
+    .upsert({ user_id: authenticatedUserId, ...payload }, { onConflict: "user_id" })
     .select("birth_date,goals,interests,accepted_terms_at,onboarding_completed")
     .single();
 
   if (error) {
     if (error.code === "42501" || /row-level security/i.test(error.message || "")) {
-      throw new Error("O banco ainda não permite salvar suas preferências. Atualize a configuração de preferências do Fortalfy no Supabase e tente novamente.");
+      throw new Error("Não foi possível salvar suas preferências nesta sessão. Saia da conta, entre novamente e tente de novo.");
     }
     throw error;
   }
