@@ -1909,7 +1909,7 @@ img { display: block; max-width: 100%; }
   .stories-local-note { font-size: 9px; }
   .stories-filter-empty { max-width: 130px; }
   .story-composer-scrim { align-items: end; padding: 8px; }
-  .story-composer { width: 100%; max-height: calc(100svh - 16px - env(safe-area-inset-bottom)); padding: 15px; border-radius: 20px 20px 14px 14px; }
+  .story-composer { width: 100%; max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: 15px; border-radius: 20px 20px 14px 14px; }
   .story-upload-preview { height: min(43svh, 340px); }
   .story-composer-footer .button { min-height: 42px; padding: 0 11px; font-size: 10px; }
   .story-viewer-backdrop { padding: 0; }
