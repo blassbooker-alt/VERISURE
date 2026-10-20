@@ -2,7 +2,7 @@ import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useR
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
-  Bell, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleAlert,
+  Bell, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleAlert, Download,
   CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Info, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   Globe2, Phone, ShoppingBag, Sparkles, Star, Target, Ticket, Timer, Trash2, UserMinus, UserPlus, Users, Utensils, Wallet, X,
@@ -200,6 +200,41 @@ function Screen({ children, title, subtitle, location = false, className = "", a
 }
 
 function PublicLanding() {
+  const installPromptRef = useRef(null);
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+  useEffect(() => {
+    setIsAppInstalled(window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true);
+    const onBeforeInstallPrompt = event => {
+      event.preventDefault();
+      installPromptRef.current = event;
+    };
+    const onAppInstalled = () => {
+      installPromptRef.current = null;
+      setIsAppInstalled(true);
+      setInstallHelpOpen(false);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+  const startInstall = async () => {
+    const installPrompt = installPromptRef.current;
+    if (!installPrompt) {
+      setInstallHelpOpen(true);
+      return;
+    }
+    installPromptRef.current = null;
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice?.outcome === "accepted") setIsAppInstalled(true);
+  };
+  const installButton = (className = "") => <button type="button" className={`button install-app-button ${className}`} onClick={startInstall}>
+    <Download size={16} aria-hidden="true" /><span>Baixar app</span>
+  </button>;
   const experiences = [
     { title: "FortalPass", image: "fortalfy-pack-gym-interior.jpg", alt: "Academia clara com equipamentos de treino", description: "Explore academias, estúdios e profissionais parceiros." , to: "/pass" },
     { title: "FortalReels", image: "fortalfy-pack-reels-training.jpg", alt: "Treino de mobilidade em um estúdio iluminado", description: "Encontre ideias de movimento em vídeos curtos.", to: "/reels" },
@@ -215,7 +250,7 @@ function PublicLanding() {
     { image: "fortalfy-v2-acessorios.png", alt: "Campanha Fortalfy de acessórios para treino com atleta e equipamentos", label: "Acessórios de treino" },
   ];
   return <main className="public-landing">
-    <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link><Link to="/feed" className="button primary">Começar agora <ArrowRight size={16} /></Link></div></header>
+    <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link>{!isAppInstalled && installButton("public-header-install")}<Link to="/feed" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link></div></header>
     <section className="public-hero">
       <div className="public-hero-copy"><span className="eyebrow">BEM-ESTAR, MOVIMENTO E COMUNIDADE</span><h1>Seu bem-estar começa com um próximo passo.</h1><p>Treine, encontre profissionais e construa uma rotina mais saudável em um só lugar.</p><div className="public-hero-actions"><Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link><a href="#experiencias" className="button subtle">Conhecer a Fortalfy</a></div><div className="public-value-points"><span><BadgeCheck size={16} /> Profissionais parceiros</span><span><Users size={16} /> Comunidade</span><span><Activity size={16} /> Sua evolução</span></div></div>
       <div className="public-hero-visual"><img src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher treinando força em um ambiente claro e acolhedor" fetchpriority="high" /><span>Movimento possível, no seu ritmo.</span></div>
@@ -225,6 +260,21 @@ function PublicLanding() {
     <section className="public-routine-section" id="sobre"><img src={visualPackAsset("fortalfy-pack-wellness-morning.jpg")} alt="Mulher alongando em casa pela manhã" loading="lazy" /><div><span className="eyebrow">NO SEU RITMO</span><h2>Pequenos passos também contam.</h2><p>A Fortalfy reúne ferramentas e experiências para você construir uma rotina possível, com mais clareza e apoio.</p><Link to="/feed" className="button primary">Conhecer a plataforma <ArrowRight size={16} /></Link></div></section>
     <section className="public-campaigns-section" aria-labelledby="campaigns-title"><div className="public-section-heading"><span className="eyebrow">CAMPANHAS FORTALFY</span><h2 id="campaigns-title">Inspiração para acompanhar seu ritmo.</h2><p>Conheça as campanhas Fortalfy e explore o catálogo.</p></div><div className="public-campaign-grid">{campaigns.map(item => <Link to="/shop" className="public-campaign-card" key={item.image} aria-label={`${item.label}. Explorar Fortalfy Shop.`}><img src={publicAsset(`fortalfy/campaign/${item.image}`)} alt={item.alt} loading="lazy" decoding="async" onError={event => { event.currentTarget.onerror = null; event.currentTarget.alt = "Imagem de campanha Fortalfy indisponível; fotografia alternativa de bem-estar."; event.currentTarget.src = visualPackAsset("fortalfy-pack-wellness-product.jpg"); }} /></Link>)}</div></section>
     <footer className="public-footer"><Link to="/" aria-label="Fortalfy, início"><Brand /></Link><span>Seu bem-estar, no seu ritmo.</span><nav aria-label="Links institucionais"><a href="#sobre">Sobre</a><Link to="/benefits-terms">Termos e benefícios</Link><a href="mailto:fortalfy@gmail.com">Suporte</a></nav><small>© {new Date().getFullYear()} Fortalfy</small></footer>
+    {!isAppInstalled && <div className="mobile-install-bar">{installButton("mobile-install-cta")}</div>}
+    {installHelpOpen && <div className="install-help-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && setInstallHelpOpen(false)}>
+      <section className="install-help-card" role="dialog" aria-modal="true" aria-labelledby="install-help-title">
+        <button type="button" className="install-help-close" aria-label="Fechar instruções" onClick={() => setInstallHelpOpen(false)}><X size={19} /></button>
+        <span className="install-help-icon"><Download size={22} /></span>
+        <span className="eyebrow">FORTALFY NO SEU CELULAR</span>
+        <h2 id="install-help-title">Adicione o app à sua tela inicial</h2>
+        <p>Instale a Fortalfy para abrir em tela cheia e acessar mais rápido.</p>
+        <ol>
+          <li><strong>iPhone ou iPad:</strong> toque em <b>Compartilhar</b> no Safari e escolha <b>Adicionar à Tela de Início</b>.</li>
+          <li><strong>Android:</strong> abra o menu <b>⋮</b> do navegador e toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li>
+        </ol>
+        <button type="button" className="button primary install-help-done" onClick={() => setInstallHelpOpen(false)}>Entendi</button>
+      </section>
+    </div>}
   </main>;
 }
 

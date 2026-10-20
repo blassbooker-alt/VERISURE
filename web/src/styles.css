@@ -5580,13 +5580,15 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
   html[data-theme="light"] .reel-preview-feature > div { padding: 20px; }
 }
 .public-landing { min-height: 100vh; color: #14211c; background: #f7f8f4; }
-.public-header { min-height: 76px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 28px; padding: 10px max(calc((100vw - 1280px) / 2), 32px); background: #ffffffed; border-bottom: 1px solid #dde5df; }
+.public-header { min-height: 76px; position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 28px; padding: 10px max(calc((100vw - 1280px) / 2), 32px); background: #ffffffed; border-bottom: 1px solid #dde5df; backdrop-filter: blur(14px); }
 .public-header .logo-mark { color: #10372c; }
 .public-header > nav, .public-header-actions { display: flex; align-items: center; }
 .public-header > nav { justify-content: center; gap: clamp(18px, 3vw, 42px); color: #52645a; font-size: 13px; }
 .public-header > nav a:hover, .public-login-link:hover { color: #21624f; }
 .public-header-actions { justify-content: flex-end; gap: 20px; }
 .public-login-link { color: #3f5048; font-size: 13px; font-weight: 700; }
+.public-header-actions .install-app-button { min-height: 42px; padding-inline: 15px; color: #fff; background: #10372c; border: 1px solid #10372c; border-radius: 12px; font-size: 12px; font-weight: 800; }
+.public-header-actions .install-app-button:hover { color: #d3eb63; background: #174b3b; }
 .public-landing .button.primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 18px; color: #14211c; background: #d3eb63; border: 1px solid #c7df58; border-radius: 12px; box-shadow: none; font-size: 13px; font-weight: 800; }
 .public-landing .button.primary:hover { background: #e3f58d; }
 .public-landing .button.subtle { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px; color: #21624f; background: #fff; border: 1px solid #cfdcd3; border-radius: 12px; font-size: 13px; font-weight: 750; }
@@ -5632,6 +5634,18 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
 .public-campaign-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .public-campaign-card { min-width: 0; display: block; overflow: hidden; aspect-ratio: 4 / 5; background: #f5f7f3; border: 1px solid #e2e9e2; border-radius: 18px; }
 .public-campaign-card img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.mobile-install-bar, .install-help-scrim { display: none; }
+.install-help-scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: #06180fc7; backdrop-filter: blur(6px); }
+.install-help-card { width: min(100%, 460px); position: relative; padding: 30px; color: #14211c; background: #fff; border: 1px solid #dde5df; border-radius: 24px; box-shadow: 0 24px 80px #06180f55; }
+.install-help-close { width: 38px; height: 38px; position: absolute; top: 15px; right: 15px; display: grid; place-items: center; color: #52645a; background: #f1f5f0; border: 0; border-radius: 50%; }
+.install-help-icon { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 22px; color: #d3eb63; background: #10372c; border-radius: 15px; }
+.install-help-card > .eyebrow { color: #3e795e; font-size: 10px; font-weight: 850; letter-spacing: 1px; }
+.install-help-card h2 { max-width: 340px; margin: 9px 0; color: #14211c; font-size: clamp(24px, 6vw, 31px); line-height: 1.1; letter-spacing: -.8px; }
+.install-help-card p { margin: 0; color: #52645a; font-size: 14px; line-height: 1.6; }
+.install-help-card ol { display: grid; gap: 12px; margin: 20px 0; padding-left: 21px; color: #46584e; font-size: 13px; line-height: 1.55; }
+.install-help-card li::marker { color: #24724f; font-weight: 800; }
+.install-help-card li strong { color: #14211c; }
+.install-help-done { width: 100%; }
 @media (max-width: 900px) {
   .public-header { grid-template-columns: auto 1fr; padding-inline: 24px; }
   .public-header > nav { display: none; }
@@ -5646,7 +5660,9 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
   .public-header { min-height: 64px; gap: 10px; padding: 9px 15px; }
   .public-header .logo-mark { font-size: 20px; }
   .public-header .logo-symbol { width: 27px; height: 27px; }
-  .public-header-actions { gap: 12px; }
+  .public-header-actions { gap: 8px; }
+  .public-header-actions .public-header-start { display: none; }
+  .public-header-actions .install-app-button { min-height: 38px; gap: 6px; padding-inline: 10px; border-radius: 10px; font-size: 10px; white-space: nowrap; }
   .public-header-actions .button { min-height: 38px; padding-inline: 11px; font-size: 10px; }
   .public-login-link { font-size: 11px; }
   .public-hero { width: calc(100% - 32px); min-height: auto; gap: 22px; padding: 38px 0; }
@@ -5679,6 +5695,15 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
   .public-footer > span { align-self: center; }
   .public-footer > nav { width: 100%; order: 3; margin: 4px 0 0; }
   .public-footer > small { align-self: center; margin-left: auto; }
+}
+@media (max-width: 900px) {
+  .public-landing { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .mobile-install-bar { width: min(100% - 28px, 520px); position: fixed; z-index: 25; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; display: block; margin-inline: auto; }
+  .mobile-install-cta { width: 100%; min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; color: #14211c; background: #d3eb63; border: 1px solid #c7df58; border-radius: 16px; box-shadow: 0 10px 32px #102d1f38, 0 2px 6px #102d1f20; font-size: 14px; font-weight: 850; }
+  .mobile-install-cta:hover, .mobile-install-cta:active { background: #e3f58d; transform: translateY(-1px); }
+  .mobile-install-cta svg { width: 18px; height: 18px; }
+  .install-help-card { padding: 26px 22px 22px; border-radius: 21px; }
+  .install-help-scrim { padding: 14px; }
 }
 /* Keep the fixed navigation consistent on screens rendered outside .mobile-app. */
 html[data-theme="light"] .bottom-nav,
