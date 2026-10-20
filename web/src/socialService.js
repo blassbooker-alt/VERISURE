@@ -2,6 +2,7 @@ import { createSecureId } from "./secureId.js";
 
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
+const PROFILE_COVER_RATIO = 820 / 312;
 
 function isMissingCommercialContentColumn(error) {
   return Boolean(
@@ -110,7 +111,7 @@ export function getProfileImageCropRect(width, height, field, zoom = 1, panX = 0
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     throw new Error("Dimensões da imagem inválidas.");
   }
-  const ratio = field === "avatar_path" ? 1 : 3;
+  const ratio = field === "avatar_path" ? 1 : PROFILE_COVER_RATIO;
   const baseWidth = Math.min(width, height * ratio);
   const baseHeight = baseWidth / ratio;
   const scale = Math.min(3, Math.max(1, Number(zoom) || 1));
@@ -148,8 +149,8 @@ export async function prepareProfileImage(file, field, zoom = 1, pan = {}) {
   try {
     const crop = getProfileImageCropRect(bitmap.width, bitmap.height, field, zoom, pan.x, pan.y);
     const canvas = document.createElement("canvas");
-    canvas.width = field === "avatar_path" ? 900 : 1500;
-    canvas.height = field === "avatar_path" ? 900 : 500;
+    canvas.width = field === "avatar_path" ? 900 : 1640;
+    canvas.height = field === "avatar_path" ? 900 : 624;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Não foi possível preparar o corte da imagem.");
     context.drawImage(bitmap, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);

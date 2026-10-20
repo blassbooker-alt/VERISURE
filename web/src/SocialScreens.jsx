@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, ExternalLink, Heart,
@@ -92,7 +93,10 @@ function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");
-    if (!context) return;
+    if (!context) {
+      setImageDraft(current => ({ ...current, previewError: "Este navegador não conseguiu abrir a prévia da imagem." }));
+      return;
+    }
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
     const crop = getProfileImageCropRect(
@@ -104,6 +108,9 @@ function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
       imageDraft.panY,
     );
     context.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+    setImageDraft(current => current?.previewUrl === imageDraft.previewUrl
+      ? { ...current, previewLoading: false, previewError: "" }
+      : current);
   };
 
   useEffect(() => {
@@ -159,7 +166,8 @@ function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
         }
       }}
     />
-    <img ref={imageRef} src={imageDraft.previewUrl} alt="" aria-hidden="true" className="social-image-crop-source" onLoad={drawPreview} />
+    <img ref={imageRef} src={imageDraft.previewUrl} alt="" aria-hidden="true" className="social-image-crop-source" onLoad={drawPreview} onError={() => setImageDraft(current => ({ ...current, previewLoading: false, previewError: "Não foi possível carregar esta imagem. Escolha outro arquivo." }))} />
+    {imageDraft.previewLoading && <span className="social-image-crop-status" role="status">Carregando prévia…</span>}
     {canAdjust && <span className="social-image-crop-move-hint"><Move size={14} /> Arraste para reposicionar</span>}
   </div>;
 }
@@ -2554,12 +2562,6 @@ export function SocialProfile({ client, session, profile, profileError = "", con
   }, [client, editOpen, profileUsername, userId]);
 
   useEffect(() => {
-    if (!imageDraft?.previewUrl) return undefined;
-    const previewUrl = imageDraft.previewUrl;
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [imageDraft?.previewUrl]);
-
-  useEffect(() => {
     setPerson(isOwn ? profile : null);
     setPosts([]);
     setPostCount(0);
@@ -2787,10 +2789,12 @@ export function SocialProfile({ client, session, profile, profileError = "", con
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
       notify("Use uma imagem JPG, PNG, WebP ou GIF.");
+    } else if (file.type === "image/gif" && file.size > 5 * 1024 * 1024) {
+      notify("GIFs animados podem ter até 5 MB para preservar a animação.");
     } else if (file.size > 15 * 1024 * 1024) {
       notify("A imagem original pode ter até 15 MB.");
     } else {
-      setImageDraft({ field, file, previewUrl: URL.createObjectURL(file), zoom: 1, panX: 0, panY: 0 });
+      setImageDraft({ field, file, previewUrl: URL.createObjectURL(file), zoom: 1, panX: 0, panY: 0, previewLoading: true, previewError: "" });
     }
     event.target.value = "";
   };
@@ -2954,20 +2958,30 @@ export function SocialProfile({ client, session, profile, profileError = "", con
         </form>
       </section>
     </div>}
-    {imageDraft && <div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !busy && setImageDraft(null)}>
-      <section className="social-share-dialog social-image-crop-dialog" role="dialog" aria-modal="true" aria-label={imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}>
-        <header><strong>{imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}</strong><button className="social-icon-button" onClick={() => setImageDraft(null)} aria-label="Fechar" disabled={busy}><X size={18} /></button></header>
+    {imageDraft && createPortal(<div className="social-share-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && !busy && setImageDraft(null)}>
+      <section className="social-share-dialog social-image-crop-dialog" role="dialog" aria-modal="true" aria-labelledby="social-image-crop-title" aria-describedby="social-image-crop-description" aria-busy={busy} onKeyDown={event => {
+        if (event.key === "Escape" && !busy) setImageDraft(null);
+        if (event.key === "Tab") {
+          const focusable = [...event.currentTarget.querySelectorAll('button:not(:disabled), input:not(:disabled), canvas[tabindex="0"]')];
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        }
+      }}>
+        <header><strong id="social-image-crop-title">{imageDraft.field === "avatar_path" ? "Ajustar foto do perfil" : "Ajustar foto de capa"}</strong><button autoFocus type="button" className="social-icon-button" onClick={() => setImageDraft(null)} aria-label="Fechar edição da imagem" disabled={busy}><X size={18} /></button></header>
         <ProfileImageCropPreview imageDraft={imageDraft} setImageDraft={setImageDraft} />
         {imageDraft.file.type === "image/gif"
           ? <p className="social-image-crop-note">GIFs animados são mantidos sem corte para preservar a animação.</p>
           : <div className="social-image-zoom">
-            <div><span>Zoom</span><output>{Math.round(imageDraft.zoom * 100)}%</output></div>
-            <input aria-label="Zoom do enquadramento" type="range" min="1" max="3" step="0.05" value={imageDraft.zoom} onChange={event => setImageDraft(current => ({ ...current, zoom: Number(event.target.value) }))} />
-            <button type="button" className="social-image-crop-reset" onClick={() => setImageDraft(current => ({ ...current, zoom: 1, panX: 0, panY: 0 }))}>Redefinir enquadramento</button>
+            <div><label htmlFor="social-image-zoom">Zoom</label><output htmlFor="social-image-zoom">{Math.round(imageDraft.zoom * 100)}%</output></div>
+            <input id="social-image-zoom" aria-label="Zoom do enquadramento" type="range" min="1" max="3" step="0.05" value={imageDraft.zoom} onChange={event => setImageDraft(current => ({ ...current, zoom: Number(event.target.value) }))} />
+            <button type="button" className="social-image-crop-reset" disabled={busy} onClick={() => setImageDraft(current => ({ ...current, zoom: 1, panX: 0, panY: 0 }))}>Redefinir</button>
           </div>}
-        <p className="social-image-crop-note">Arraste a imagem para escolher o enquadramento. A prévia mostra exatamente o corte que será salvo.</p>
-        <footer className="social-image-crop-actions"><button className="button subtle" disabled={busy} onClick={() => setImageDraft(null)}>Cancelar</button><button className="button primary" disabled={busy} onClick={saveProfileImage}>{busy ? "Preparando imagem…" : "Usar esta imagem"}</button></footer>
+        <p id="social-image-crop-description" className="social-image-crop-note">{imageDraft.file.type === "image/gif" ? "Prévia central do GIF. Arraste desativado para manter a animação original." : "Arraste para reposicionar. A prévia mostra o recorte que será salvo."}</p>
+        {imageDraft.previewError && <p className="social-image-crop-error" role="alert">{imageDraft.previewError}</p>}
+        <footer className="social-image-crop-actions"><button type="button" className="button subtle" disabled={busy} onClick={() => setImageDraft(null)}>Cancelar</button><button type="button" className="button primary" disabled={busy || imageDraft.previewLoading || !!imageDraft.previewError} onClick={saveProfileImage}>{busy ? "Salvando imagem…" : "Salvar"}</button></footer>
       </section>
-    </div>}
+    </div>, document.querySelector(".mobile-app") || document.body)}
   </div>;
 }

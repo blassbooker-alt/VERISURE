@@ -2342,15 +2342,17 @@ img { display: block; max-width: 100%; }
   .partner-product-form-actions .button { flex: 1; }
 }
 .social-connections-dialog { width: min(100%, 430px); }
-.social-image-crop-dialog { width: min(100%, 600px); max-height: min(92vh, 820px); padding: 22px; }
+.social-image-crop-dialog { width: min(100%, 600px); max-height: min(calc(100vh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 820px); max-height: min(calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), 820px); overflow: auto; padding: 22px; }
 .social-image-crop-preview { position: relative; display: block; overflow: hidden; margin: 12px auto 16px; border: 1px solid #e3ebe4; background: #edf3ee; touch-action: none; user-select: none; }
 .social-image-crop-preview.avatar { width: min(100%, 360px, 42vh); aspect-ratio: 1; border-radius: 50%; }
-.social-image-crop-preview.cover { width: 100%; min-height: 110px; aspect-ratio: 3 / 1; border-radius: 14px; }
+.social-image-crop-preview.cover { width: 100%; aspect-ratio: 820 / 312; border-radius: 14px; }
 .social-image-crop-preview canvas { width: 100%; height: 100%; display: block; cursor: grab; }
 .social-image-crop-preview canvas:active { cursor: grabbing; }
 .social-image-crop-preview canvas:focus-visible { outline: 3px solid #55a46d; outline-offset: -4px; }
 .social-image-crop-source { display: none; }
 .social-image-crop-move-hint { position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid #ffffff5c; border-radius: 999px; color: #fff; background: #10271dbd; font-size: 11px; font-weight: 700; pointer-events: none; backdrop-filter: blur(8px); }
+.social-image-crop-status { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; color: #35513e; background: #edf3eee8; font-size: 13px; font-weight: 700; text-align: center; }
+.social-image-crop-error { margin: 8px 0; padding: 10px 12px; border: 1px solid #f1c6bf; border-radius: 10px; color: #8c3026; background: #fff4f2; font-size: 12px; line-height: 1.45; }
 .social-image-zoom { display: grid; gap: 8px; color: #35513e; font-size: 12px; font-weight: 700; }
 .social-image-zoom > div { display: flex; align-items: center; justify-content: space-between; }
 .social-image-zoom output { color: #718076; font-variant-numeric: tabular-nums; }
@@ -2361,7 +2363,7 @@ img { display: block; max-width: 100%; }
 .social-image-crop-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 17px; }
 @media (max-width: 600px) {
   .social-image-crop-dialog { padding: 17px; }
-  .social-image-crop-preview.cover { min-height: 96px; }
+  .social-image-crop-preview.cover { width: 100%; }
   .social-image-crop-move-hint { right: 7px; bottom: 7px; padding: 6px 8px; font-size: 10px; }
   .social-image-crop-actions .button { flex: 1; }
 }

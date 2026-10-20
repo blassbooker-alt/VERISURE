@@ -444,11 +444,11 @@ test("profile image crop keeps the selected aspect ratio and clamps drag offsets
     x: 200, y: 0, width: 800, height: 800, maxPanX: 200, maxPanY: 0,
   });
   const cover = getProfileImageCropRect(1600, 900, "cover_path");
-  assert.equal(cover.width / cover.height, 3);
+  assert.ok(Math.abs(cover.width / cover.height - 820 / 312) < 1e-10);
   assert.equal(cover.x, 0);
   assert.equal(cover.y, cover.maxPanY);
   const zoomed = getProfileImageCropRect(1600, 900, "cover_path", 2, 5, -5);
-  assert.equal(zoomed.width / zoomed.height, 3);
+  assert.ok(Math.abs(zoomed.width / zoomed.height - 820 / 312) < 1e-10);
   assert.equal(zoomed.x, 800);
   assert.equal(zoomed.y, 0);
   assert.throws(() => getProfileImageCropRect(0, 800, "avatar_path"), /Dimensões/);
