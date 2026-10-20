@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Bell, BookOpen, Brush, Building2, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, ShoppingCart, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2, Compass, Radio } from "lucide-react";
+import { Activity, ArrowRight, Bell, BookOpen, Brush, Building2, Clapperboard, Dumbbell, Home, Menu, MessageCircle, Plus, ShoppingBag, ShoppingCart, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2, Compass, Radio } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -113,14 +113,21 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     return () => media.removeEventListener?.("change", update);
   }, []);
   const expanded = desktop && desktopExpanded;
-  const active = ["/feed", "/reels", "/people", "/messages"].includes(location.pathname)
+  const feedMode = location.pathname === "/feed";
+  const mobileTabs = feedMode ? [
+    { to: "/home", label: "Início", icon: Home },
+    { to: "/feed", label: "Feed", icon: Users },
+    { to: "/feed?compose=1", label: "Criar", icon: Plus },
+    { to: "/messages", label: "Mensagens", icon: MessageCircle },
+    { to: "/profile", label: "Perfil", icon: UserRound },
+  ] : primaryTabs;
+  const active = feedMode ? "/feed" : ["/feed", "/reels", "/people", "/messages"].includes(location.pathname)
     ? "/feed"
     : location.pathname.startsWith("/shop") || location.pathname === "/studio"
     ? "/shop"
     : ["/pass", "/workout", "/nutrition", "/progress", "/earnings"].includes(location.pathname)
     ? "/home"
     : primaryTabs.find(tab => location.pathname === tab.to)?.to;
-  const activeIndex = primaryTabs.findIndex(tab => tab.to === active);
   if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
   if (location.pathname === "/reels") return null;
   const desktopItems = [...primaryTabs, ...drawerItems,
@@ -135,14 +142,15 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     { to: "/professional", label: "Área profissional", icon: Building2 },
     { to: "/partner/manage", label: "Gestão de parceiros", icon: Wallet },
   ].filter((item, index, all) => all.findIndex(other => other.to === item.to) === index);
+  const activeIndex = (expanded ? desktopItems : mobileTabs).findIndex(tab => tab.to === active);
   return <nav id="fortalfy-desktop-navigation" className={`bottom-nav${expanded ? " desktop-nav-expanded" : ""}`} aria-label="Navegação principal">
     {activeIndex >= 0 && <span
       className="bottom-nav-indicator"
       aria-hidden="true"
       style={{ "--nav-active-offset": `calc(${10 + activeIndex * 20}% - 22px)` }}
     ><span /></span>}
-    {(expanded ? desktopItems : primaryTabs).map(({ to, label, icon: Icon }) =>
-      <Link key={to} to={to} className={`bottom-nav-item ${active === to ? "active" : ""}`} aria-current={active === to ? "page" : undefined}>
+    {(expanded ? desktopItems : mobileTabs).map(({ to, label, icon: Icon }) =>
+      <Link key={`${to}-${label}`} to={to} className={`bottom-nav-item ${active === to && label !== "Criar" ? "active" : ""}${label === "Criar" ? " bottom-nav-create" : ""}`} aria-current={active === to && label !== "Criar" ? "page" : undefined} aria-label={label === "Criar" ? "Criar publicação" : undefined}>
         <span className="bottom-nav-icon"><Icon size={21} strokeWidth={active === to ? 2.5 : 1.8} /></span><span>{label}</span>
       </Link>)}
     {expanded && <button className="bottom-nav-item desktop-nav-notifications" type="button" onClick={onNotificationsOpen}><span className="bottom-nav-icon"><Bell size={20} /></span><span>Notificações</span></button>}

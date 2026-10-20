@@ -172,14 +172,14 @@ function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
   </div>;
 }
 
-function SocialAuth({ client, configured, notify, recovery = false, onRecovered }) {
+function SocialAuth({ client, configured, notify, recovery = false, onRecovered, variant = "", initialMode = "login" }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedKind = searchParams.get("professionalKind") || "";
   const authCallbackError = searchParams.get("authError");
   const professionalKind = PROFESSIONAL_CATEGORIES.some(category => category.id === requestedKind) ? requestedKind : "";
-  const [mode, setMode] = useState(recovery ? "update" : professionalKind ? "signup" : "login");
+  const [mode, setMode] = useState(recovery ? "update" : professionalKind ? "signup" : initialMode);
   const [busy, setBusy] = useState(false);
   const [otpToken, setOtpToken] = useState("");
   const [resendSeconds, setResendSeconds] = useState(0);
@@ -470,7 +470,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered 
   };
 
   return (
-    <div className="social-auth-hero-container">
+    <div className={`social-auth-hero-container${variant ? ` ${variant}` : ""}`}>
       <div className="social-auth-split">
         {/* Left Column: Brand Showcase */}
         <aside className="social-auth-showcase">
@@ -1505,7 +1505,7 @@ function CreatePost({ client, userId, onPublished, notify, videosOnly = false, s
   };
 
   return <>
-  <form className={`social-create-post${videosOnly ? " social-reel-create-post" : ""}`} onSubmit={submit}>
+  <form id={videosOnly ? undefined : "social-create-post"} className={`social-create-post${videosOnly ? " social-reel-create-post" : ""}`} onSubmit={submit}>
     <label className="social-create-text"><span className="sr-only">{videosOnly ? "Legenda do Reel" : "Texto da publicação"}</span><textarea value={body} maxLength={5000} rows={3} onChange={event => setBody(event.target.value)} placeholder={videosOnly ? "Escreva uma legenda para seu Reel..." : "Compartilhe uma conquista, dica de treino ou novidade do esporte..."} /><small>{body.length}/5.000</small></label>
     {!!files.length && <div className="social-file-list">{files.map((file, index) => <span key={`${file.name}-${index}`}>{file.type.startsWith("video/") ? <Video size={14} /> : <ImagePlus size={14} />}{file.name}<button type="button" aria-label={`Remover ${file.name}`} onClick={() => setFiles(current => current.filter((_, itemIndex) => itemIndex !== index))}><X size={14} /></button></span>)}</div>}
     <div className="social-create-footer">
@@ -2284,7 +2284,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
   </div>;
 }
 
-export function SocialFeed({ client, configured, session, profile, profileError = "", feedArts = [], notify, recovery = false, onRecovered, onRetryProfile, mediaType = "" }) {
+export function SocialFeed({ client, configured, session, authReady = true, profile, profileError = "", feedArts = [], notify, recovery = false, onRecovered, onRetryProfile, mediaType = "" }) {
   const [filter, setFilter] = useState("latest");
   const [posts, setPosts] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -2292,12 +2292,35 @@ export function SocialFeed({ client, configured, session, profile, profileError 
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [searchParams] = useSearchParams();
   const reelListRef = useRef(null);
   const loadingMoreRef = useRef(false);
   const userId = session?.user?.id;
   const canPublishReels = Boolean(profile?.partnerApproved
     && ["personal", "nutricionista", "academia", "marca"].includes(profile.kind));
   const filters = [["latest", "Mais recentes"], ["following", "Seguindo"]];
+  const openAuth = mode => {
+    setAuthMode(mode);
+    setAuthOpen(true);
+  };
+
+  useEffect(() => {
+    if (searchParams.get("compose") !== "1") return;
+    if (!userId) {
+      openAuth("signup");
+      return;
+    }
+    window.setTimeout(() => document.getElementById("social-create-post")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+  }, [searchParams, userId]);
+
+  useEffect(() => {
+    if (!authOpen) return undefined;
+    const closeOnEscape = event => event.key === "Escape" && setAuthOpen(false);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [authOpen]);
 
   const refresh = async () => {
     if (!client || !userId) return;
@@ -2403,11 +2426,20 @@ export function SocialFeed({ client, configured, session, profile, profileError 
 
   const reelMode = mediaType === "video";
   if (recovery) return <SocialAuth client={client} configured={configured} notify={notify} recovery onRecovered={onRecovered} />;
+  if (!session && !authReady && !reelMode) return <div className="social-feed-skeleton" role="status" aria-label="Preparando sua comunidade"><span /><span /><span /></div>;
+  if (!session && !reelMode) return <div className="social-guest-feed">
+    <header className="social-guest-feed-header"><span className="eyebrow">FORTALFY · COMUNIDADE & BEM-ESTAR</span><h1>Feed da comunidade</h1><p>Inspiração, rotina e bem-estar no seu ritmo.</p><div className="social-guest-feed-actions"><button type="button" className="button social-feed-primary" onClick={() => openAuth("signup")}>Criar conta</button><button type="button" className="button social-feed-secondary" onClick={() => openAuth("login")}>Entrar</button></div></header>
+    <section className="social-guest-empty"><span className="social-guest-empty-icon"><Users size={25} /></span><span className="eyebrow">UM ESPAÇO PARA A COMUNIDADE</span><h2>Seu Feed começa com uma conexão.</h2><p>Siga pessoas, profissionais e parceiros para encontrar conteúdos que combinam com seu ritmo.</p><div className="social-guest-empty-actions"><button type="button" className="button social-feed-primary" onClick={() => openAuth("signup")}>Encontrar pessoas</button><Link to="/pass" className="button social-feed-secondary">Explorar FortalPass</Link><button type="button" className="social-feed-text-action" onClick={() => openAuth("signup")}>Criar primeira publicação <ArrowRight size={15} /></button></div></section>
+    <p className="social-guest-honesty-note">As publicações da comunidade aparecem aqui quando você entra. Nenhum conteúdo de demonstração é apresentado como atividade real.</p>
+    {authOpen && <div className="social-auth-feed-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setAuthOpen(false)}><section className="social-auth-feed-dialog" role="dialog" aria-modal="true" aria-label={authMode === "signup" ? "Criar conta Fortalfy" : "Entrar na Fortalfy"}><button className="social-auth-feed-close" type="button" aria-label="Fechar janela de acesso" onClick={() => setAuthOpen(false)}><X size={20} /></button><SocialAuth client={client} configured={configured} notify={notify} variant="social-auth-feed-modal" initialMode={authMode} /></section></div>}
+  </div>;
   if (!session) return <>{!reelMode && <CommunityNavigation active="feed" />}<SocialAuth client={client} configured={configured} notify={notify} /></>;
   if (profileError) return <div className="social-feed-error" role="alert">{reelMode && <Link to="/feed" className="social-reels-back" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link>}<CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
   if (!profile) return <div className="social-inline-status"><LoaderCircle className="spin" size={17} /> Preparando seu perfil…</div>;
-  return <div className={`social-feed${reelMode ? ` social-reels-page${composerOpen ? " is-composing" : ""}` : ""}`}>
-    {!reelMode && <><CommunityNavigation active="feed" /><section className="social-feed-hero"><div className="social-feed-hero-copy"><span className="eyebrow"><Activity size={13} /> COMUNIDADE FORTALFY</span><h1>Esporte, saúde e movimento em conversa.</h1><p>Acompanhe atualizações de academias, profissionais de nutrição e educação física, atletas e pessoas que vivem o esporte.</p></div><div className="social-feed-hero-art" aria-hidden="true"><Dumbbell size={44} /><span>SEU RITMO<br />EM MOVIMENTO</span></div></section><nav className="social-feed-topics" aria-label="Explorar a comunidade"><Link to="/partner/gym"><Dumbbell size={15} /> Academias</Link><Link to="/nutrition"><Activity size={15} /> Nutrição</Link><Link to="/workout"><Zap size={15} /> Treinos</Link><Link to="/reels"><Video size={15} /> Vídeos</Link></nav></>}
+  return <div className={`social-feed${reelMode ? ` social-reels-page${composerOpen ? " is-composing" : ""}` : " social-feed-authenticated"}`}>
+    {!reelMode && <aside className="social-feed-desktop-nav" aria-label="Navegação principal do Feed"><Link to="/home">Início</Link><Link className="active" to="/feed" aria-current="page">Feed</Link><Link to="/reels">Reels</Link><Link to="/people">Pessoas</Link><Link to="/messages">Mensagens</Link><Link to="/food">Food</Link><Link to="/shop">Loja</Link><Link to="/pass">FortalPass</Link><Link to="/profile">Perfil</Link><Link className="social-feed-create-link" to="/feed?compose=1"><Plus size={16} /> Criar publicação</Link></aside>}
+    <main className="social-feed-main">
+    {!reelMode && <><CommunityNavigation active="feed" /><header className="social-feed-header"><div><span className="eyebrow">SUA COMUNIDADE FORTALFY</span><h1>Feed da comunidade</h1><p>Inspiração, rotina e bem-estar no seu ritmo.</p></div><nav className="social-feed-quick-actions" aria-label="Ações rápidas"><Link to="/workout"><Dumbbell size={16} /> Registrar treino</Link><Link to="/nutrition"><Activity size={16} /> Registrar alimentação</Link></nav></header></>}
     {reelMode && <div className="social-reels-intro"><Link className="social-reels-back" to="/feed" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link><Clapperboard size={19} /><span><strong>FortalReels</strong><small>Vídeos verticais 9:16 · até {FORTALREEL_MAX_DURATION_SECONDS / 60} minutos</small></span><button type="button" className="button primary small-button" onClick={() => {
       if (!canPublishReels) {
         notify("A publicação no FortalReels é exclusiva de criadores e parceiros aprovados.");
@@ -2444,6 +2476,8 @@ export function SocialFeed({ client, configured, session, profile, profileError 
         {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} />)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais publicações"}</button>}
       </>}
+    </main>
+    {!reelMode && <aside className="social-feed-side-panel" aria-label="Descubra mais na Fortalfy"><section><span className="eyebrow">FORTALPASS</span><h2>Encontre seu próximo treino</h2><p>Explore academias, modalidades e parceiros disponíveis na sua região.</p><Link to="/pass">Explorar FortalPass <ArrowRight size={15} /></Link></section><section><span className="eyebrow">SUA ROTINA</span><h2>Bem-estar no seu ritmo</h2><p>Registre treinos e refeições para acompanhar sua própria jornada.</p><Link to="/home">Ver minha jornada <ArrowRight size={15} /></Link></section><section><span className="eyebrow">COMUNIDADE</span><h2>Conheça quem faz parte</h2><p>Descubra perfis de pessoas e parceiros da Fortalfy.</p><Link to="/people">Explorar pessoas <ArrowRight size={15} /></Link></section></aside>}
   </div>;
 }
 

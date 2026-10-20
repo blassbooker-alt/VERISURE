@@ -195,18 +195,18 @@ function CommentThread({ comments = [], userName, userAvatar = "", onAdd, onTogg
   </div>;
 }
 
-function MobileHeader({ location = "", action, onNotificationsOpen, notificationCount = 0, desktopMenuOpen, onDesktopMenuOpenChange }) {
-  return <header className="mobile-header"><NavigationDrawer onNotificationsOpen={onNotificationsOpen} desktopOpen={desktopMenuOpen} onDesktopOpenChange={onDesktopMenuOpenChange} /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
+function MobileHeader({ location = "", action, onNotificationsOpen, notificationCount = 0, desktopMenuOpen, onDesktopMenuOpenChange, hideNavigation = false }) {
+  return <header className={`mobile-header${hideNavigation ? " compact-mobile-header" : ""}`}>{!hideNavigation && <NavigationDrawer onNotificationsOpen={onNotificationsOpen} desktopOpen={desktopMenuOpen} onDesktopOpenChange={onDesktopMenuOpenChange} />}<Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
     {location && <button type="button" className="location-chip" onClick={action} aria-label={location ? `Alterar região: ${location}` : "Definir região"}><MapPin size={15} /><span>{location}</span><ChevronDown size={14} /></button>}
     <button className="icon-button notification-bell" aria-label={notificationCount ? `Notificações, ${notificationCount} não lidas` : "Notificações"} onClick={onNotificationsOpen}><Bell size={20} />{notificationCount > 0 && <span className="notification-bell-count">{notificationCount > 9 ? "9+" : notificationCount}</span>}</button>
   </header>;
 }
 
-function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false }) {
+function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false, compactHeader = false }) {
   const notifications = useContext(NotificationContext);
-  const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => !compactHeader && window.matchMedia("(min-width: 1024px)").matches);
   return <div className={`app-screen${immersive ? " immersive-screen" : ""}${desktopMenuOpen ? " navigation-expanded" : ""}`}>
-    {!immersive && <MobileHeader location={location === true ? "" : location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} />}
+    {!immersive && <MobileHeader location={location === true ? "" : location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} hideNavigation={compactHeader} />}
     <main className={`screen-content ${className}`}>
       {title && !immersive && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
       {children}
@@ -1984,7 +1984,7 @@ function AppContent() {
       <Route path="/" element={authSession?.user?.id ? <Navigate to="/home" replace /> : <PublicLanding />} />
       <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} activityStatus={activityStatus} activityError={activityError} notify={notify} />} />
       <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />
-      <Route path="/feed" element={<Screen title="Feed esportivo" subtitle="COMUNIDADE DE ESPORTE E SAÚDE" className="feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/feed" element={<Screen compactHeader className="feed-screen community-feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} authReady={authReady} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} messagePreferences={notificationPreferences} /></Screen>} />
