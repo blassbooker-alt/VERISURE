@@ -138,3 +138,14 @@ create policy "authorized viewers read active story media" on storage.objects
       where story.media_path = name and story.expires_at > now()
     )
   );
+
+-- Uploads de Stories não dependem da política genérica de publicações.
+-- A regra limita a gravação ao diretório, ao usuário autenticado e aos formatos suportados.
+drop policy if exists "users upload their own story media" on storage.objects;
+create policy "users upload their own story media" on storage.objects
+  for insert to authenticated with check (
+    bucket_id = 'social-media'
+    and split_part(name, '/', 1) = auth.uid()::text
+    and split_part(name, '/', 2) = 'stories'
+    and name ~ ('^' || auth.uid()::text || '/stories/[0-9a-fA-F-]{36}\.(jpg|png|webp|mp4|webm)$')
+  );

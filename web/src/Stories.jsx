@@ -43,6 +43,25 @@ function displayName(name) {
   return name.trim().slice(0, 28) || "Seu perfil";
 }
 
+function storyPublishError(error) {
+  const code = String(error?.code || "");
+  const status = Number(error?.status || error?.statusCode || 0);
+  const message = String(error?.message || "");
+  if (status === 401 || /jwt expired|session.*expired/i.test(message)) {
+    return "Sua sessão expirou. Entre novamente na Fortalfy e tente publicar o Story.";
+  }
+  if (status === 403 || code === "42501" || /row-level security|permission denied|not allowed/i.test(message)) {
+    return "A permissão de publicação foi recusada. Aplique a configuração de upload de Stories no Supabase e tente novamente.";
+  }
+  if (status === 413 || /file size|too large/i.test(message)) {
+    return "O arquivo excede o limite permitido para Stories.";
+  }
+  if (status === 415 || /mime|content.?type|bucket.*not found/i.test(message)) {
+    return "Este formato de mídia não está habilitado no armazenamento de Stories.";
+  }
+  return message || "Não foi possível publicar o Story. Verifique sua conexão e tente novamente.";
+}
+
 function StoryComposer({ onClose, onPublish, notify }) {
   const [file, setFile] = useState(null);
   const [caption, setCaption] = useState("");
@@ -117,9 +136,9 @@ function StoryComposer({ onClose, onPublish, notify }) {
     try {
       await onPublish(file, caption.trim());
     } catch (publishError) {
-      setError(publishError.message || "Não foi possível publicar o Story.");
+      setError(storyPublishError(publishError));
       setSaving(false);
-      notify("O Story não foi publicado. Verifique a conexão e tente novamente.");
+      notify("O Story não foi publicado. Veja o motivo e tente novamente.");
     }
   };
 
