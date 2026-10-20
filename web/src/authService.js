@@ -112,20 +112,13 @@ export async function saveOnboarding(client, userId, fields) {
   };
 
   const { data, error } = await client.from("user_preferences")
-    .update(payload)
-    .eq("user_id", userId)
+    .upsert({ user_id: userId, ...payload }, { onConflict: "user_id" })
     .select("birth_date,goals,interests,accepted_terms_at,onboarding_completed")
     .single();
 
   if (error) {
-    if ((error.code === "PGRST116" || /0 rows/i.test(error.message || "")) && typeof client.from("user_preferences").upsert === "function") {
-      const upsertRes = await client.from("user_preferences")
-        .upsert({ user_id: userId, ...payload }, { onConflict: "user_id" })
-        .select("birth_date,goals,interests,accepted_terms_at,onboarding_completed")
-        .single();
-      if (!upsertRes.error && upsertRes.data) {
-        return upsertRes.data;
-      }
+    if (error.code === "42501" || /row-level security/i.test(error.message || "")) {
+      throw new Error("O banco ainda não permite salvar suas preferências. Atualize a configuração de preferências do Fortalfy no Supabase e tente novamente.");
     }
     throw error;
   }

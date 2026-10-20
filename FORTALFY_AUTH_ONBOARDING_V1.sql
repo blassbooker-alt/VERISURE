@@ -34,6 +34,11 @@ create policy "users update own preferences" on public.user_preferences
   for update to authenticated using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 grant select, update on public.user_preferences to authenticated;
+grant insert on public.user_preferences to authenticated;
+
+drop policy if exists "users insert own preferences" on public.user_preferences;
+create policy "users insert own preferences" on public.user_preferences
+  for insert to authenticated with check (auth.uid() = user_id);
 
 insert into public.user_preferences (user_id)
 select id from public.profiles
