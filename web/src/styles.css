@@ -5635,6 +5635,11 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
 .public-campaign-card { min-width: 0; display: block; overflow: hidden; aspect-ratio: 4 / 5; background: #f5f7f3; border: 1px solid #e2e9e2; border-radius: 18px; }
 .public-campaign-card img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .mobile-install-bar, .install-help-scrim { display: none; }
+.install-settings-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; margin-top: 22px; padding: 20px; color: var(--color-text); background: var(--color-surface, #fff); border: 1px solid var(--color-border); border-radius: 18px; box-shadow: 0 8px 24px #173a240d; }
+.install-settings-icon { width: 46px; height: 46px; display: grid; place-items: center; color: #d3eb63; background: #10372c; border-radius: 14px; }
+.install-settings-copy h2 { margin: 0 0 5px; font-size: 15px; }
+.install-settings-copy p { margin: 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
+.install-settings-button { min-height: 44px; gap: 8px; white-space: nowrap; }
 .install-help-scrim { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: #06180fc7; backdrop-filter: blur(6px); }
 .install-help-card { width: min(100%, 460px); position: relative; padding: 30px; color: #14211c; background: #fff; border: 1px solid #dde5df; border-radius: 24px; box-shadow: 0 24px 80px #06180f55; }
 .install-help-close { width: 38px; height: 38px; position: absolute; top: 15px; right: 15px; display: grid; place-items: center; color: #52645a; background: #f1f5f0; border: 0; border-radius: 50%; }
@@ -5697,15 +5702,13 @@ html[data-theme="light"] .reel-preview-feature p { max-width: 430px; margin: 0 0
   .public-footer > small { align-self: center; margin-left: auto; }
 }
 @media (max-width: 900px) {
-  .public-landing { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
-  .mobile-app:not(.reels-app) { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
-  .mobile-install-bar { width: min(100% - 28px, 520px); position: fixed; z-index: 25; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); left: 0; display: block; margin-inline: auto; }
-  .mobile-install-bar.app-install-bar { bottom: calc(94px + env(safe-area-inset-bottom)); }
-  .mobile-install-cta { width: 100%; min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; color: #14211c; background: #d3eb63; border: 1px solid #c7df58; border-radius: 16px; box-shadow: 0 10px 32px #102d1f38, 0 2px 6px #102d1f20; font-size: 14px; font-weight: 850; }
-  .mobile-install-cta:hover, .mobile-install-cta:active { background: #e3f58d; transform: translateY(-1px); }
-  .mobile-install-cta svg { width: 18px; height: 18px; }
+  .public-landing { padding-bottom: 0; }
   .install-help-card { padding: 26px 22px 22px; border-radius: 21px; }
   .install-help-scrim { padding: 14px; }
+}
+@media (max-width: 560px) {
+  .install-settings-card { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 16px; }
+  .install-settings-button { grid-column: 1 / -1; width: 100%; }
 }
 /* Keep the fixed navigation consistent on screens rendered outside .mobile-app. */
 html[data-theme="light"] .bottom-nav,

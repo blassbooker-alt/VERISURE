@@ -216,10 +216,6 @@ function Screen({ children, title, subtitle, location = false, className = "", a
 }
 
 function PublicLanding() {
-  const { isAppInstalled, startInstall } = useContext(InstallAppContext);
-  const installButton = (className = "") => <button type="button" className={`button install-app-button ${className}`} onClick={startInstall}>
-    <Download size={16} aria-hidden="true" /><span>Baixar app</span>
-  </button>;
   const experiences = [
     { title: "FortalPass", image: "fortalfy-pack-gym-interior.jpg", alt: "Academia clara com equipamentos de treino", description: "Explore academias, estúdios e profissionais parceiros." , to: "/pass" },
     { title: "FortalReels", image: "fortalfy-pack-reels-training.jpg", alt: "Treino de mobilidade em um estúdio iluminado", description: "Encontre ideias de movimento em vídeos curtos.", to: "/reels" },
@@ -235,7 +231,7 @@ function PublicLanding() {
     { image: "fortalfy-v2-acessorios.png", alt: "Campanha Fortalfy de acessórios para treino com atleta e equipamentos", label: "Acessórios de treino" },
   ];
   return <main className="public-landing">
-    <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link>{!isAppInstalled && installButton("public-header-install")}<Link to="/feed" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link></div></header>
+    <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link><Link to="/feed" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link></div></header>
     <section className="public-hero">
       <div className="public-hero-copy"><span className="eyebrow">BEM-ESTAR, MOVIMENTO E COMUNIDADE</span><h1>Seu bem-estar começa com um próximo passo.</h1><p>Treine, encontre profissionais e construa uma rotina mais saudável em um só lugar.</p><div className="public-hero-actions"><Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link><a href="#experiencias" className="button subtle">Conhecer a Fortalfy</a></div><div className="public-value-points"><span><BadgeCheck size={16} /> Profissionais parceiros</span><span><Users size={16} /> Comunidade</span><span><Activity size={16} /> Sua evolução</span></div></div>
       <div className="public-hero-visual"><img src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher treinando força em um ambiente claro e acolhedor" fetchpriority="high" /><span>Movimento possível, no seu ritmo.</span></div>
@@ -2018,7 +2014,7 @@ function AppContent() {
       <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
       <Route path="/restaurants" element={<Navigate to="/food" replace />} />
       <Route path="/results" element={<Navigate to="/progress" replace />} />
-      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /><Link className="button subtle notification-settings-link" to="/settings/notifications"><Bell size={17} /> Preferências de notificação <ArrowRight size={16} /></Link></Screen>} />
+      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /><Link className="button subtle notification-settings-link" to="/settings/notifications"><Bell size={17} /> Preferências de notificação <ArrowRight size={16} /></Link>{!isAppInstalled && <section className="install-settings-card"><span className="install-settings-icon"><Download size={20} /></span><div className="install-settings-copy"><h2>Baixe o app Fortalfy</h2><p>Tenha acesso rápido à Fortalfy direto pela tela inicial do seu celular.</p></div><button type="button" className="button primary install-settings-button" onClick={startInstall}>Baixar app <ArrowRight size={16} /></button></section>}</Screen>} />
       <Route path="/settings/notifications" element={<Screen className="settings-screen notification-settings-screen" title="Notificações" subtitle="SUA EXPERIÊNCIA FORTALFY"><NotificationSettings client={supabase} userId={accountUserId} /></Screen>} />
       <Route path="/notifications" element={<Screen className="notification-screen"><NotificationCenter page notifications={notifications} loading={notificationLoading} error={notificationError} onRetry={refreshNotifications} onClose={() => navigate(-1)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onNavigate={openNotificationTarget} /></Screen>} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
@@ -2036,7 +2032,6 @@ function AppContent() {
     {notificationCenterOpen && <NotificationCenter notifications={notifications} loading={notificationLoading} error={notificationError} onRetry={refreshNotifications} onClose={() => setNotificationCenterOpen(false)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onClear={accountUserId ? null : clearNotifications} onNavigate={openNotificationTarget} />}
     </NotificationContext.Provider>
     </InstallAppContext.Provider>
-    {!isAppInstalled && !immersiveReels && <div className={`mobile-install-bar${location.pathname === "/" ? " landing-install-bar" : " app-install-bar"}`}><button type="button" className="button install-app-button mobile-install-cta" onClick={startInstall}><Download size={18} aria-hidden="true" /><span>Baixar app</span></button></div>}
     {installHelpOpen && <InstallHelpDialog onClose={() => setInstallHelpOpen(false)} />}
     {supabase && authSession?.user?.id && !isDemoUser(authSession.user.id) && (
       <OnboardingGate
