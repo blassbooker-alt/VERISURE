@@ -19,10 +19,32 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="preconnect" href="https://pfmioxdeirbsvqrvoekw.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://pfmioxdeirbsvqrvoekw.supabase.co" />
+    <style>
+      #startup-splash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 14px; color: #183b2a; background: #f6f8f5; font: 600 14px/1.5 system-ui, sans-serif; }
+      #startup-splash strong { font-size: 24px; letter-spacing: -.04em; }
+      #startup-splash span { color: #66756b; text-align: center; }
+      #startup-retry { min-height: 44px; margin-top: 4px; padding: 0 18px; border: 0; border-radius: 12px; color: #fff; background: #24784b; font: inherit; font-weight: 700; }
+      #startup-splash i { width: 26px; height: 26px; border: 3px solid #dce9df; border-top-color: #24784b; border-radius: 50%; animation: startup-spin .8s linear infinite; }
+      @keyframes startup-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #startup-splash i { animation-duration: 2s; } }
+    </style>
     <title>fortalfy — seu bem-estar, no seu ritmo</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><main id="startup-splash" role="status" aria-live="polite"><strong>fortalfy</strong><i aria-hidden="true"></i><span>Preparando seu espaço de bem-estar…</span></main></div>
+    <script>
+      window.setTimeout(() => {
+        const splash = document.getElementById("startup-splash");
+        if (!splash) return;
+        splash.querySelector("span").textContent = "A conexão está lenta. Tente abrir novamente.";
+        const retry = document.createElement("button");
+        retry.id = "startup-retry";
+        retry.type = "button";
+        retry.textContent = "Tentar novamente";
+        retry.onclick = () => window.location.reload();
+        splash.append(retry);
+      }, 10000);
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (/node_modules[\\/]lucide-react[\\/]/.test(id)) return "lucide-icons";
           if (/node_modules[\\/]@supabase[\\/]/.test(id)) return "supabase";
         },
       },

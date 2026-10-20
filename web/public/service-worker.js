@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v16";
+const CACHE = "fortalfy-pwa-v17";
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.add("./")).then(() => self.skipWaiting()));
 });

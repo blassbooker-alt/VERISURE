@@ -1765,8 +1765,14 @@ function AppContent() {
       return undefined;
     }
     let active = true;
+    // A sessão deve liberar a interface mesmo quando o armazenamento local
+    // ou a rede móvel atrasar a inicialização do cliente Supabase.
+    const sessionFallback = window.setTimeout(() => {
+      if (active) setAuthReady(true);
+    }, 3500);
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
+      window.clearTimeout(sessionFallback);
       if (error) {
         console.error("Não foi possível recuperar a sessão do Supabase.", error);
         notify(getErrorMessage(error, "Não foi possível recuperar sua sessão."));
@@ -1777,6 +1783,7 @@ function AppContent() {
       setAuthReady(true);
     }).catch(error => {
       if (!active) return;
+      window.clearTimeout(sessionFallback);
       console.error("Falha ao recuperar a sessão do Supabase.", error);
       notify(getErrorMessage(error, "Não foi possível recuperar sua sessão."));
       setAuthReady(true);
@@ -1792,6 +1799,7 @@ function AppContent() {
     });
     return () => {
       active = false;
+      window.clearTimeout(sessionFallback);
       subscription.unsubscribe();
     };
   }, [navigate]);
