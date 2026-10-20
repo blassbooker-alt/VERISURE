@@ -125,10 +125,23 @@ export async function saveOnboarding(client, userId, fields) {
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await client.from("user_preferences")
-    .upsert({ user_id: authenticatedUserId, ...payload }, { onConflict: "user_id" })
+  // The auth provisioning trigger creates this row for new accounts. Updating
+  // it first avoids an INSERT/ON CONFLICT path that can be rejected by INSERT
+  // RLS even when the existing row is owned by the active session.
+  let { data, error } = await client.from("user_preferences")
+    .update(payload)
+    .eq("user_id", authenticatedUserId)
     .select("birth_date,goals,interests,accepted_terms_at,onboarding_completed")
-    .single();
+    .maybeSingle();
+
+  // Older accounts may predate the provisioning trigger. Create only the
+  // missing row; the INSERT policy still limits this operation to auth.uid().
+  if (!error && !data) {
+    ({ data, error } = await client.from("user_preferences")
+      .insert({ user_id: authenticatedUserId, ...payload })
+      .select("birth_date,goals,interests,accepted_terms_at,onboarding_completed")
+      .single());
+  }
 
   if (error) {
     if (error.code === "42501" || /row-level security/i.test(error.message || "")) {

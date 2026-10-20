@@ -354,6 +354,7 @@ test("Reel publication delegates validation and atomic metadata writes to the se
 test("regular posts do not require the optional Reel schema columns", async () => {
   let insertedPost;
   const client = {
+    auth: { getSession: async () => ({ data: { session: { user: { id: "active-user-1" } } }, error: null }) },
     from(table) {
       assert.equal(table, "posts");
       return {
@@ -364,8 +365,9 @@ test("regular posts do not require the optional Reel schema columns", async () =
       };
     },
   };
-  const result = await publishPost(client, "owner-1", { body: "Publicação comum" });
+  const result = await publishPost(client, "stale-user-id", { body: "Publicação comum" });
   assert.ok(result.id);
+  assert.equal(insertedPost.author_id, "active-user-1");
   assert.equal(insertedPost.body, "Publicação comum");
   assert.equal(Object.hasOwn(insertedPost, "is_reel"), false);
 });

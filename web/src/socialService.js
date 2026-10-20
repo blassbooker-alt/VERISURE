@@ -36,6 +36,18 @@ function requireRealUser(userId) {
   if (!userId || isDemoUser(userId)) throw new Error("Entre com uma conta real para acessar este recurso.");
 }
 
+async function getActiveUserId(client, fallbackUserId) {
+  if (typeof client?.auth?.getSession !== "function") {
+    requireRealUser(fallbackUserId);
+    return fallbackUserId;
+  }
+  const { data, error } = await client.auth.getSession();
+  if (error) throw error;
+  const activeUserId = data?.session?.user?.id;
+  requireRealUser(activeUserId);
+  return activeUserId;
+}
+
 export function getErrorMessage(error, fallback = "Não foi possível concluir esta ação.") {
   if (!error) return fallback;
   if (error.code === "23505") return "Esta ação já foi registrada.";
@@ -610,7 +622,7 @@ export async function loadComments(client, userId, postId, { offset = 0, limit =
 export async function publishPost(client, userId, {
   body, files = [], visibility = "public", isReel = false, commercialContent = false, postId: requestedPostId = "",
 }) {
-  requireRealUser(userId);
+  const publisherId = await getActiveUserId(client, userId);
   if (!client) throw new Error("A conexão com o Supabase não está configurada.");
   if (isReel && (files.length !== 1 || !["video/mp4", "video/webm"].includes(files[0]?.type))) {
     throw new Error("O FortalReels aceita um único vídeo MP4 ou WebM por publicação.");
@@ -649,16 +661,16 @@ export async function publishPost(client, userId, {
         .update({
           sponsored: true,
           commercial_content: true,
-          commercial_profile_id: userId,
+          commercial_profile_id: publisherId,
         })
         .eq("id", postId)
-        .eq("author_id", userId)
+        .eq("author_id", publisherId)
         .select("id")
         .maybeSingle();
       const classificationError = updateError
         || (classifiedPost?.id === postId ? null : new Error("O servidor não confirmou a classificação comercial do Reel."));
       if (classificationError) {
-        const { error: postCleanupError } = await client.from("posts").delete().eq("id", postId).eq("author_id", userId);
+        const { error: postCleanupError } = await client.from("posts").delete().eq("id", postId).eq("author_id", publisherId);
         if (postCleanupError) {
           console.error("Não foi possível limpar um Reel comercial que não pôde ser classificado.", postCleanupError);
           throw new Error("O Reel não foi classificado como comercial e a limpeza automática falhou. Contate o suporte.");
@@ -674,7 +686,7 @@ export async function publishPost(client, userId, {
       const extension = file.type.startsWith("video/")
         ? file.type === "video/mp4" ? "mp4" : "webm"
         : file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "webp";
-      const path = `${userId}/posts/${postId}/${String(index).padStart(2, "0")}.${extension}`;
+      const path = `${publisherId}/posts/${postId}/${String(index).padStart(2, "0")}.${extension}`;
       const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, file, {
         contentType: file.type,
         upsert: false,
@@ -703,14 +715,14 @@ export async function publishPost(client, userId, {
     }
     const { error: postError } = await client.from("posts").insert({
       id: postId,
-      author_id: userId,
+      author_id: publisherId,
       body: body.trim(),
       visibility,
       media_path: uploaded[0]?.storage_path || null,
       ...(commercialContent ? {
         sponsored: true,
         commercial_content: true,
-        commercial_profile_id: userId,
+        commercial_profile_id: publisherId,
       } : {}),
     });
     if (postError) throw postError;

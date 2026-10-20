@@ -155,31 +155,53 @@ test("onboarding reads only the signed-in user's private preference record", asy
 });
 
 test("onboarding persists the required fields and reports database failures", async () => {
-  let upsert;
-  let conflict;
+  let update;
+  let targetUser;
   const client = {
     auth: { getSession: async () => ({ data: { session: { user: { id: "user-1" } } }, error: null }) },
     from() {
       return {
-        upsert(value, options) { upsert = value; conflict = options; return this; },
+        update(value) { update = value; return this; },
+        eq(column, value) { assert.equal(column, "user_id"); targetUser = value; return this; },
         select() { return this; },
-        single: async () => ({ data: { onboarding_completed: true }, error: null }),
+        maybeSingle: async () => ({ data: { onboarding_completed: true }, error: null }),
       };
     },
   };
   const result = await saveOnboarding(client, "stale-user-id", {
     birthDate: "1995-04-23", goals: ["forca"], interests: ["feed"], acceptedTerms: true,
   });
-  assert.equal(upsert.user_id, "user-1");
-  assert.deepEqual(conflict, { onConflict: "user_id" });
-  assert.equal(upsert.birth_date, "1995-04-23");
-  assert.deepEqual(upsert.goals, ["forca"]);
-  assert.deepEqual(upsert.interests, ["feed"]);
-  assert.equal(upsert.onboarding_completed, true);
+  assert.equal(targetUser, "user-1");
+  assert.equal(update.birth_date, "1995-04-23");
+  assert.deepEqual(update.goals, ["forca"]);
+  assert.deepEqual(update.interests, ["feed"]);
+  assert.equal(update.onboarding_completed, true);
   assert.equal(result.onboarding_completed, true);
   await assert.rejects(saveOnboarding(client, "user-1", {
     birthDate: "2999-01-01", goals: [], interests: [], acceptedTerms: false,
   }), /data de nascimento não pode estar no futuro/i);
+});
+
+test("onboarding inserts a preference row only when auth provisioning did not create one", async () => {
+  const operations = [];
+  const client = {
+    auth: { getSession: async () => ({ data: { session: { user: { id: "user-1" } } }, error: null }) },
+    from(table) {
+      assert.equal(table, "user_preferences");
+      return {
+        update() { operations.push("update"); return this; },
+        eq() { return this; },
+        insert(value) { operations.push(["insert", value.user_id]); return this; },
+        select() { return this; },
+        maybeSingle: async () => ({ data: null, error: null }),
+        single: async () => ({ data: { onboarding_completed: true }, error: null }),
+      };
+    },
+  };
+  await saveOnboarding(client, "stale-user-id", {
+    birthDate: "1995-04-23", goals: ["forca"], interests: ["feed"], acceptedTerms: true,
+  });
+  assert.deepEqual(operations, ["update", ["insert", "user-1"]]);
 });
 
 test("isDemoUser correctly identifies demo and local guest users", () => {
