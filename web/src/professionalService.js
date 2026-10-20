@@ -162,24 +162,43 @@ export async function loadProfessionalBookings(client, professionalId) {
   }));
 }
 
+function isMissingOptionalApplicationColumn(error) {
+  return ["42703", "PGRST204"].includes(error?.code)
+    && /professional_applications\.(sla_due_at|reviewed_at|approved_at|rejected_at|current_revision)/i.test(error.message || "");
+}
+
 export async function loadProfessionalApplications(client, ownerId) {
   if (!client || !ownerId) throw new Error("Entre em uma conta Fortalfy para carregar seu cadastro profissional.");
-  const { data, error } = await client.from("professional_applications")
-    .select("id,kind,status,private_data,public_data,reviewer_note,submitted_at,updated_at")
+  const columns = "id,kind,status,private_data,public_data,reviewer_note,submitted_at,sla_due_at,reviewed_at,approved_at,rejected_at,current_revision,updated_at";
+  let result = await client.from("professional_applications")
+    .select(columns)
     .eq("profile_id", ownerId)
     .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return data || [];
+  if (isMissingOptionalApplicationColumn(result.error)) {
+    result = await client.from("professional_applications")
+      .select("id,kind,status,private_data,public_data,reviewer_note,submitted_at,updated_at")
+      .eq("profile_id", ownerId)
+      .order("updated_at", { ascending: false });
+  }
+  if (result.error) throw result.error;
+  return result.data || [];
 }
 
 export async function loadProfessionalApplicationsForReview(client) {
   if (!client) throw new Error("A conexão com o Supabase não está configurada.");
-  const { data, error } = await client.from("professional_applications")
-    .select("id,profile_id,kind,status,private_data,public_data,reviewer_note,submitted_at,updated_at")
+  const columns = "id,profile_id,kind,status,private_data,public_data,reviewer_note,submitted_at,sla_due_at,reviewed_at,approved_at,rejected_at,current_revision,updated_at";
+  let result = await client.from("professional_applications")
+    .select(columns)
     .neq("status", "draft")
     .order("submitted_at", { ascending: true });
-  if (error) throw error;
-  return data || [];
+  if (isMissingOptionalApplicationColumn(result.error)) {
+    result = await client.from("professional_applications")
+      .select("id,profile_id,kind,status,private_data,public_data,reviewer_note,submitted_at,updated_at")
+      .neq("status", "draft")
+      .order("submitted_at", { ascending: true });
+  }
+  if (result.error) throw result.error;
+  return result.data || [];
 }
 
 export async function loadApprovedProfessionalProfiles(client, profileId) {
