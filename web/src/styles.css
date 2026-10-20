@@ -7034,3 +7034,70 @@ html[data-theme] .public-routine-section h2 {
     background: #fff;
   }
 }
+
+/* Keep the Reel action stack anchored beside the creator details at the bottom of the frame. */
+@media (max-width: 760px) {
+  .reels-app .social-reel-card .social-reel-side-rail {
+    top: auto;
+    right: max(10px, calc((100% - var(--reel-frame-width)) / 2 + 10px));
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    gap: clamp(5px, 1vh, 9px);
+    transform: none;
+  }
+  .reels-app .social-reel-card .social-reel-creator-action { width: 48px; height: 54px; }
+  .reels-app .social-reel-card .social-reel-creator-action > .social-avatar { width: 42px; height: 42px; }
+  .reels-app .social-reel-card .social-reel-actions.social-post-actions { gap: clamp(5px, 1vh, 9px); }
+  .reels-app .social-reel-card .social-reel-actions button { min-width: 46px; min-height: 46px; }
+  .reels-app .social-reel-card .social-reel-caption {
+    width: min(calc(var(--reel-frame-width) - 82px), 560px);
+    max-height: min(46dvh, 380px);
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: max(12px, calc((100% - var(--reel-frame-width)) / 2 + 12px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .reels-app .social-reel-card .social-reel-media-error {
+    width: min(280px, calc(var(--reel-frame-width) - 48px));
+    min-height: 64px;
+    position: absolute;
+    z-index: 6;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid #ffffff35;
+    border-radius: 14px;
+    color: #fff;
+    background: #07120fd9;
+    box-shadow: 0 8px 28px #0007;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.4;
+    transform: translate(-50%, -50%);
+  }
+  .reels-app .social-reel-card .social-reel-media-error svg { flex: 0 0 auto; }
+}
+
+@media (max-width: 380px) {
+  .reels-app .social-reel-card .social-reel-side-rail { right: max(8px, calc((100% - var(--reel-frame-width)) / 2 + 8px)); }
+  .reels-app .social-reel-card .social-reel-caption { width: min(calc(var(--reel-frame-width) - 76px), 560px); }
+  .reels-app .social-reel-card .social-reel-actions button { min-width: 44px; min-height: 44px; }
+}
+
+/* Compact avatar first Stories row, matching the lightweight profile strip in the supplied reference. */
+@media (max-width: 760px) {
+  .stories-row { gap: 8px; margin: 12px -12px 8px; padding: 2px 12px 6px; }
+  .story-item, .story-item-wrap { width: 48px; flex: 0 0 48px; }
+  .story-item { gap: 4px; font-size: 8px; }
+  .story-ring { width: 38px; height: 38px; padding: 2px; }
+  .story-ring .story-avatar { border-width: 1px; font-size: 11px; }
+  .story-ring.own i { width: 15px; height: 15px; border-width: 1.5px; }
+  .story-add-own { width: 19px; height: 19px; right: 1px; bottom: 18px; border-width: 1px; }
+  .story-add-own svg { width: 12px; height: 12px; }
+}
+
+.reels-app .social-reel-media-error { cursor: pointer; }
+.reels-app .social-reel-media-error:disabled { opacity: .7; cursor: progress; }

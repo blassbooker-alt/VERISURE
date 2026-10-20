@@ -1148,7 +1148,7 @@ function SocialComment({ comment, userId, onLike, onEdit, onDelete, onReply, onR
   </article>;
 }
 
-function PostMedia({ media, onOpen, reelMode = false, onReelWatch, autoAdvance = false, playbackRate = 1, onCaptionsAvailable }) {
+function PostMedia({ media, onOpen, reelMode = false, onReelWatch, autoAdvance = false, playbackRate = 1, onCaptionsAvailable, onRetry }) {
   const watchedMedia = useRef(new Set());
   const containerRef = useRef(null);
   const audioTrackCheckRef = useRef({ path: "", promise: null, hasAudio: null });
@@ -1157,6 +1157,13 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch, autoAdvance =
   const reelVisibleRef = useRef(false);
   const [soundEnabled, setSoundEnabled] = useState(reelSoundEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [mediaFailed, setMediaFailed] = useState(false);
+  const [retryingMedia, setRetryingMedia] = useState(false);
+  const mediaSourceKey = media?.map(item => item.url || item.storage_path || item.id).join("|") || "";
+  useEffect(() => {
+    setMediaFailed(false);
+    setRetryingMedia(false);
+  }, [mediaSourceKey]);
   useEffect(() => {
     const syncSoundPreference = event => {
       soundEnabledRef.current = event.detail;
@@ -1337,12 +1344,32 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch, autoAdvance =
       soundtrackRef.current.currentTime = 0;
     }
   };
+  const retryReelMedia = async event => {
+    event.stopPropagation();
+    if (retryingMedia) return;
+    setRetryingMedia(true);
+    try {
+      if (onRetry) await onRetry();
+      else {
+        const video = containerRef.current?.querySelector("video");
+        if (video) {
+          video.load();
+          await video.play();
+        }
+        setMediaFailed(false);
+      }
+    } catch (error) {
+      console.error("Não foi possível atualizar o vídeo do Reel.", error);
+    } finally {
+      setRetryingMedia(false);
+    }
+  };
   if (!media?.length) return null;
   const hasVideo = media.some(item => item.media_type === "video");
   return <div ref={containerRef} className={`social-media-grid count-${Math.min(media.length, 4)}${hasVideo && !reelMode ? " has-landscape-video" : ""}`}>
     {media.slice(0, 4).map((item, index) => <div key={item.id || item.storage_path} className={`social-media-item${item.media_type === "video" && !reelMode ? " is-landscape-video" : ""}`}>
       {item.media_type === "video"
-        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode && !autoAdvance} muted={reelMode ? true : undefined} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onEnded={reelMode && autoAdvance ? event => event.currentTarget.closest(".social-reel-card")?.nextElementSibling?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined} onPlay={reelMode ? () => setIsPlaying(true) : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
+        ? <><video src={item.url} controls={!reelMode} playsInline preload={reelMode ? "none" : "metadata"} loop={reelMode && !autoAdvance} muted={reelMode ? true : undefined} tabIndex={reelMode ? 0 : undefined} aria-label={reelMode ? (isPlaying ? "Pausar vídeo do Reel" : "Reproduzir vídeo do Reel") : undefined} onError={reelMode ? () => { setIsPlaying(false); setMediaFailed(true); } : undefined} onCanPlay={reelMode ? () => setMediaFailed(false) : undefined} onEnded={reelMode && autoAdvance ? event => event.currentTarget.closest(".social-reel-card")?.nextElementSibling?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined} onPlay={reelMode ? () => { setIsPlaying(true); setMediaFailed(false); } : undefined} onPause={reelMode ? () => setIsPlaying(false) : undefined} onClick={reelMode ? event => {
           const video = event.currentTarget;
           if (video.paused) video.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
           else video.pause();
@@ -1361,7 +1388,9 @@ function PostMedia({ media, onOpen, reelMode = false, onReelWatch, autoAdvance =
           watchedMedia.current.add(mediaKey);
           void onReelWatch();
         }} />{reelMode && <>
-          {!isPlaying && <button type="button" className="social-reel-play" onClick={event => {
+          {mediaFailed
+            ? <button type="button" className="social-reel-media-error" onClick={retryReelMedia} disabled={retryingMedia} aria-label="Tentar carregar o vídeo do Reel">{retryingMedia ? <LoaderCircle className="spin" size={20} /> : <Play size={20} fill="currentColor" />}<span>{retryingMedia ? "Reconectando…" : "Não foi possível carregar o vídeo. Tentar novamente"}</span></button>
+            : !isPlaying && <button type="button" className="social-reel-play" onClick={event => {
             event.stopPropagation();
             const video = event.currentTarget.parentElement?.querySelector("video");
             video?.play().catch(error => console.error("Não foi possível iniciar a reprodução do Reel.", error));
@@ -1855,7 +1884,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false,
       ? reelInfo
       : <>{authorHeader}{postDescription}</>}
     {reelMode && <div className="social-reel-top-menu">{postMenu}</div>}
-    {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} autoAdvance={autoAdvance} playbackRate={playbackRate} onCaptionsAvailable={setCaptionsAvailable} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
+    {post.media?.length > 0 && <PostMedia media={post.media} reelMode={reelMode} onReelWatch={registerReelView} autoAdvance={autoAdvance} playbackRate={playbackRate} onCaptionsAvailable={setCaptionsAvailable} onRetry={reelMode ? onRefresh : undefined} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} />}
     {post.original && <div className="social-original-post"><div className="social-original-author"><AuthorLink author={post.original.author} ownId={userId} /><span><strong>{post.original.author?.name}</strong><small>{formatDate(post.original.published_at)}</small></span></div><LinkifiedText text={post.original.body} /><PostMedia media={post.original.media} reelMode={reelMode} onReelWatch={registerReelView} onOpen={(media, index) => { setLightboxMedia(media); setLightboxIndex(index); }} /></div>}
     <div className="social-post-stats"><span>{likeCount > 0 && <><Heart size={14} fill="currentColor" /> {likeCount} curtida{likeCount === 1 ? "" : "s"}</>}</span><span>{reelMode && <><Eye size={14} /> {reelViewCount} visualizaç{reelViewCount === 1 ? "ão" : "ões"} · </>}{post.commentCount} comentário{post.commentCount === 1 ? "" : "s"} · {post.shareCount} compartilhamento{post.shareCount === 1 ? "" : "s"}</span></div>
     {!reelMode && postActions}
