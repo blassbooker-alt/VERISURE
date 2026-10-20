@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-forest-950: #06261d;
-  --color-forest-900: #063b2d;
-  --color-forest-800: #0b4d3b;
-  --color-forest-700: #0f6b4f;
-  --color-lime-500: #c9f31d;
-  --color-lime-400: #d9ff57;
-  --color-cream-50: #f7faf5;
-  --color-sand-100: #e9e6d8;
-  --color-ink-950: #10241d;
-  --color-ink-700: #385149;
-  --color-muted-500: #6b7f76;
+  --color-forest-950: #003d30;
+  --color-forest-900: #047031;
+  --color-forest-800: #087b45;
+  --color-forest-700: #0b8950;
+  --color-lime-500: #caf319;
+  --color-lime-400: #d8f54e;
+  --color-cream-50: #f7f9f6;
+  --color-sand-100: #eaf5e6;
+  --color-ink-950: #18231d;
+  --color-ink-700: #3f5146;
+  --color-muted-500: #657168;
   --color-success: #248a5b;
   --color-warning: #d28a20;
   --color-error: #d95c55;
@@ -21,23 +21,23 @@
 }
 
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--ink-950);
   background: var(--cream-50);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --forest-950: #06261d;
-  --forest-900: #063b2d;
-  --forest-800: #0b4d3b;
-  --forest-700: #0f6b4f;
-  --lime-500: #c9f31d;
-  --lime-400: #d9ff57;
-  --cream-50: #f7faf5;
-  --sand-100: #e9e6d8;
-  --ink-950: #10241d;
-  --ink-700: #385149;
-  --muted-500: #6b7f76;
+  --forest-950: #003d30;
+  --forest-900: #047031;
+  --forest-800: #087b45;
+  --forest-700: #0b8950;
+  --lime-500: #caf319;
+  --lime-400: #d8f54e;
+  --cream-50: #f7f9f6;
+  --sand-100: #eaf5e6;
+  --ink-950: #18231d;
+  --ink-700: #3f5146;
+  --muted-500: #657168;
   --success: #248a5b;
   --warning: #d28a20;
   --error: #d95c55;
@@ -7224,4 +7224,280 @@ html[data-theme="dark"] .social-auth-feed-close { color: #edf4ef; background: #1
   .social-auth-feed-backdrop { align-items: end; padding: 0; }
   .social-auth-feed-dialog { width: 100%; max-height: 92dvh; border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); }
   .social-auth-feed-modal .social-auth-hero-container { padding: 20px 14px 14px; }
+}
+
+/* Fortalfy visual system — official greens, shared surfaces and accessible states. */
+:root {
+  --brand-forest: #003d30;
+  --brand-green: #047031;
+  --brand-green-bright: #087b45;
+  --brand-lime: #caf319;
+  --brand-soft: #eaf5e6;
+  --page-bg: #f7f9f6;
+  --surface: #fff;
+  --text: #18231d;
+  --muted: #657168;
+  --border: #e1e8e0;
+  --color-background: #f7f9f6;
+  --color-background-secondary: #eef5ec;
+  --color-surface: #fff;
+  --color-surface-secondary: #f3f7f1;
+  --color-surface-elevated: #fff;
+  --color-text-primary: #18231d;
+  --color-text-secondary: #526257;
+  --color-border: #e1e8e0;
+  --color-primary: #087b45;
+  --color-primary-foreground: #fff;
+  --color-success: #087b45;
+  --color-danger: #a62f29;
+  --color-input-background: #fff;
+  --color-navigation-background: #fff;
+  --color-focus: #087b45;
+  --forest: #003d30;
+  --deep: #003d30;
+  --lime: #caf319;
+  --canvas: #f7f9f6;
+  --card: #fff;
+  --line: #e1e8e0;
+  --ink-950: #18231d;
+  --ink-700: #3f5146;
+  --quiet: #657168;
+  --muted-500: #657168;
+  --brand-shadow-sm: 0 2px 12px #123b2610;
+  --brand-shadow-md: 0 12px 28px #123b2617;
+  --brand-radius-card: 18px;
+  --brand-radius-control: 12px;
+}
+
+:root[data-theme="dark"] {
+  --brand-forest: #003d30;
+  --brand-green: #087b45;
+  --brand-green-bright: #11925a;
+  --brand-lime: #caf319;
+  --brand-soft: #203729;
+  --page-bg: #0d1510;
+  --surface: #141e17;
+  --text: #edf4ef;
+  --muted: #a5b3a8;
+  --border: #2d3c31;
+  --color-background: #0d1510;
+  --color-background-secondary: #111d15;
+  --color-surface: #141e17;
+  --color-surface-secondary: #1b281e;
+  --color-surface-elevated: #202e23;
+  --color-text-primary: #edf4ef;
+  --color-text-secondary: #a5b3a8;
+  --color-border: #2d3c31;
+  --color-primary: #caf319;
+  --color-primary-foreground: #18231d;
+  --color-success: #9cdb87;
+  --color-danger: #ffb8ad;
+  --color-input-background: #101a13;
+  --color-navigation-background: #141e17;
+  --color-focus: #caf319;
+  --forest: #087b45;
+  --deep: #003d30;
+  --lime: #caf319;
+  --canvas: #0d1510;
+  --card: #141e17;
+  --line: #2d3c31;
+  --ink-950: #edf4ef;
+  --ink-700: #c0cbc2;
+  --quiet: #a5b3a8;
+  --muted-500: #a5b3a8;
+  --brand-shadow-sm: 0 3px 14px #00000020;
+  --brand-shadow-md: 0 14px 34px #00000030;
+}
+:root[data-theme="light"] {
+  --page-bg: #f7f9f6;
+  --surface: #fff;
+  --text: #18231d;
+  --muted: #657168;
+  --border: #e1e8e0;
+  --color-background: #f7f9f6;
+  --color-background-secondary: #eaf5e6;
+  --color-surface: #fff;
+  --color-surface-secondary: #f3f7f1;
+  --color-surface-elevated: #fff;
+  --color-text-primary: #18231d;
+  --color-text-secondary: #526257;
+  --color-border: #e1e8e0;
+  --color-primary: #087b45;
+  --color-primary-foreground: #fff;
+  --color-success: #087b45;
+  --color-danger: #a62f29;
+  --color-input-background: #fff;
+  --color-navigation-background: #fff;
+  --color-focus: #087b45;
+  --forest: #003d30;
+  --deep: #003d30;
+  --lime: #caf319;
+  --canvas: #f7f9f6;
+  --card: #fff;
+  --line: #e1e8e0;
+  --ink-950: #18231d;
+  --ink-700: #3f5146;
+  --quiet: #657168;
+  --muted-500: #657168;
+}
+
+html, body, #root, .mobile-app, .app-screen {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+html { scroll-behavior: smooth; }
+body { font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+.mobile-app {
+  background-image: radial-gradient(ellipse at 50% -16rem, #eaf5e6 0, transparent 34rem);
+  background-size: auto;
+}
+:root[data-theme="dark"] .mobile-app { background-image: radial-gradient(ellipse at 50% -16rem, #183425 0, transparent 34rem); }
+
+.logo-mark { color: var(--brand-forest); letter-spacing: -.045em; }
+.logo-accent { color: var(--brand-green); }
+.logo-symbol { border: 1px solid #e8eee7; border-radius: 10px; box-shadow: 0 1px 4px #123b2610; }
+.logo-mark.light { color: #fff; }
+.logo-mark.light .logo-accent { color: var(--brand-lime); }
+
+:is(.mobile-header, .bottom-nav, .navigation-drawer) {
+  border-color: var(--color-border);
+  background-color: var(--color-navigation-background);
+  box-shadow: var(--brand-shadow-sm);
+}
+.mobile-header { min-height: 64px; backdrop-filter: blur(14px); }
+.bottom-nav { border-radius: 20px; }
+.bottom-nav-indicator > span { background: var(--brand-forest); box-shadow: 0 4px 12px #003d3030; }
+.bottom-nav-item.active { color: var(--brand-green); }
+.bottom-nav-item.active .bottom-nav-icon svg { color: #fff; }
+.feed-screen .bottom-nav-create .bottom-nav-icon { background: var(--brand-green); }
+.feed-screen .bottom-nav-create { color: var(--brand-green); }
+
+:is(.button.primary, .social-feed-primary, .social-feed-desktop-nav > .social-feed-create-link) {
+  color: #fff;
+  background: var(--brand-forest);
+  border-color: var(--brand-forest);
+  box-shadow: 0 3px 10px #003d3018;
+}
+:is(.button.primary, .social-feed-primary, .social-feed-desktop-nav > .social-feed-create-link):hover:not(:disabled) {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+}
+:is(.button.subtle, .social-feed-secondary) {
+  color: var(--brand-forest);
+  background: var(--brand-soft);
+  border-color: #d7e8d1;
+}
+.button.lime-button { color: #18231d; background: var(--brand-lime); }
+:is(.text-link, .text-button, .inline-link, .social-feed-text-action, .social-feed-quick-actions a) { color: var(--brand-green); }
+
+:is(.feed-post, .social-create-post, .social-post-card, .social-auth-card, .social-profile-card,
+  .social-empty-feed, .social-local-creations, .social-feed-error, .social-guest-feed-header,
+  .social-guest-empty, .stories-experience, .social-follow-requests,
+  .social-feed-side-panel section, .social-discovery-card, .social-person-card, .social-messages-panel,
+  .theme-settings-card, .dash-panel, .weekly-empty, .weekly-plan-card, .measurement-card,
+  .adherence-card, .food-menu-card, .food-card, .gym-card, .partner-product-form,
+  .professional-care, .profile-content-section, .profile-identity-card, .social-professional-public-card) {
+  border-color: var(--color-border);
+  border-radius: var(--brand-radius-card);
+  background-color: var(--color-surface);
+  box-shadow: var(--brand-shadow-sm);
+}
+.social-post-card, .social-create-post { padding: 16px; }
+.social-post-card:hover, .social-person-card:hover, .social-discovery-card:hover { box-shadow: var(--brand-shadow-md); }
+
+:is(.social-auth-form input:not([type="checkbox"]):not([type="radio"]),
+  .social-profile-edit-form input:not([type="checkbox"]):not([type="radio"]),
+  .professional-form-field input, .professional-form-field textarea, .professional-form-field select,
+  .social-create-text textarea, .story-caption-field textarea, .profile-link-editor-row input,
+  .profile-link-editor-row select, .profile-link-editor-row textarea) {
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--brand-radius-control);
+  color: var(--color-text-primary);
+  background-color: var(--color-input-background);
+  box-shadow: inset 0 1px 2px #0a2a1608;
+}
+:is(.social-auth-form input:not([type="checkbox"]):not([type="radio"]),
+  .social-profile-edit-form input:not([type="checkbox"]):not([type="radio"]),
+  .professional-form-field input, .professional-form-field textarea, .professional-form-field select,
+  .social-create-text textarea, .story-caption-field textarea, .profile-link-editor-row input,
+  .profile-link-editor-row select, .profile-link-editor-row textarea)::placeholder { color: var(--muted); }
+:is(.social-auth-form label, .social-profile-edit-form label, .professional-form-field,
+  .story-caption-field, .profile-link-editor-row label) { color: var(--color-text-secondary); }
+
+.social-guest-feed { width: min(100% - 40px, 860px); margin-top: 30px; }
+.social-guest-feed-header {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #eaf5e6 0%, #f7f9f6 54%, #fff 100%);
+}
+.social-guest-feed-header::after { position: absolute; inset: 0 auto 0 0; width: 4px; content: ""; background: var(--brand-green); }
+.social-guest-feed-header .eyebrow, .social-guest-empty .eyebrow, .social-feed-side-panel .eyebrow { color: var(--brand-green); }
+.social-guest-feed-header h1 { color: var(--brand-forest); font-weight: 760; letter-spacing: -.04em; }
+.social-guest-feed-header p { color: var(--muted); line-height: 1.6; }
+.social-guest-empty { border-radius: 20px; }
+.social-guest-empty-icon { color: var(--brand-green); background: var(--brand-soft); }
+.social-guest-empty h2 { color: var(--brand-forest); font-weight: 720; }
+.social-guest-empty > p, .social-guest-honesty-note { color: var(--muted); }
+.social-feed-authenticated { gap: 24px; }
+.social-feed-desktop-nav > a { border-radius: 11px; transition: background-color .16s ease, color .16s ease; }
+.social-feed-desktop-nav > a:hover, .social-feed-desktop-nav > a.active { color: var(--brand-forest); background: var(--brand-soft); }
+.social-feed-primary, .social-feed-secondary { min-height: 46px; border-radius: 12px; font-weight: 720; }
+
+:is(.screen-heading h1, .social-feed-header h1, .social-profile-bio h2, .section-title-row h2,
+  .stories-section-heading h2, .social-auth-card h2, .social-guest-empty h2) { letter-spacing: -.035em; }
+:is(.social-post-copy, .social-guest-feed-header p, .social-guest-empty > p, .social-feed-side-panel p) { line-height: 1.65; }
+:is(.feed-filters button, .social-filter-tabs button, .social-refresh, .profile-tabs button, .partner-tabs button) {
+  min-height: 38px;
+  border-color: var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+}
+:is(.feed-filters button.selected, .social-filter-tabs button.active) {
+  color: #fff;
+  background: var(--brand-forest);
+  border-color: var(--brand-forest);
+}
+:is(.social-icon-button, .icon-button, .social-feed-auth-close) { transition: color .16s ease, background-color .16s ease; }
+.social-icon-button:hover, .icon-button:hover { color: var(--brand-green); background: var(--brand-soft); }
+
+html[data-theme="dark"] .mobile-app :is(.mobile-header, .bottom-nav, .navigation-drawer,
+  .feed-post, .social-create-post, .social-post-card, .social-auth-card, .social-profile-card,
+  .social-empty-feed, .social-local-creations, .social-feed-error, .social-guest-feed-header,
+  .social-guest-empty, .stories-experience, .social-follow-requests, .social-feed-side-panel section,
+  .social-discovery-card, .social-person-card, .social-messages-panel, .theme-settings-card,
+  .dash-panel, .weekly-empty, .weekly-plan-card, .measurement-card, .adherence-card, .food-menu-card,
+  .food-card, .gym-card, .partner-product-form, .professional-care, .profile-content-section,
+  .profile-identity-card, .social-professional-public-card) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+html[data-theme="dark"] .social-guest-feed-header { background: linear-gradient(135deg, #182d20, #141e17 65%, #141e17); }
+html[data-theme="dark"] .social-guest-feed-header h1, html[data-theme="dark"] .social-guest-empty h2 { color: var(--color-text-primary); }
+html[data-theme="dark"] :is(.social-auth-form input, .professional-form-field input,
+  .professional-form-field textarea, .professional-form-field select, .social-create-text textarea,
+  .story-caption-field textarea) { color: var(--color-text-primary); background-color: var(--color-input-background); border-color: var(--color-border); }
+html[data-theme="dark"] .button.subtle { color: var(--color-text-primary); background: #203729; border-color: #34523d; }
+html[data-theme="dark"] .social-feed-desktop-nav > a:hover, html[data-theme="dark"] .social-feed-desktop-nav > a.active { color: #e1f6a0; background: #203729; }
+
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .social-guest-feed { width: calc(100% - 24px); margin-top: 14px; }
+  .social-guest-feed-header { border-radius: 18px; }
+  .social-guest-feed-header h1 { font-size: clamp(26px, 7vw, 32px); }
+  .social-guest-feed-actions { gap: 8px; }
+  .social-guest-feed-actions > * { min-height: 44px; }
+  .social-feed-authenticated { width: calc(100% - 24px); }
+  .social-feed-header h1 { color: var(--brand-forest); }
+  html[data-theme="dark"] .social-feed-header h1 { color: var(--color-text-primary); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

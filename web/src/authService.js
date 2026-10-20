@@ -100,7 +100,7 @@ export async function loadUserPreferences(client, userId) {
 export async function saveOnboarding(client, userId, fields) {
   const errors = validateOnboarding(fields);
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0]);
-  if (!client || !userId || isDemoUser(userId)) throw new Error("Entre com uma conta real para salvar suas preferências.");
+  if (!client || !userId) throw new Error("Entre com uma conta real para salvar suas preferências.");
 
   // Use the identity from the same session whose JWT Supabase sends with the
   // request. A stale userId prop can otherwise fail the user_preferences RLS
@@ -114,6 +114,7 @@ export async function saveOnboarding(client, userId, fields) {
       throw new Error("Sua sessão expirou. Entre novamente para salvar suas preferências.");
     }
   }
+  if (isDemoUser(authenticatedUserId)) throw new Error("Entre com uma conta real para salvar suas preferências.");
 
   const payload = {
     birth_date: fields.birthDate,
