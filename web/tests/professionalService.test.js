@@ -63,10 +63,11 @@ test("professional bookings reject local or missing accounts before querying", a
 });
 
 test("all professional categories have category-specific application fields", () => {
-  assert.equal(PROFESSIONAL_CATEGORIES.length, 7);
+  assert.equal(PROFESSIONAL_CATEGORIES.length, 8);
   assert.ok(professionalFieldsFor("nutricionista").some(field => field.id === "registrationRegion"));
   assert.ok(professionalFieldsFor("influenciador").some(field => field.id === "fitnessNiches"));
   assert.ok(professionalFieldsFor("restaurante").some(field => field.id === "cuisine"));
+  assert.ok(professionalFieldsFor("academia").some(field => field.id === "operatingHours"));
   assert.deepEqual(professionalFieldsFor("unsupported"), []);
 });
 
@@ -77,7 +78,17 @@ test("professional application validation requires category data and safe HTTPS 
     contactEmail: "coach@example.com",
     phone: "+5511999999999",
     city: "Fortaleza, CE",
+    addressCountry: "Brasil",
+    addressState: "Ceará",
+    addressCity: "Fortaleza",
+    addressNeighborhood: "Centro",
+    addressStreet: "Rua Um",
+    addressNumber: "10",
+    addressPostalCode: "60000-000",
+    addressType: "atendimento",
     description: "Atendimento personalizado",
+    legalName: "Coach Silva",
+    personDocument: "529.982.247-25",
     registrationNumber: "CREF 00000",
     specialties: "Musculação",
     serviceModes: "Presencial",
@@ -86,6 +97,32 @@ test("professional application validation requires category data and safe HTTPS 
   assert.equal(normalizeExternalUrl("http://example.com"), "");
   assert.equal(normalizeExternalUrl("https://user:pass@example.com"), "");
   assert.equal(normalizeExternalUrl("https://example.com"), "https://example.com/");
+});
+
+test("professional identity validation checks CPF and CNPJ digits", () => {
+  const common = {
+    displayName: "Negócio",
+    contactEmail: "contato@example.com",
+    phone: "+5511999999999",
+    city: "Fortaleza, CE",
+    addressCountry: "Brasil",
+    addressState: "Ceará",
+    addressCity: "Fortaleza",
+    addressNeighborhood: "Centro",
+    addressStreet: "Rua Um",
+    addressNumber: "10",
+    addressPostalCode: "60000-000",
+    addressType: "comercial",
+    description: "Empresa de exemplo",
+    legalName: "Empresa de Exemplo Ltda",
+    businessId: "11.222.333/0001-81",
+    representativeName: "Ana Silva",
+    representativeDocument: "529.982.247-25",
+    category: "Bem-estar",
+  };
+  assert.deepEqual(validateProfessionalApplication("empresa", common), {});
+  assert.match(validateProfessionalApplication("empresa", { ...common, businessId: "11.222.333/0001-80" }).businessId, /CNPJ válido/);
+  assert.match(validateProfessionalApplication("empresa", { ...common, representativeDocument: "111.111.111-11" }).representativeDocument, /CPF válido/);
 });
 
 test("profile links enforce size, labels, types, HTTPS and no fake verified status", () => {

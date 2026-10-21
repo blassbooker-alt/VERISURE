@@ -7,7 +7,7 @@ import {
 import {
   createProfessionalDocumentUrl, loadProfessionalApplicationDocuments, loadProfessionalApplications,
   loadProfessionalApplicationsForReview, PROFESSIONAL_CATEGORIES, professionalFieldsFor,
-  professionalStatusLabel, removeProfessionalApplicationDocument, reviewProfessionalApplication,
+  professionalStatusLabel, recordCreatorReviewEvidence, removeProfessionalApplicationDocument, reviewProfessionalApplication,
   saveProfessionalApplication, submitProfessionalApplication, uploadProfessionalApplicationDocument,
   validateProfessionalApplication,
 } from "./professionalService.js";
@@ -19,6 +19,7 @@ import {
 
 const CATEGORY_ICONS = {
   empresa: BriefcaseBusiness,
+  academia: Dumbbell,
   marca: Tags,
   vendedor: Store,
   restaurante: Utensils,
@@ -34,6 +35,14 @@ function categoryFor(id) {
 function ApplicationStatus({ application }) {
   if (!application) return null;
   const note = application.reviewer_note;
+  const received = Boolean(application.submitted_at);
+  const decided = ["approved", "rejected", "suspended"].includes(application.status);
+  const steps = [
+    { label: "Cadastro enviado", complete: received },
+    { label: application.status === "correction_required" ? "Correção solicitada" : "Em análise", complete: received && !decided },
+    { label: "Decisão", complete: decided },
+    { label: "Selo liberado", complete: application.status === "approved" },
+  ];
   return <div className={`professional-application-status status-${application.status}`} role="status">
     {application.status === "approved" ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}
     <div>
@@ -50,6 +59,9 @@ function ApplicationStatus({ application }) {
                 ? "Revise os dados solicitados e envie a candidatura novamente."
                 : "Salve seu cadastro e envie-o para análise quando estiver pronto."}</p>
       {note && <small>Observação da equipe: {note}</small>}
+      {application.submitted_at && <small>Protocolo {application.id} · enviado em {new Date(application.submitted_at).toLocaleString("pt-BR")}{application.sla_due_at ? ` · prazo-alvo ${new Date(application.sla_due_at).toLocaleString("pt-BR")}` : ""}. A meta é 24 horas úteis após o envio completo; feriados e validações externas podem estender a análise.</small>}
+      {application.current_revision > 1 && <small>Reenvio · versão {application.current_revision}</small>}
+      {received && <ol className="professional-status-timeline">{steps.map((item, index) => <li key={item.label} className={item.complete ? "complete" : ""}><span>{index + 1}</span>{item.label}</li>)}</ol>}
     </div>
   </div>;
 }
@@ -66,16 +78,22 @@ function ApplicationField({ field, value, onChange, disabled = false }) {
   };
   return <label className="professional-form-field" htmlFor={props.id}>
     {field.label}{field.required && <span aria-hidden="true"> *</span>}
-    {field.type === "textarea"
+    {field.type === "select"
+      ? <select {...props}><option value="">Selecione</option>{field.options.map(option => <option key={option} value={option}>{option}</option>)}</select>
+      : field.type === "textarea"
       ? <textarea {...props} rows={field.id === "description" ? 4 : 3} />
       : <input {...props} type={field.type || "text"} />}
   </label>;
 }
 
-function ReviewApplication({ client, application, busyId, onReview, note, onNoteChange }) {
+function ReviewApplication({ client, application, busyId, onReview, note, onNoteChange, approved = false }) {
   const [documents, setDocuments] = useState([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
+  const [observedFollowers, setObservedFollowers] = useState('{"instagram":0,"tiktok":0,"youtube":0}');
+  const [ownershipConfirmed, setOwnershipConfirmed] = useState(false);
+  const [validationMethod, setValidationMethod] = useState("manual");
+  const [evidenceNote, setEvidenceNote] = useState("");
   const category = categoryFor(application.kind);
   const values = application.private_data || {};
   useEffect(() => {
@@ -104,11 +122,12 @@ function ReviewApplication({ client, application, busyId, onReview, note, onNote
     <div><span className="eyebrow">{category?.label || application.kind}</span><h3>{values.displayName || "Nome não informado"}</h3><p>{values.contactEmail || ""} · {values.city || ""}</p></div>
     <dl>{Object.entries(values).filter(([, value]) => value).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl>
     <div className="professional-review-documents"><strong>Documentos privados</strong>{documentsError && <p className="professional-error" role="alert">{documentsError}</p>}{documents.length === 0 && !documentsError && <small>Nenhum documento anexado.</small>}{documents.map(document => <button type="button" key={document.id} onClick={() => openDocument(document)}><ExternalLink size={14} />{document.file_name} · {document.document_kind}</button>)}</div>
-    <label className="professional-form-field">Observação para o solicitante<textarea rows={2} maxLength={2000} value={note} onChange={event => onNoteChange(event.target.value)} /></label>
+    {application.kind === "influenciador" && <section className="professional-creator-evidence"><strong>Conferência do Creator oficial</strong><p>Informe contagens observadas por rede. A aprovação exige titularidade confirmada e o mínimo configurado no banco (padrão: 100.000 somados).</p><label className="professional-form-field">Contagens observadas (JSON por rede)<textarea rows={2} value={observedFollowers} onChange={event => setObservedFollowers(event.target.value)} /></label><label className="professional-form-field">Método<select value={validationMethod} onChange={event => setValidationMethod(event.target.value)}><option value="manual">Revisão manual</option></select></label><label className="professional-form-field">Registro da evidência<textarea rows={2} maxLength={2000} value={evidenceNote} onChange={event => setEvidenceNote(event.target.value)} placeholder="Links conferidos, data e observações da revisão" /></label><label className="social-auth-consent"><input type="checkbox" checked={ownershipConfirmed} onChange={event => setOwnershipConfirmed(event.target.checked)} /><span>Confirmei que o solicitante controla ou representa os perfis informados.</span></label></section>}
+    <label className="professional-form-field">Motivo e resumo da decisão (obrigatório)<textarea rows={2} maxLength={2000} value={note} onChange={event => onNoteChange(event.target.value)} /></label>
     <div className="professional-review-actions">
-      <button type="button" className="button primary small-button" disabled={busyId === application.id} onClick={() => onReview(application, "approved")}>Aprovar</button>
-      <button type="button" className="button subtle small-button" disabled={busyId === application.id} onClick={() => onReview(application, "correction_required")}>Solicitar correção</button>
-      <button type="button" className="button subtle small-button" disabled={busyId === application.id} onClick={() => onReview(application, "rejected")}>Reprovar</button>
+      {approved
+        ? <button type="button" className="button subtle small-button" disabled={busyId === application.id || note.trim().length < 3} onClick={() => onReview(application, "suspended")}>Suspender selo e acesso</button>
+        : <><button type="button" className="button primary small-button" disabled={busyId === application.id || note.trim().length < 3 || (application.kind === "influenciador" && (!ownershipConfirmed || !evidenceNote.trim()))} onClick={() => onReview(application, "approved", application.kind === "influenciador" ? { observedFollowers, ownershipConfirmed, validationMethod, evidenceNote } : null)}>Aprovar</button><button type="button" className="button subtle small-button" disabled={busyId === application.id || note.trim().length < 3} onClick={() => onReview(application, "correction_required")}>Solicitar correção</button><button type="button" className="button subtle small-button" disabled={busyId === application.id || note.trim().length < 3} onClick={() => onReview(application, "rejected")}>Reprovar</button></>}
     </div>
   </article>;
 }
@@ -117,9 +136,16 @@ function AdminReview({ client, applications, onRefresh, notify }) {
   const [notes, setNotes] = useState({});
   const [busyId, setBusyId] = useState("");
   const pending = applications.filter(application => application.status === "under_review");
-  const review = async (application, status) => {
+  const approved = applications.filter(application => application.status === "approved");
+  const review = async (application, status, creatorEvidence = null) => {
     setBusyId(application.id);
     try {
+      if (status === "approved" && application.kind === "influenciador") {
+        let observed;
+        try { observed = JSON.parse(creatorEvidence.observedFollowers); }
+        catch { throw new Error("Informe as contagens observadas em JSON válido por rede."); }
+        await recordCreatorReviewEvidence(client, application.id, { ...creatorEvidence, observedFollowers: observed });
+      }
       await reviewProfessionalApplication(client, application.id, status, notes[application.id] || "");
       notify(status === "approved" ? "Cadastro profissional aprovado." : "Revisão atualizada.");
       await onRefresh();
@@ -142,6 +168,16 @@ function AdminReview({ client, applications, onRefresh, notify }) {
       note={notes[application.id] || ""}
       onNoteChange={value => setNotes(current => ({ ...current, [application.id]: value }))}
     />)}
+    {approved.length > 0 && <details className="professional-approved-review"><summary>Perfis aprovados ({approved.length})</summary>{approved.map(application => <ReviewApplication
+      key={application.id}
+      client={client}
+      application={application}
+      busyId={busyId}
+      onReview={review}
+      note={notes[application.id] || ""}
+      onNoteChange={value => setNotes(current => ({ ...current, [application.id]: value }))}
+      approved
+    />)}</details>}
   </section>;
 }
 
@@ -571,11 +607,11 @@ export default function ProfessionalPortal({ client, session, profile, notify })
   const submit = async event => {
     event.preventDefault();
     if (!acceptedFreeBusinessTerms) {
-      setFormError("Confirme que leu as condições do cadastro comercial gratuito antes de enviar.");
+      setFormError("Confirme a veracidade e a titularidade das informações antes de enviar.");
       return;
     }
-    if (["nutricionista", "personal", "vendedor"].includes(selectedCategory) && !documents.length) {
-      setFormError("Anexe ao menos um documento de comprovação antes de enviar o cadastro.");
+    if (!documents.length) {
+      setFormError("Anexe ao menos um documento de identidade, registro profissional ou comprovação empresarial antes de enviar.");
       setStep(1);
       return;
     }
@@ -690,7 +726,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
               .filter(field => step === 0
                 ? ["displayName", "contactEmail", "phone", "city"].includes(field.id)
                 : !["displayName", "contactEmail", "phone", "city"].includes(field.id))
-              .map(field => <ApplicationField key={field.id} field={field} value={form[field.id]} disabled={["under_review", "suspended"].includes(selectedApplication?.status)} onChange={(id, value) => setForm(current => ({ ...current, [id]: value }))} />)}</div>
+              .map(field => <ApplicationField key={field.id} field={field} value={form[field.id]} disabled={["under_review", "approved", "suspended"].includes(selectedApplication?.status)} onChange={(id, value) => setForm(current => ({ ...current, [id]: value }))} />)}</div>
             : <div className="professional-review-preview"><h3>Revise antes de enviar</h3><dl>{fields.map(field => <div key={field.id}><dt>{field.label}</dt><dd>{form[field.id] || "Não informado"}</dd></div>)}</dl><p>Os dados identificáveis e credenciais ficam privados para análise. Apenas nome, apresentação, cidade e site poderão ser publicados depois da aprovação.</p></div>}
           {step === 1 && <section className="professional-document-upload">
             <div><strong>Documentos para análise</strong><p>Arquivos privados, acessíveis apenas ao titular e à equipe autorizada. PDF, JPG ou PNG, até 10 MB.</p></div>
@@ -698,17 +734,17 @@ export default function ProfessionalPortal({ client, session, profile, notify })
             <label className="button subtle small-button professional-document-picker">{uploadingDocument ? "Enviando…" : documentsLoading ? "Carregando documentos…" : "Anexar documento"}<input type="file" accept="application/pdf,image/jpeg,image/png" onChange={uploadDocument} disabled={uploadingDocument || documentsLoading || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)} /></label>
             {documentsError && <p className="professional-error" role="alert">{documentsError}</p>}
             {documents.map(document => <div className="professional-document-item" key={document.id}><span>{document.file_name}<small>{document.document_kind} · {Math.ceil(document.size_bytes / 1024)} KB</small></span>{!["under_review", "approved", "suspended", "rejected"].includes(selectedApplication?.status) && <button type="button" disabled={uploadingDocument} onClick={() => removeDocument(document)}>Remover</button>}</div>)}
-            {["nutricionista", "personal", "vendedor"].includes(selectedCategory) && documents.length === 0 && <small className="professional-required-document">Este tipo de cadastro exige ao menos um documento antes do envio.</small>}
+            {documents.length === 0 && <small className="professional-required-document">O envio exige ao menos um documento de identidade, registro ou comprovação da atividade.</small>}
           </section>}
           {step === 2 && <label className="social-auth-consent">
             <input type="checkbox" checked={acceptedFreeBusinessTerms} onChange={event => setAcceptedFreeBusinessTerms(event.target.checked)} required />
-            <span>Confirmo que o cadastro, a manutenção do perfil e a listagem básica são gratuitos; aceito as políticas comerciais e entendo que publicidade exige aprovação separada. A adesão a descontos é voluntária e terá aceite próprio.</span>
+            <span>Declaro que os dados são verdadeiros, atuais e meus ou da empresa que represento. Li as políticas aplicáveis e entendo que o envio inicia uma análise, sem garantir aprovação. CPF, documentos e endereço residencial ficam privados; o selo só aparece após aprovação.</span>
           </label>}
           {formError && <p className="professional-error" role="alert">{formError}</p>}
           <footer className="professional-form-actions">
-            <button type="button" className="button subtle" disabled={saving || step === 0 || selectedApplication?.status === "under_review"} onClick={() => moveStep(-1)}>Voltar</button>
+            <button type="button" className="button subtle" disabled={saving || step === 0 || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)} onClick={() => moveStep(-1)}>Voltar</button>
             {step < 2
-              ? <button type="button" className="button primary" disabled={saving || uploadingDocument || ["under_review", "suspended"].includes(selectedApplication?.status)} onClick={() => moveStep(1)}>{saving ? "Salvando…" : "Salvar e continuar"} <ArrowRight size={16} /></button>
+              ? <button type="button" className="button primary" disabled={saving || uploadingDocument || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)} onClick={() => moveStep(1)}>{saving ? "Salvando…" : "Salvar e continuar"} <ArrowRight size={16} /></button>
               : <button type="submit" className="button primary" disabled={saving || documentsLoading || uploadingDocument || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)}>{saving ? "Enviando…" : ["correction_required", "rejected"].includes(selectedApplication?.status) ? "Reenviar para análise" : "Enviar para análise"} <ArrowRight size={16} /></button>}
           </footer>
         </form>

@@ -2,13 +2,14 @@ import { mapProfile, signMedia } from "./socialService.js";
 import { createSecureId } from "./secureId.js";
 
 export const PROFESSIONAL_CATEGORIES = [
-  { id: "empresa", label: "Empresa", description: "Apresente sua empresa, serviços e portfólio." },
-  { id: "marca", label: "Marca", description: "Mostre produtos, coleções e campanhas." },
-  { id: "vendedor", label: "Vendedor Fortalfy Shop", description: "Prepare seu catálogo e solicite acesso à operação de vendas." },
-  { id: "restaurante", label: "Restaurante", description: "Apresente seu estabelecimento e cardápio." },
-  { id: "nutricionista", label: "Nutricionista", description: "Divulgue sua atuação após análise das credenciais." },
-  { id: "personal", label: "Personal trainer", description: "Apresente seus serviços e acompanhamento." },
-  { id: "influenciador", label: "Influenciador fitness", description: "Conecte seu conteúdo esportivo a marcas e parceiros." },
+  { id: "empresa", label: "Empresa", description: "Apresente sua empresa, serviços e portfólio. A equipe revisará seus dados antes de qualquer aprovação." },
+  { id: "marca", label: "Loja ou marca parceira", description: "Mostre produtos, catálogo e canais comerciais para análise." },
+  { id: "vendedor", label: "Vendedor Fortalfy Shop", description: "Solicite análise para habilitar uma operação de vendas." },
+  { id: "restaurante", label: "Restaurante ou negócio de alimentação", description: "Apresente o estabelecimento, cardápio e informações de atendimento." },
+  { id: "nutricionista", label: "Nutricionista", description: "Apresente seus dados profissionais e registro para revisão manual." },
+  { id: "personal", label: "Personal trainer", description: "Apresente sua atuação, registro ou certificações para revisão." },
+  { id: "academia", label: "Academia ou estúdio", description: "Cadastre a empresa, endereço, equipe e estrutura para revisão como parceiro Fortalfy." },
+  { id: "influenciador", label: "Fortalfy Creator / Influenciador", description: "Candidate-se ao perfil oficial. A aprovação exige análise manual e o mínimo de audiência definido pela Fortalfy. Se ainda não atingir, você pode continuar como creator da comunidade pela conta comum, sem selo oficial." },
 ];
 
 const COMMON_FIELDS = [
@@ -16,51 +17,88 @@ const COMMON_FIELDS = [
   { id: "contactEmail", label: "E-mail profissional", type: "email", required: true, maxLength: 254 },
   { id: "phone", label: "Telefone profissional", type: "tel", required: true, maxLength: 40 },
   { id: "city", label: "Cidade e estado", required: true, maxLength: 120 },
+  { id: "addressCountry", label: "País do endereço", required: true, maxLength: 80 },
+  { id: "addressState", label: "Estado / UF", required: true, maxLength: 80 },
+  { id: "addressCity", label: "Cidade", required: true, maxLength: 120 },
+  { id: "addressNeighborhood", label: "Bairro", required: true, maxLength: 120 },
+  { id: "addressStreet", label: "Logradouro", required: true, maxLength: 180 },
+  { id: "addressNumber", label: "Número", required: true, maxLength: 30 },
+  { id: "addressPostalCode", label: "CEP", required: true, maxLength: 12 },
+  { id: "addressComplement", label: "Complemento (opcional)", maxLength: 120 },
+  { id: "addressType", label: "Tipo de endereço", type: "select", options: ["residencial", "comercial", "atendimento", "sede"], required: true, maxLength: 30 },
   { id: "website", label: "Site oficial (opcional)", type: "url", maxLength: 2048 },
   { id: "description", label: "Apresentação", type: "textarea", required: true, maxLength: 2000 },
 ];
 
 const CATEGORY_FIELDS = {
   empresa: [
-    { id: "legalName", label: "Razão social (opcional)", maxLength: 180 },
-    { id: "businessId", label: "CNPJ ou identificação empresarial (opcional)", maxLength: 32 },
+    { id: "legalName", label: "Razão social", required: true, maxLength: 180 },
+    { id: "businessId", label: "CNPJ da empresa", required: true, maxLength: 18 },
+    { id: "representativeName", label: "Nome do representante legal", required: true, maxLength: 180 },
+    { id: "representativeDocument", label: "CPF do representante (privado)", required: true, maxLength: 14 },
     { id: "category", label: "Área de atuação", required: true, maxLength: 100 },
     { id: "address", label: "Endereço comercial (opcional)", maxLength: 300 },
     { id: "services", label: "Serviços oferecidos (opcional)", type: "textarea", maxLength: 1200 },
   ],
   marca: [
-    { id: "businessId", label: "CNPJ ou identificação empresarial (opcional)", maxLength: 32 },
+    { id: "legalName", label: "Razão social", required: true, maxLength: 180 },
+    { id: "businessId", label: "CNPJ da empresa", required: true, maxLength: 18 },
+    { id: "representativeName", label: "Nome do representante legal", required: true, maxLength: 180 },
+    { id: "representativeDocument", label: "CPF do representante (privado)", required: true, maxLength: 14 },
     { id: "category", label: "Categoria de produtos", required: true, maxLength: 100 },
     { id: "country", label: "País de operação", required: true, maxLength: 80 },
   ],
   vendedor: [
-    { id: "businessId", label: "CPF/CNPJ (opcional nesta etapa)", maxLength: 32 },
+    { id: "legalName", label: "Razão social", required: true, maxLength: 180 },
+    { id: "businessId", label: "CNPJ da empresa", required: true, maxLength: 18 },
+    { id: "representativeName", label: "Nome do representante legal", required: true, maxLength: 180 },
+    { id: "representativeDocument", label: "CPF do representante (privado)", required: true, maxLength: 14 },
     { id: "category", label: "Categoria de produtos", required: true, maxLength: 100 },
     { id: "shippingPolicy", label: "Política de envio (opcional)", type: "textarea", maxLength: 1200 },
     { id: "returnPolicy", label: "Política de troca e devolução (opcional)", type: "textarea", maxLength: 1200 },
   ],
   restaurante: [
-    { id: "businessId", label: "CNPJ ou identificação empresarial (opcional)", maxLength: 32 },
+    { id: "legalName", label: "Razão social", required: true, maxLength: 180 },
+    { id: "businessId", label: "CNPJ do estabelecimento", required: true, maxLength: 18 },
+    { id: "representativeName", label: "Nome do representante legal", required: true, maxLength: 180 },
+    { id: "representativeDocument", label: "CPF do representante (privado)", required: true, maxLength: 14 },
     { id: "cuisine", label: "Categoria culinária", required: true, maxLength: 100 },
-    { id: "address", label: "Endereço do estabelecimento", required: true, maxLength: 300 },
     { id: "serviceModes", label: "Modalidades (entrega, retirada, salão)", maxLength: 200 },
   ],
   nutricionista: [
+    { id: "legalName", label: "Nome civil", required: true, maxLength: 180 },
+    { id: "personDocument", label: "CPF (somente para análise privada)", required: true, maxLength: 14 },
     { id: "registrationNumber", label: "Número do CRN", required: true, maxLength: 40 },
     { id: "registrationRegion", label: "Região do CRN", required: true, maxLength: 12 },
     { id: "specialties", label: "Especialidades", required: true, maxLength: 300 },
     { id: "serviceModes", label: "Modalidades (online/presencial)", required: true, maxLength: 100 },
   ],
   personal: [
+    { id: "legalName", label: "Nome civil", required: true, maxLength: 180 },
+    { id: "personDocument", label: "CPF (somente para análise privada)", required: true, maxLength: 14 },
     { id: "registrationNumber", label: "Número do CREF (quando aplicável)", required: true, maxLength: 40 },
     { id: "specialties", label: "Especialidades", required: true, maxLength: 300 },
     { id: "serviceModes", label: "Modalidades (online/presencial)", required: true, maxLength: 100 },
   ],
   influenciador: [
-    { id: "fitnessNiches", label: "Nichos fitness e esportivos", required: true, maxLength: 300 },
+    { id: "legalName", label: "Nome civil", required: true, maxLength: 180 },
+    { id: "personDocument", label: "CPF do titular (somente para análise privada)", required: true, maxLength: 14 },
+    { id: "birthDate", label: "Data de nascimento", type: "date", required: true, maxLength: 10 },
+    { id: "country", label: "País de atuação", required: true, maxLength: 80 },
+    { id: "fitnessNiches", label: "Nicho principal", required: true, maxLength: 300 },
     { id: "socialLinks", label: "Links oficiais de redes sociais", type: "textarea", required: true, maxLength: 2048 },
-    { id: "declaredFollowers", label: "Seguidores declarados por rede (opcional)", type: "textarea", maxLength: 500 },
-    { id: "portfolio", label: "Portfólio e formatos comerciais (opcional)", type: "textarea", maxLength: 1200 },
+    { id: "declaredFollowers", label: "Seguidores declarados por rede (serão conferidos manualmente)", type: "textarea", required: true, maxLength: 500 },
+    { id: "averageViews", label: "Média aproximada de visualizações", maxLength: 80 },
+    { id: "portfolio", label: "Portfólio e trabalhos anteriores", type: "textarea", maxLength: 1200 },
+  ],
+  academia: [
+    { id: "legalName", label: "Razão social", required: true, maxLength: 180 },
+    { id: "businessId", label: "CNPJ da academia ou estúdio", required: true, maxLength: 18 },
+    { id: "representativeName", label: "Nome do representante legal", required: true, maxLength: 180 },
+    { id: "representativeDocument", label: "CPF do representante (privado)", required: true, maxLength: 14 },
+    { id: "category", label: "Modalidades e estrutura", required: true, maxLength: 300 },
+    { id: "services", label: "Serviços oferecidos", type: "textarea", required: true, maxLength: 1200 },
+    { id: "operatingHours", label: "Horário de funcionamento", required: true, maxLength: 180 },
   ],
 };
 
@@ -96,6 +134,29 @@ export function normalizeExternalUrl(value) {
   }
 }
 
+function validCpf(value) {
+  const cpf = String(value || "").replace(/\D/g, "");
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+  const digit = length => {
+    const sum = cpf.slice(0, length).split("").reduce((total, number, index) => total + Number(number) * (length + 1 - index), 0);
+    const result = (sum * 10) % 11;
+    return result === 10 ? 0 : result;
+  };
+  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
+}
+
+function validCnpj(value) {
+  const cnpj = String(value || "").replace(/\D/g, "");
+  if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+  const calculate = length => {
+    const weights = length === 12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
+    const sum = cnpj.slice(0, length).split("").reduce((total, digit, index) => total + Number(digit) * weights[index], 0);
+    const remainder = sum % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+  return calculate(12) === Number(cnpj[12]) && calculate(13) === Number(cnpj[13]);
+}
+
 export function validateProfessionalApplication(categoryId, values, { allowIncomplete = false } = {}) {
   const errors = {};
   if (!ALLOWED_CATEGORIES.has(categoryId)) return { category: "Selecione uma categoria profissional válida." };
@@ -114,6 +175,27 @@ export function validateProfessionalApplication(categoryId, values, { allowIncom
     const links = String(values.socialLinks).split(/\r?\n/).map(value => value.trim()).filter(Boolean);
     if (links.some(value => !normalizeExternalUrl(value))) {
       errors.socialLinks = "Informe um link HTTPS válido em cada linha; não envie senhas das redes sociais.";
+    }
+  }
+  if (!allowIncomplete && ["nutricionista", "personal", "influenciador"].includes(categoryId) && !validCpf(values.personDocument)) {
+    errors.personDocument = "Informe um CPF válido para a análise privada.";
+  }
+  if (!allowIncomplete && ["empresa", "marca", "vendedor", "restaurante", "academia"].includes(categoryId)) {
+    if (!validCnpj(values.businessId)) errors.businessId = "Informe um CNPJ válido da empresa.";
+    if (!validCpf(values.representativeDocument)) errors.representativeDocument = "Informe um CPF válido para o representante legal.";
+  }
+  if (values.addressPostalCode && !/^[\d\s-]{5,12}$/.test(values.addressPostalCode)) {
+    errors.addressPostalCode = "Informe um CEP válido.";
+  }
+  if (categoryId === "influenciador" && values.birthDate) {
+    const date = new Date(`${values.birthDate}T00:00:00Z`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== values.birthDate || date > new Date()) {
+      errors.birthDate = "Informe uma data de nascimento válida.";
+    } else {
+      const age = new Date().getUTCFullYear() - date.getUTCFullYear();
+      const beforeBirthday = new Date().getUTCMonth() < date.getUTCMonth()
+        || (new Date().getUTCMonth() === date.getUTCMonth() && new Date().getUTCDate() < date.getUTCDate());
+      if (age - Number(beforeBirthday) < 18) errors.birthDate = "A candidatura oficial está disponível apenas para maiores de 18 anos.";
     }
   }
   return errors;
@@ -250,6 +332,19 @@ export async function reviewProfessionalApplication(client, applicationId, statu
   return data;
 }
 
+export async function recordCreatorReviewEvidence(client, applicationId, evidence) {
+  if (!client || !applicationId) throw new Error("Não foi possível localizar a candidatura Creator.");
+  const { data, error } = await client.rpc("record_fortalfy_creator_evidence", {
+    p_application_id: applicationId,
+    p_observed_followers: evidence.observedFollowers,
+    p_ownership_confirmed: Boolean(evidence.ownershipConfirmed),
+    p_validation_method: evidence.validationMethod,
+    p_evidence_note: String(evidence.evidenceNote || "").trim(),
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function loadProfessionalApplicationDocuments(client, applicationId) {
   if (!client || !applicationId) return [];
   const { data, error } = await client.from("professional_application_documents")
@@ -309,6 +404,8 @@ export async function removeProfessionalApplicationDocument(client, document) {
 
 export async function createProfessionalDocumentUrl(client, storagePath) {
   if (!client || !storagePath) throw new Error("Documento indisponível.");
+  const { error: auditError } = await client.rpc("record_fortalfy_professional_document_access", { p_storage_path: storagePath });
+  if (auditError) throw auditError;
   const { data, error } = await client.storage.from("professional-documents").createSignedUrl(storagePath, 60);
   if (error) throw error;
   return data.signedUrl;

@@ -17,6 +17,7 @@ import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 const FortalShop = lazy(() => import("./FortalShop.jsx"));
 const FortalfyStudio = lazy(() => import("./FortalfyStudio.jsx"));
+const FortalCreator = lazy(() => import("./FortalCreator.jsx"));
 const PerformanceDashboard = lazy(() => import("./PerformanceDashboard.jsx"));
 const ThemeSettings = lazy(() => import("./ThemeSettings.jsx"));
 const NotificationSettings = lazy(() => import("./NotificationSettings.jsx"));
@@ -204,6 +205,12 @@ function MobileHeader({ location = "", action, onNotificationsOpen, notification
 function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false, compactHeader = false }) {
   const notifications = useContext(NotificationContext);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => !compactHeader && window.matchMedia("(min-width: 1024px)").matches);
+  useEffect(() => {
+    const desktopBreakpoint = window.matchMedia("(min-width: 1024px)");
+    const syncNavigationWithViewport = () => setDesktopMenuOpen(desktopBreakpoint.matches && !compactHeader);
+    desktopBreakpoint.addEventListener?.("change", syncNavigationWithViewport);
+    return () => desktopBreakpoint.removeEventListener?.("change", syncNavigationWithViewport);
+  }, [compactHeader]);
   return <div className={`app-screen${immersive ? " immersive-screen" : ""}${desktopMenuOpen ? " navigation-expanded" : ""}`}>
     {!immersive && <MobileHeader location={location === true ? "" : location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} hideNavigation={compactHeader} />}
     <main className={`screen-content ${className}`}>
@@ -1979,7 +1986,7 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/creator", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id);
   return <Suspense fallback={<div className="app-loading" role="status">Carregando Fortalfy…</div>}><div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
@@ -1993,6 +2000,7 @@ function AppContent() {
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} messagePreferences={notificationPreferences} /></Screen>} />
+      <Route path="/creator" element={<Screen title="FortalCreator" subtitle="PROGRAMA DE CRIADORES" className="creator-screen"><FortalCreator session={authSession} client={supabase} notify={notify} /></Screen>} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
       <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
       <Route path="/checkin/:publicId" element={<Screen title="Validar presença" subtitle="FORTALPASS · ACESSO SEGURO" className="gym-access-screen"><GymCheckInPage client={supabase} session={authSession} /></Screen>} />

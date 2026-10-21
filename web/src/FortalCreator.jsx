@@ -1,0 +1,200 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, BadgeCheck, BookOpen, Camera, CheckCircle2, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users } from "lucide-react";
+import { loadProfessionalApplications, professionalStatusLabel } from "./professionalService.js";
+import Brand from "./Brand.jsx";
+import {
+  applyToCreatorCampaign, authorizeCreatorInstructor, createCreatorCampaign, createCreatorCourse,
+  createCreatorCourseLesson, createCreatorLive, enrollFreeCreatorCourse,
+  loadCreatorCampaigns, loadCreatorCourses, loadCreatorInstructorAuthorization,
+  loadCreatorLives, loadCreatorMetrics, loadMyCreatorCampaignApplications, loadMyCreatorLearning,
+  loadMyCreatorLiveRegistrations, publishCreatorCourse, publishCreatorLive, registerCreatorLive,
+  reviewCreatorCampaignApplication,
+} from "./creatorProgramService.js";
+
+const sections = ["Visão geral", "Minha evolução", "Níveis e benefícios", "Academia", "Lives", "Campanhas e collabs", "Meu perfil", "Minha candidatura"];
+const levels = [
+  { name: "Start", color: "start", criteria: "Acessos válidos e primeiros usuários ativados pelo link pessoal.", perks: "Conteúdos de orientação e possibilidade de participar de oportunidades abertas." },
+  { name: "Pro", color: "pro", criteria: "Crescimento consistente, usuários ativados e audiência real na Fortalfy.", perks: "Possibilidade de seleção para collabs, unboxing e campanhas compatíveis." },
+  { name: "Oficial", color: "official", criteria: "Desempenho sustentado, qualidade e regularidade de conteúdo.", perks: "Possibilidade de campanhas oficiais conforme seleção e disponibilidade." },
+];
+const creatorPillars = [
+  { image: "02_comunidade_em_crescimento.jpg", icon: Clapperboard, title: "Crie conteúdo", description: "Transforme suas ideias em vídeos, fotos e histórias com a sua identidade." },
+  { image: "04_conexoes_reais.jpg", icon: GraduationCap, title: "Aprenda novas habilidades", description: "Desenvolva repertório para criar, editar e comunicar com mais confiança." },
+  { image: "05_identidade_da_marca.jpg", icon: HeartHandshake, title: "Conecte-se com uma comunidade", description: "Troque experiências com pessoas que também estão construindo sua jornada." },
+];
+const creatorAudiences = [
+  { image: "07_inicio_de_uma_jornada.jpg", title: "Quem está começando", description: "Dê forma às primeiras ideias e descubra seu jeito de criar." },
+  { image: "08_criatividade_em_movimento.jpg", title: "Quem já compartilha", description: "Dê consistência a vídeos e fotografias que já fazem parte da sua rotina." },
+  { image: "10_cresca_com_a_fortalfy.jpg", title: "Quem fortalece sua marca", description: "Amplie sua presença digital e desenvolva competências profissionais." },
+];
+const creatorSteps = [
+  { title: "Crie seu perfil", description: "Apresente quem você é e o tipo de conteúdo que deseja desenvolver." },
+  { title: "Produza e publique", description: "Compartilhe conteúdos autorais nas redes em que você já está presente." },
+  { title: "Aprenda e evolua", description: "Aprimore habilidades e troque experiências com a comunidade." },
+  { title: "Explore colaborações", description: "Acompanhe oportunidades compatíveis com seu perfil e sua jornada." },
+];
+export default function FortalCreator({ session, client, notify }) {
+  const [section, setSection] = useState("Visão geral");
+  const [application, setApplication] = useState(null);
+  const [applicationLoading, setApplicationLoading] = useState(false);
+  const [applicationError, setApplicationError] = useState("");
+  const [programData, setProgramData] = useState({ courses: [], enrollments: [], orders: [], lives: [], registrations: [], campaigns: [], campaignApplications: [], metrics: null, instructor: false });
+  const [programLoading, setProgramLoading] = useState(false);
+  const [programError, setProgramError] = useState("");
+  const [programMessage, setProgramMessage] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [courseForm, setCourseForm] = useState({ title: "", summary: "", price: "0" });
+  const [lessonForms, setLessonForms] = useState({});
+  const isAdmin = session?.user?.app_metadata?.role === "admin";
+  const userId = session?.user?.id || "";
+
+  useEffect(() => {
+    if (!["Minha evolução", "Academia", "Lives", "Campanhas e collabs"].includes(section)) return undefined;
+    if (!client) { setProgramError("Configure o Supabase para carregar dados reais do programa."); return undefined; }
+    let active = true;
+    setProgramLoading(true);
+    setProgramError("");
+    setProgramMessage("");
+    const task = async () => {
+      if (section === "Academia") {
+        const [courses, learning, instructor] = await Promise.all([
+          loadCreatorCourses(client, userId, isAdmin), loadMyCreatorLearning(client, userId),
+          isAdmin ? Promise.resolve(true) : loadCreatorInstructorAuthorization(client, userId),
+        ]);
+        return { courses, enrollments: learning.enrollments, orders: learning.orders, instructor };
+      }
+      if (section === "Lives") {
+        const [lives, registrations, instructor] = await Promise.all([loadCreatorLives(client, userId, isAdmin), loadMyCreatorLiveRegistrations(client, userId), isAdmin ? Promise.resolve(true) : loadCreatorInstructorAuthorization(client, userId)]);
+        return { lives, registrations, instructor };
+      }
+      if (section === "Campanhas e collabs") {
+        const [campaigns, campaignApplications] = await Promise.all([loadCreatorCampaigns(client), loadMyCreatorCampaignApplications(client, userId, isAdmin)]);
+        return { campaigns, campaignApplications };
+      }
+      return { metrics: await loadCreatorMetrics(client, userId) };
+    };
+    task().then(result => { if (active) setProgramData(current => ({ ...current, ...result })); })
+      .catch(error => { if (active) setProgramError(error.message || "Não foi possível carregar os dados FortalCreator."); })
+      .finally(() => { if (active) setProgramLoading(false); });
+    return () => { active = false; };
+  }, [client, isAdmin, reloadKey, section, userId]);
+
+  async function runProgramAction(action, successMessage) {
+    setProgramError(""); setProgramMessage("");
+    try { await action(); setProgramMessage(successMessage); setReloadKey(value => value + 1); notify?.(successMessage); }
+    catch (error) { setProgramError(error.message || "Não foi possível concluir esta ação."); }
+  }
+
+  useEffect(() => {
+    if (section !== "Minha candidatura" || !userId || !client) return undefined;
+    let active = true;
+    setApplicationLoading(true);
+    setApplicationError("");
+    loadProfessionalApplications(client, userId).then(rows => {
+      if (active) setApplication(rows.find(row => row.kind === "influenciador") || null);
+    }).catch(error => {
+      if (active) setApplicationError(error.message || "Não foi possível carregar sua candidatura.");
+    }).finally(() => { if (active) setApplicationLoading(false); });
+    return () => { active = false; };
+  }, [client, section, userId]);
+
+  return <div className="creator-page">
+    <header className="creator-hero" id="creator-top"><img className="creator-hero-photo" src="/assets/creator/06_torne_se_um_fortalcreator.jpg" alt="" aria-hidden="true" fetchpriority="high"/><div className="creator-hero-content"><span className="creator-hero-kicker">PROGRAMA DE CRIADORES FORTALFY</span><h2>Sua criatividade pode abrir novos caminhos.</h2><p>Faça parte do FortalCreator e desenvolva sua presença digital com conteúdo, aprendizado e comunidade.</p><div className="creator-hero-actions"><button type="button" className="button primary" onClick={() => { setSection("Minha candidatura"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Quero ser FortalCreator <ArrowRight size={16}/></button><button type="button" className="creator-hero-secondary" onClick={() => { setSection("Visão geral"); window.setTimeout(() => scrollToCreatorSection("creator-about"), 0); }}>Conhecer o programa</button></div></div><div className="creator-hero-image-note"><img src="/assets/creator/01_conheca_a_fortalfy.jpg" alt="" aria-hidden="true"/><span><strong>Ideias que ganham espaço</strong><small>Uma jornada de criação e aprendizado</small></span></div><span className="creator-hero-icon" aria-hidden="true"><Clapperboard size={34}/></span></header>
+    <nav className="creator-tabs" aria-label="Seções FortalCreator">{sections.map(item => <button key={item} type="button" className={section === item ? "selected" : ""} aria-current={section === item ? "page" : undefined} onClick={() => setSection(item)}>{item}</button>)}</nav>
+
+    {section === "Minha candidatura" && <section className="creator-card creator-application"><span className="eyebrow">CANDIDATURA OFICIAL</span><h2>Inscrição e acompanhamento</h2>
+      <p>A candidatura usa o fluxo profissional existente da Fortalfy, com rascunho no Supabase, revisão administrativa e documentos em armazenamento privado.</p>
+      {applicationLoading && <p role="status">Carregando estado da candidatura…</p>}
+      {applicationError && <p className="creator-error" role="alert">{applicationError}</p>}
+      {!client && <p className="creator-error" role="alert">O Supabase não está configurado neste ambiente. A candidatura não pode ser salva.</p>}
+      {!userId && <p>Entre ou crie uma conta Fortalfy para salvar e acompanhar sua candidatura. O fluxo preserva os dados até você retornar à área de cadastro.</p>}
+      {userId && !applicationLoading && !applicationError && <div className="creator-application-state"><strong>{application ? professionalStatusLabel(application.status) : "Nenhuma candidatura de Creator encontrada"}</strong>{application?.submitted_at && <small>Enviada em {new Date(application.submitted_at).toLocaleDateString("pt-BR")}</small>}{application?.reviewer_note && <p>Orientação da equipe: {application.reviewer_note}</p>}</div>}
+      <div className="creator-form-actions"><Link className="button primary" to={userId ? "/professional/manage?category=influenciador" : "/profile?professionalKind=influenciador"}>{application ? "Continuar ou acompanhar candidatura" : "Iniciar candidatura segura"} <ArrowRight size={16}/></Link></div>
+      <aside className="creator-status"><LockKeyhole size={16}/> Dados pessoais e endereço são tratados pelo cadastro profissional com acesso restrito; documentos são enviados ao bucket privado. O fluxo atual não faz reconhecimento facial automático. A revisão é manual.</aside>
+    </section>}
+
+    {section === "Visão geral" && <CreatorLanding onApply={() => { setSection("Minha candidatura"); window.scrollTo({ top: 0, behavior: "smooth" }); }} onAcademy={() => { setSection("Academia"); window.scrollTo({ top: 0, behavior: "smooth" }); }} onLevels={() => setSection("Níveis e benefícios")}/>}
+    {section === "Minha evolução" && <section className="creator-card"><Users/><h2>{programData.metrics?.assigned_level ? `Nível ${programData.metrics.assigned_level}` : "Métricas do programa"}</h2>{programLoading && <p role="status">Carregando indicadores…</p>}{programError && <p className="creator-error" role="alert">{programError}</p>}{programData.metrics ? <div className="creator-metric-grid">{[["Acessos válidos",programData.metrics.valid_referral_visits],["Usuários ativados",programData.metrics.activated_users],["Seguidores Fortalfy",programData.metrics.fortalfy_followers],["Qualidade do conteúdo",programData.metrics.content_quality_score ?? "Pendente"],["Regularidade",programData.metrics.content_regularity_score ?? "Pendente"]].map(([label,value])=><article key={label}><span>{label}</span><strong>{value}</strong></article>)}</div> : !programLoading && !programError && <p>Nenhum snapshot de métricas foi calculado para esta conta. Acessos válidos, ativações, seguidores reais e qualidade/regularidade não serão estimados pelo cliente.</p>}<p>Cursos e lives não alteram o nível.</p></section>}
+    {section === "Níveis e benefícios" && <Levels/>}
+    {section === "Academia" && <AcademyProgram client={client} profileId={userId} isAdmin={isAdmin} data={programData} loading={programLoading} error={programError} message={programMessage} courseForm={courseForm} setCourseForm={setCourseForm} lessonForms={lessonForms} setLessonForms={setLessonForms} runAction={runProgramAction}/>}
+    {section === "Lives" && <LiveProgram client={client} profileId={userId} isAdmin={isAdmin} data={programData} loading={programLoading} error={programError} message={programMessage} runAction={runProgramAction}/>}
+    {section === "Campanhas e collabs" && <CampaignProgram client={client} profileId={userId} isAdmin={isAdmin} data={programData} loading={programLoading} error={programError} message={programMessage} runAction={runProgramAction}/>}
+    {section === "Meu perfil" && <section className="creator-card"><h2>Perfil de criador</h2><p>Um perfil oficial é disponibilizado depois da aprovação administrativa da candidatura.</p>{session?.user?.email && <small>Conta Fortalfy: {session.user.email}</small>}</section>}
+  </div>;
+}
+
+function Levels({ titlePrefix = "" }) { return <section className="creator-levels"><h2>Níveis e possibilidades</h2><p>A evolução considera crescimento e qualidade dentro da Fortalfy. Cursos e lives não alteram o nível. Critérios e metas ainda precisam ser configurados pelo programa.</p><div>{levels.map(level => <article className={`creator-card creator-level creator-level-${level.color}`} key={level.name}><span className="creator-level-number">NÍVEL</span><h3>{titlePrefix ? `${titlePrefix} ${level.name}` : level.name}</h3><strong>Critérios considerados</strong><p>{level.criteria}</p><strong>Possibilidades</strong><p>{level.perks}</p></article>)}</div><aside className="creator-status"><BadgeCheck size={16}/> Nível atual e progresso aguardam integração das métricas específicas do Creator.</aside></section>; }
+
+function scrollToCreatorSection(id) { document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }
+
+function CreatorLanding({ onApply, onAcademy, onLevels }) {
+  return <div className="creator-landing">
+    <section className="creator-landing-section creator-about" id="creator-about" aria-labelledby="creator-about-title">
+      <div className="creator-section-heading"><span className="eyebrow">CRIATIVIDADE COM PROPÓSITO</span><h2 id="creator-about-title">O que é o FortalCreator?</h2><p>O FortalCreator é um programa para pessoas que desejam criar conteúdo, desenvolver sua presença digital, conectar-se com uma comunidade ativa e evoluir profissionalmente.</p></div>
+      <div className="creator-pillar-grid">{creatorPillars.map(({ image, icon: Icon, title, description }) => <article className="creator-pillar-card" key={title}><div className="creator-pillar-photo"><img src={`/assets/creator/${image}`} alt="" loading="lazy" decoding="async"/><span><Icon size={19}/></span></div><div><h3>{title}</h3><p>{description}</p></div></article>)}</div>
+    </section>
+
+    <section className="creator-landing-section creator-audience" aria-labelledby="creator-audience-title">
+      <div className="creator-section-heading"><span className="eyebrow">DIFERENTES CAMINHOS, UMA MESMA VONTADE DE CRIAR</span><h2 id="creator-audience-title">Para quem é?</h2><p>Para pessoas adultas que querem compartilhar ideias e construir uma presença digital com autenticidade.</p></div>
+      <div className="creator-audience-grid">{creatorAudiences.map(item => <article className="creator-audience-card" key={item.title}><img src={`/assets/creator/${item.image}`} alt="" loading="lazy" decoding="async"/><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}</div>
+      <div className="creator-interest-list" aria-label="Áreas de interesse"><span>Lifestyle</span><span>Tecnologia</span><span>Moda</span><span>Beleza</span><span>Fitness</span><span>Bem-estar</span><span>Marketing digital</span><span>Edição</span></div>
+    </section>
+
+    <section className="creator-landing-section creator-steps-section" aria-labelledby="creator-steps-title">
+      <div className="creator-section-heading"><span className="eyebrow">UMA JORNADA POSSÍVEL</span><h2 id="creator-steps-title">Como funciona?</h2><p>Um caminho para aprender, praticar e descobrir novas possibilidades criativas.</p></div>
+      <ol className="creator-step-grid">{creatorSteps.map((step, index) => <li className="creator-step-card" key={step.title}><span className="creator-step-number">0{index + 1}</span><div><h3>{step.title}</h3><p>{step.description}</p></div></li>)}</ol>
+      <p className="creator-opportunity-note"><LockKeyhole size={15}/> Oportunidades de colaboração dependem dos critérios e da seleção da Fortalfy; participação ou benefícios não são automáticos.</p>
+    </section>
+
+    <section className="creator-academy-feature" aria-labelledby="creator-academy-title"><div className="creator-academy-copy"><span className="eyebrow">ACADEMIA FORTALCREATOR</span><h2 id="creator-academy-title">Aprenda a criar melhor.</h2><p>A Academia foi pensada para apoiar seu desenvolvimento com conteúdos sobre criação de vídeos, edição, marketing digital, engajamento, marca pessoal e publicidade.</p><p className="creator-academy-pricing">A disponibilidade do catálogo depende da configuração do programa. Os cursos podem ser gratuitos em períodos promocionais ou vendidos individualmente; o preço será informado antes da compra.</p><button type="button" className="button primary" onClick={onAcademy}>Conhecer a Academia <ArrowRight size={16}/></button></div><div className="creator-academy-visual"><img src="/assets/creator/03_fortalfy_no_cotidiano.jpg" alt="Criadora estudando e planejando conteúdo em um ambiente iluminado" loading="lazy" decoding="async"/><span><BookOpen size={16}/> Aprendizado no seu ritmo</span></div></section>
+
+    <section className="creator-landing-section creator-landing-levels" aria-labelledby="creator-landing-levels-title"><div className="creator-section-heading"><span className="eyebrow">EVOLUÇÃO COM CONSISTÊNCIA</span><h2 id="creator-landing-levels-title">Desenvolva sua presença.</h2><p>FortalCreator Start, Pro e Oficial representam etapas de participação e desenvolvimento dentro do programa. Os critérios ainda dependem da configuração das métricas.</p></div><Levels titlePrefix="FortalCreator"/><button type="button" className="creator-inline-link" onClick={onLevels}>Ver detalhes dos níveis <ArrowRight size={15}/></button></section>
+
+    <section className="creator-testimonial" aria-labelledby="creator-testimonial-title"><div className="creator-testimonial-image"><img src="/assets/creator/09_mostre_sua_personalidade.jpg" alt="Criadora em um momento espontâneo" loading="lazy" decoding="async"/></div><div className="creator-testimonial-copy"><span className="creator-demo-label"><CheckCircle2 size={14}/> DEPOIMENTO DEMONSTRATIVO</span><h2 id="creator-testimonial-title">Toda jornada criativa começa de algum lugar.</h2><blockquote>“Eu sempre quis criar conteúdo, mas não sabia por onde começar. O FortalCreator me mostrou que posso aprender, desenvolver meu estilo e fazer parte de uma comunidade que também está evoluindo.”</blockquote><p>Texto ilustrativo. Não representa o relato de uma pessoa ou creator real.</p></div></section>
+
+    <section className="creator-final-cta" aria-labelledby="creator-final-title"><span className="eyebrow">FORTALCREATOR</span><h2 id="creator-final-title">Seu próximo passo começa aqui.</h2><p>Comece a desenvolver sua criatividade, sua presença digital e suas conexões.</p><button type="button" className="button creator-final-button" onClick={onApply}>Quero fazer parte <ArrowRight size={16}/></button><small>A candidatura passa por análise. A participação depende dos critérios do programa.</small></section>
+
+    <CreatorLandingFooter onAcademy={onAcademy}/>
+  </div>;
+}
+
+function CreatorLandingFooter({ onAcademy }) {
+  return <footer className="creator-landing-footer"><div className="creator-footer-brand"><Link to="/home" aria-label="Fortalfy, página inicial"><Brand/></Link><p>Uma jornada para criar, aprender e evoluir com autenticidade.</p></div><nav aria-label="Links FortalCreator"><Link to="/home">Fortalfy</Link><button type="button" onClick={() => scrollToCreatorSection("creator-top")}>FortalCreator</button><button type="button" onClick={onAcademy}>Academia</button><a href="mailto:fortalfy@gmail.com">Contato</a><Link to="/benefits-terms">Termos e benefícios</Link></nav><p className="creator-footer-availability">Campanhas, collabs, produtos e demais oportunidades dependem de critérios, seleção e disponibilidade da Fortalfy.</p><small>© {new Date().getFullYear()} Fortalfy · Conteúdo demonstrativo identificado quando aplicável.</small></footer>;
+}
+
+function ProgramFeedback({ loading, error, message }) { return <>{loading && <p role="status">Carregando FortalCreator…</p>}{error && <p className="creator-error" role="alert">{error} Confira se a migração FORTALFY_CREATOR_PROGRAM_V1.sql foi aplicada.</p>}{message && <p className="creator-feedback" role="status">{message}</p>}</>; }
+
+function AcademyProgram({ client, profileId, isAdmin, data, loading, error, message, courseForm, setCourseForm, lessonForms, setLessonForms, runAction }) {
+  const canTeach = Boolean(data.instructor || isAdmin);
+  const [teacherId, setTeacherId] = useState("");
+  return <section className="creator-card"><BookOpen/><h2>Academia FortalCreator</h2><ProgramFeedback loading={loading} error={error} message={message}/>
+    {(canTeach) && <form className="creator-admin-form" onSubmit={event => { event.preventDefault(); runAction(() => createCreatorCourse(client, profileId, { title: courseForm.title, summary: courseForm.summary, priceCents: Math.round(Number(courseForm.price || 0) * 100) }), "Rascunho de curso salvo no servidor."); }}><h3>Criar curso</h3><label>Título<input required minLength={3} maxLength={160} value={courseForm.title} onChange={event => setCourseForm(value => ({ ...value, title: event.target.value }))}/></label><label>Descrição<textarea maxLength={3000} value={courseForm.summary} onChange={event => setCourseForm(value => ({ ...value, summary: event.target.value }))}/></label><label>Preço individual (R$)<input type="number" min="0" step="0.01" value={courseForm.price} onChange={event => setCourseForm(value => ({ ...value, price: event.target.value }))}/></label><button type="submit" className="button primary" disabled={!client}>Salvar curso como rascunho</button><small>Publicar um curso não habilita checkout. Pagamentos dependem de gateway e confirmação segura no servidor.</small></form>}
+    {isAdmin && <form className="creator-admin-form" onSubmit={event => { event.preventDefault(); runAction(() => authorizeCreatorInstructor(client, profileId, teacherId.trim()), "Permissão de professor concedida."); setTeacherId(""); }}><h3>Autorizar professor</h3><label>ID da conta Fortalfy<input required value={teacherId} onChange={event => setTeacherId(event.target.value)} placeholder="UUID do perfil"/></label><button type="submit" className="button subtle" disabled={!client}>Autorizar</button></form>}
+    <h3>Catálogo</h3>{!loading && !error && !data.courses.length && <p>Nenhum curso publicado.</p>}{data.courses.map(course => { const enrolled = data.enrollments.some(item => item.course_id === course.id && item.status === "active"); const own = course.instructor_id === profileId || isAdmin; return <article className="creator-program-item" key={course.id}><div><span className="eyebrow">{course.status === "draft" ? "RASCUNHO" : "CURSO"} · {course.price_cents === 0 ? "GRATUITO" : `R$ ${(course.price_cents / 100).toFixed(2).replace(".", ",")}`}</span><h3>{course.title}</h3><p>{course.summary || "Descrição ainda não adicionada."}</p><small>Professor: {course.instructor?.display_name || (course.instructor?.username ? `@${course.instructor.username}` : "Perfil não informado")}</small></div>{course.status === "published" && (course.price_cents === 0 ? <button className="button primary" disabled={!client || enrolled || !profileId} onClick={() => runAction(() => enrollFreeCreatorCourse(client, course.id), "Inscrição gratuita confirmada no servidor.")}>{enrolled ? "Inscrito" : "Inscrever-se"}</button> : <button className="button subtle" disabled title="Checkout de cursos ainda não está configurado">Pagamento indisponível</button>)}{own && course.status === "draft" && <div className="creator-admin-form"><label>Título da aula<input value={lessonForms[course.id]?.title || ""} onChange={event => setLessonForms(current => ({ ...current, [course.id]: { ...current[course.id], title: event.target.value } }))}/></label><label>Conteúdo da aula<textarea value={lessonForms[course.id]?.body || ""} onChange={event => setLessonForms(current => ({ ...current, [course.id]: { ...current[course.id], body: event.target.value } }))}/></label><label>Ordem<input type="number" min="0" value={lessonForms[course.id]?.position ?? "0"} onChange={event => setLessonForms(current => ({ ...current, [course.id]: { ...current[course.id], position: event.target.value } }))}/></label><button type="button" className="button subtle" onClick={() => runAction(() => createCreatorCourseLesson(client, course.id, lessonForms[course.id] || {}), "Aula adicionada ao rascunho.")}>Adicionar aula</button><button type="button" className="button primary" onClick={() => runAction(() => publishCreatorCourse(client, course.id), "Curso publicado no catálogo.")}>Publicar curso</button></div>}</article>; })}
+    <div className="creator-subsections"><section><h3>Meus cursos</h3>{data.enrollments.length ? data.enrollments.map(item => <p key={item.id}>{data.courses.find(course => course.id === item.course_id)?.title || "Curso inscrito"} · {item.status}</p>) : !error && <p>Nenhuma inscrição.</p>}</section><section><h3>Histórico de compras</h3>{data.orders.length ? data.orders.map(order => <p key={order.id}>R$ {(order.amount_cents / 100).toFixed(2)} · {order.status}</p>) : !error && <p>Nenhuma compra.</p>}</section><section><h3>Próximas lives</h3><Link to="/live" className="text-link">Ver transmissões da Fortalfy <ArrowRight size={15}/></Link></section></div>
+    {!canTeach && !error && <p>Criação de cursos disponível somente para professores autorizados pela administração.</p>}
+  </section>;
+}
+
+function LiveProgram({ client, profileId, isAdmin, data, loading, error, message, runAction }) {
+  const [form, setForm] = useState({ title: "", description: "", startsAt: "", accessMode: "approved_creator" });
+  const canSchedule = Boolean(data.instructor || isAdmin);
+  return <section className="creator-card"><Radio/><h2>Lives FortalCreator</h2><ProgramFeedback loading={loading} error={error} message={message}/><p>Inscrições ficam protegidas por permissão no servidor. A transmissão/vídeo ainda não tem provedor conectado; nenhum participante recebe link privado aqui.</p>
+    {canSchedule && <form className="creator-admin-form" onSubmit={event => { event.preventDefault(); runAction(async () => { await createCreatorLive(client, profileId, form); setForm({ title: "", description: "", startsAt: "", accessMode: "approved_creator" }); }, "Live salva como rascunho."); }}><h3>Agendar live</h3><label>Título<input required minLength={3} maxLength={160} value={form.title} onChange={event => setForm(value => ({ ...value, title: event.target.value }))}/></label><label>Descrição<textarea maxLength={3000} value={form.description} onChange={event => setForm(value => ({ ...value, description: event.target.value }))}/></label><label>Data e hora<input required type="datetime-local" value={form.startsAt} onChange={event => setForm(value => ({ ...value, startsAt: event.target.value }))}/></label><label>Acesso<select value={form.accessMode} onChange={event => setForm(value => ({ ...value, accessMode: event.target.value }))}><option value="approved_creator">Criadores aprovados</option><option value="public">Público autenticado</option></select></label><button className="button primary" disabled={!client}>Salvar agenda</button></form>}
+    {data.lives.map(live => { const registered = data.registrations.some(item => item.live_id === live.id && item.status === "registered"); const own = live.instructor_id === profileId || isAdmin; return <article className="creator-program-item" key={live.id}><div><span className="eyebrow">{live.status === "draft" ? "RASCUNHO" : live.access_mode === "approved_creator" ? "CRIADORES APROVADOS" : "PÚBLICA"}</span><h3>{live.title}</h3><p>{new Date(live.starts_at).toLocaleString("pt-BR")} · {live.description}</p></div>{live.status === "published" && <button className="button primary" disabled={!client || registered || !profileId} onClick={() => runAction(() => registerCreatorLive(client, live.id), "Inscrição confirmada no servidor.")}>{registered ? "Inscrito" : "Inscrever-se"}</button>}{own && live.status === "draft" && <button className="button subtle" onClick={() => runAction(() => publishCreatorLive(client, live.id), "Agenda publicada.")}>Publicar agenda</button>}</article>; })}
+    {!loading && !error && !data.lives.length && <p>Nenhuma live Creator programada.</p>}{!canSchedule && !error && <p>Agendamento disponível para professores autorizados e administradores.</p>}
+  </section>;
+}
+
+function CampaignProgram({ client, profileId, isAdmin, data, loading, error, message, runAction }) {
+  const [form, setForm] = useState({ title: "", description: "", opportunityType: "collab" });
+  const [applicationMessage, setApplicationMessage] = useState("");
+  return <section className="creator-card"><Clapperboard/><h2>Campanhas e collabs</h2><ProgramFeedback loading={loading} error={error} message={message}/><p>Collabs, unboxing, campanhas e produtos dependem de seleção e disponibilidade. Nenhuma oportunidade garante remuneração ou envio de produto.</p>
+    {isAdmin && <form className="creator-admin-form" onSubmit={event => { event.preventDefault(); runAction(async () => { await createCreatorCampaign(client, profileId, form); setForm({ title: "", description: "", opportunityType: "collab" }); }, "Oportunidade publicada."); }}><h3>Publicar oportunidade</h3><label>Título<input required minLength={3} maxLength={160} value={form.title} onChange={event => setForm(value => ({ ...value, title: event.target.value }))}/></label><label>Descrição<textarea maxLength={5000} value={form.description} onChange={event => setForm(value => ({ ...value, description: event.target.value }))}/></label><label>Tipo<select value={form.opportunityType} onChange={event => setForm(value => ({ ...value, opportunityType: event.target.value }))}><option value="collab">Collab</option><option value="unboxing">Unboxing</option><option value="campaign">Campanha</option><option value="product">Produto</option></select></label><button className="button primary" disabled={!client}>Publicar</button></form>}
+    {data.campaigns.map(campaign => { const ownApplication = data.campaignApplications.find(item => item.campaign_id === campaign.id && item.profile_id === profileId); return <article className="creator-program-item" key={campaign.id}><div><span className="eyebrow">{campaign.opportunity_type.toUpperCase()}</span><h3>{campaign.title}</h3><p>{campaign.description}</p></div><button type="button" className="button primary" disabled={!client || Boolean(ownApplication) || !profileId} onClick={() => runAction(() => applyToCreatorCampaign(client, campaign.id, applicationMessage), "Candidatura à oportunidade registrada.")}>{ownApplication ? `Solicitação: ${ownApplication.status}` : "Solicitar participação"}</button></article>; })}
+    {!loading && !error && !data.campaigns.length && <p>Nenhuma oportunidade aberta.</p>}
+    {data.campaignApplications.length > 0 && <section className="creator-subsections"><h3>{isAdmin ? "Solicitações recebidas" : "Minhas solicitações"}</h3>{data.campaignApplications.map(item => <article className="creator-program-item" key={item.id}><div><strong>{item.profile_id === profileId ? "Minha inscrição" : "Conta candidata"}</strong><p>{item.message || "Sem mensagem"} · {item.status}</p></div>{isAdmin && item.status === "pending" && <div className="creator-form-actions"><button className="button primary" onClick={() => runAction(() => reviewCreatorCampaignApplication(client, item.id, "selected"), "Participação selecionada.")}>Selecionar</button><button className="button subtle" onClick={() => runAction(() => reviewCreatorCampaignApplication(client, item.id, "declined"), "Solicitação encerrada.")}>Recusar</button></div>}</article>)}</section>}
+    {!isAdmin && data.campaigns.length > 0 && <label className="creator-application-message">Apresentação para a campanha<textarea maxLength={2000} value={applicationMessage} onChange={event => setApplicationMessage(event.target.value)}/></label>}
+  </section>;
+}
