@@ -277,7 +277,7 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
       <div className="module-catalog-heading">
         <span className="eyebrow">SEU UNIVERSO DE BEM-ESTAR</span>
         <h2>Explore a Fortalfy</h2>
-        <p>Movimento, inspiração, alimentação e produtos em um só lugar.</p>
+        <p>Movimento, criação, comunidade, alimentação e bem-estar em um só lugar.</p>
       </div>
       <div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">
         <Link to="/pass" className="module-card module-card-pass">
@@ -291,6 +291,12 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
           <span className="module-card-shade" aria-hidden="true" />
           <span className="module-card-top"><span>VÍDEOS DA COMUNIDADE</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
           <span className="module-card-copy"><small>FORTALREELS</small><strong>Inspire-se em movimento.</strong><span>Conteúdo fitness em formato vertical.</span></span>
+        </Link>
+        <Link to="/creator" className="module-card module-card-creator">
+          <img src={publicAsset("creator/06_torne_se_um_fortalcreator.jpg")} alt="" loading="lazy" decoding="async" />
+          <span className="module-card-shade" aria-hidden="true" />
+          <span className="module-card-top"><span>PROGRAMA DE CRIADORES</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
+          <span className="module-card-copy"><small>FORTALCREATOR</small><strong>Sua criatividade pode abrir novos caminhos.</strong><span>Crie conteúdo, aprenda e conecte-se com a comunidade.</span></span>
         </Link>
         <Link to="/food" className="module-card module-card-food">
           <img src={visualPackAsset("fortalfy-pack-food-card.jpg")} alt="" loading="lazy" decoding="async" />
