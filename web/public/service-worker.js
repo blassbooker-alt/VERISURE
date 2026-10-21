@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v20";
+const CACHE = "fortalfy-pwa-v21";
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const response = await fetch("./precache-manifest.json", { cache: "reload" });
@@ -11,9 +11,12 @@ self.addEventListener("install", event => {
     await Promise.all(files.map(async file => {
       const request = new Request(new URL(file, self.registration.scope).href);
       let cachedResponse;
-      for (const previousCache of previousCaches) {
-        cachedResponse = await previousCache.match(request);
-        if (cachedResponse) break;
+      const isAppShell = ["./", "./index.html", "./manifest.webmanifest"].includes(file);
+      if (!isAppShell) {
+        for (const previousCache of previousCaches) {
+          cachedResponse = await previousCache.match(request);
+          if (cachedResponse) break;
+        }
       }
       if (cachedResponse) {
         await cache.put(request, cachedResponse.clone());
