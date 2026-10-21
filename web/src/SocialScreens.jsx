@@ -325,9 +325,24 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
           : `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(fields.kind)}`;
         const data = await createAccount(client, fields, redirectTo);
         if (isExistingEmailSignup(data)) {
-          setMessage("Se este endereço puder receber uma confirmação, enviaremos instruções. Se você já tem uma conta, entre ou solicite a recuperação da senha.");
-          setMessageType("info");
-          setMode("login");
+          // signUp does not resend confirmation for an existing unconfirmed account.
+          setFields(current => ({ ...current, password: "" }));
+          setOtpToken("");
+          setResendSeconds(0);
+          setMode("confirm");
+          try {
+            await resendSignupOtp(client, fields.email);
+            setResendSeconds(60);
+            setMessage("Se esta conta ainda precisar de confirma\u00e7\u00e3o, enviamos um novo c\u00f3digo. Confira a caixa de entrada e o spam.");
+            setMessageType("success");
+          } catch (emailError) {
+            const errorText = (emailError?.message || "").toLowerCase();
+            const rateLimited = emailError?.code === "over_email_send_rate_limit" || /rate limit/i.test(errorText);
+            setMessage(rateLimited
+              ? "O servi\u00e7o limitou novos envios. Aguarde um minuto e toque em Reenviar c\u00f3digo de confirma\u00e7\u00e3o."
+              : "N\u00e3o foi poss\u00edvel enviar o c\u00f3digo agora. Tente novamente por Reenviar c\u00f3digo ou recuperar sua senha.");
+            setMessageType("error");
+          }
           return;
         }
         if (data?.session) {
@@ -392,6 +407,8 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
         setMessage("Esse nome de usuário já está em uso. Escolha outro.");
       } else if (userExists) {
         setMessage("Se este endereço puder ser usado, enviaremos instruções. Tente entrar ou solicitar a recuperação da senha.");
+      } else if (errText.includes("rate limit") && mode === "reset") {
+        setMessage("O limite de envio foi atingido. Aguarde um minuto antes de pedir outro link de recupera\u00e7\u00e3o.");
       } else if (errText.includes("rate limit")) {
         setMessage("Limite temporário de requisições de e-mail atingido. Se já tem conta, utilize o login.");
       } else if (mode === "confirm") {
