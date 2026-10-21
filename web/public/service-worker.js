@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v18";
+const CACHE = "fortalfy-pwa-v19";
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const response = await fetch("./precache-manifest.json", { cache: "reload" });
@@ -57,7 +57,9 @@ self.addEventListener("push", event => {
     icon: new URL("assets/fortalfy-icon-192.png", self.registration.scope).href,
     badge: new URL("assets/fortalfy-notification-badge.svg", self.registration.scope).href,
     tag: String(message.tag || message.id || "fortalfy-notification").slice(0, 100),
-    renotify: false,
+    // Notifications share tags to keep the tray tidy. Ask the OS to alert
+    // again when a new event replaces an existing grouped notification.
+    renotify: true,
     silent: !soundEnabled,
     data: { id, route },
   };
