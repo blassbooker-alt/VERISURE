@@ -1,11 +1,28 @@
-const CACHE = "fortalfy-pwa-v19";
+const CACHE = "fortalfy-pwa-v20";
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const response = await fetch("./precache-manifest.json", { cache: "reload" });
     if (!response.ok) throw new Error("Não foi possível carregar os arquivos de inicialização do Fortalfy.");
-    const files = await response.json();
+    const files = Array.from(new Set(["./", ...(await response.json())]));
+    const previousCaches = await Promise.all((await caches.keys())
+      .filter(name => name.startsWith("fortalfy-pwa-") && name !== CACHE)
+      .map(name => caches.open(name)));
     const cache = await caches.open(CACHE);
-    await cache.addAll(Array.from(new Set(["./", ...files])));
+    await Promise.all(files.map(async file => {
+      const request = new Request(new URL(file, self.registration.scope).href);
+      let cachedResponse;
+      for (const previousCache of previousCaches) {
+        cachedResponse = await previousCache.match(request);
+        if (cachedResponse) break;
+      }
+      if (cachedResponse) {
+        await cache.put(request, cachedResponse.clone());
+        return;
+      }
+      const freshResponse = await fetch(new Request(request, { cache: "reload" }));
+      if (!freshResponse.ok) throw new Error(`Unable to prepare ${file} for offline use.`);
+      await cache.put(request, freshResponse);
+    }));
     await self.skipWaiting();
   })());
 });
