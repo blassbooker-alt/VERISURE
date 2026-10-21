@@ -3731,6 +3731,12 @@ img { display: block; max-width: 100%; }
 .drawer-link::after { background: linear-gradient(90deg, #f7faf499 0%, #f5f8f36e 48%, #f0f6ed40 100%); }
 .drawer-link:hover, .drawer-link:focus-visible { border-color: #c7dfc5; box-shadow: 0 7px 18px #173a2818; transform: translateY(-1px); }
 .drawer-link:hover::before, .drawer-link:focus-visible::before { opacity: 1; transform: scale(1.05); }
+.drawer-link-creator { min-height: 64px; border-color: #b4d63e; background: #d8f54e; }
+.drawer-link-creator::after { background: linear-gradient(100deg, #d8f54ef2 0%, #d8f54edb 58%, #d8f54e80 100%); }
+.drawer-link-creator .drawer-link-icon { color: #153a27; background: #f5faf0ed; }
+.drawer-link-creator strong { color: #153a27; font-weight: 850; }
+.drawer-link-creator small { color: #405d49; }
+.drawer-link-creator > svg { margin-left: auto; flex: 0 0 auto; color: #153a27; }
 .drawer-link-icon { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; color: #24613d; background: #f5faf0ed; border: 1px solid #ffffffd9; border-radius: 13px; box-shadow: 0 3px 9px #102f1d2b, 0 0 0 2px #ffffff5c; }
 .drawer-link-icon svg { filter: drop-shadow(0 1px 1px #ffffffa6) drop-shadow(0 1px 2px #0c32131f); }
 .drawer-link > span:last-child { position: relative; display: grid; gap: 4px; width: fit-content; max-width: calc(100% - 52px); min-width: 0; }

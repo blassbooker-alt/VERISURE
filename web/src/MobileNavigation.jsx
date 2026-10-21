@@ -18,11 +18,12 @@ const drawerItems = [
   { to: "/nutrition", label: "Nutricionista", detail: "Plano alimentar semanal", icon: Utensils, image: "/assets/search-bars/nutricionista_barra.png", theme: "food" },
   { to: "/workout", label: "Personal", detail: "Treino semanal", icon: Dumbbell, image: "/assets/search-bars/personal_barra.png", theme: "training" },
   { to: "/progress", label: "Meu desempenho", detail: "Evolução e histórico de treinos", icon: Activity, image: "/assets/search-bars/personal_barra.png", theme: "training" },
-  { to: "/creator", label: "FortalCreator", detail: "Programa de criadores", icon: Clapperboard, image: "/assets/search-bars/fortalreels_barra.png", theme: "reels" },
   { to: "/messages", label: "Chat", detail: "Conversas privadas", icon: MessageCircle, image: "/assets/search-bars/chat_barra.png", theme: "community" },
   { to: "/earnings", label: "Rendimentos", detail: "Informações financeiras", icon: Wallet, image: "/assets/search-bars/meus_rendimentos_barra.png", theme: "earnings" },
   { to: "/settings", label: "Configurações", detail: "Aparência do aplicativo", icon: Settings2, image: "/assets/search-bars/personal_barra.png", theme: "settings" },
 ];
+
+const creatorItem = { to: "/creator", label: "FortalCreator", detail: "Programa de criadores", icon: Clapperboard, image: "/assets/search-bars/fortalreels_barra.png", theme: "creator" };
 
 export function NavigationDrawer({ onNotificationsOpen, desktopOpen = false, onDesktopOpenChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -58,9 +59,9 @@ export function NavigationDrawer({ onNotificationsOpen, desktopOpen = false, onD
   const active = path => location.pathname === path || (path !== "/" && location.pathname.startsWith(`${path}/`));
   const close = () => desktop ? onDesktopOpenChange?.(false) : setMobileOpen(false);
   const groupedItems = [
-    { title: "Comunidade", items: [drawerItems[0], { to: "/people", label: "Pessoas", detail: "Encontre a comunidade", icon: Compass }, drawerItems[7]] },
+    { title: "Comunidade", items: [drawerItems[0], { to: "/people", label: "Pessoas", detail: "Encontre a comunidade", icon: Compass }, drawerItems[6]] },
     { title: "Bem-estar", items: [drawerItems[1], drawerItems[3], drawerItems[4], drawerItems[5]] },
-    { title: "Descobrir", items: [drawerItems[6],
+    { title: "Descobrir", items: [creatorItem,
       { to: "/academy", label: "Academia Fortalfy", detail: "Conteúdos e cursos", icon: BookOpen },
       { to: "/live", label: "Ao vivo", detail: "Aulas e transmissões", icon: Radio },
       { to: "/studio", label: "Fortalfy Studio", detail: "Criação de artes", icon: Brush },
@@ -69,12 +70,15 @@ export function NavigationDrawer({ onNotificationsOpen, desktopOpen = false, onD
       { to: "/partner/nutritionist", label: "Nutricionistas", detail: "Profissionais aprovados", icon: Utensils },
     ] },
     { title: "Compras", items: [{ to: "/cart", label: "Minha sacola", detail: "Itens selecionados na loja", icon: ShoppingCart }] },
-    { title: "Conta", items: [drawerItems[8], drawerItems[9]] },
+    { title: "Conta", items: [drawerItems[7], drawerItems[8]] },
   ];
 
   const drawer = open && !desktop && createPortal(<div className="drawer-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setMobileOpen(false)}>
     <aside ref={drawerRef} id="fortalfy-navigation-drawer" className="navigation-drawer" role="dialog" aria-modal="true" aria-label="Menu principal">
       <div className="drawer-heading"><div><span className="eyebrow">FORTALFY</span><h2>Seu espaço</h2></div><button className="icon-button" type="button" aria-label="Fechar menu" onClick={close}><X size={19} /></button></div>
+      <Link to={creatorItem.to} className="drawer-link drawer-link-creator" style={{ "--drawer-image": `url("${creatorItem.image}")` }} onClick={close}>
+        <span className="drawer-link-icon"><creatorItem.icon size={19} /></span><span><strong>{creatorItem.label}</strong><small>{creatorItem.detail}</small></span><ArrowRight size={17} />
+      </Link>
       <nav className="drawer-mobile-links" aria-label="Menu principal">
         {drawerItems.map(({ to, label, detail, icon: Icon, image, theme }) => <Link key={to} to={to} className={`drawer-link drawer-link-${theme}`} style={{ "--drawer-image": `url("${image}")` }} onClick={close}>
           <span className="drawer-link-icon"><Icon size={19} /></span><span><strong>{label}</strong><small>{detail}</small></span>
@@ -131,11 +135,11 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     : primaryTabs.find(tab => location.pathname === tab.to)?.to;
   if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
   if (location.pathname === "/reels") return null;
-  const desktopItems = [...primaryTabs, ...drawerItems,
+  const desktopItems = [...primaryTabs, ...drawerItems, creatorItem,
     { to: "/people", label: "Pessoas", icon: Compass },
     { to: "/academy", label: "Academia Fortalfy", icon: BookOpen },
     { to: "/live", label: "Ao vivo", icon: Radio },
-    { to: "/studio", label: "Fortalfy Studio", icon: Brush }, drawerItems[6],
+    { to: "/studio", label: "Fortalfy Studio", icon: Brush },
     { to: "/partner/gym", label: "Academias parceiras", icon: Building2 },
     { to: "/partner/personal", label: "Personal trainers", icon: Dumbbell },
     { to: "/partner/nutritionist", label: "Nutricionistas", icon: Utensils },
