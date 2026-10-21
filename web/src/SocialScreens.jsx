@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Brand from "./Brand.jsx";
 import { fortalfyAsset, visualPackAsset } from "./assetPath.js";
-import { playMessageSound } from "./messageSoundService.js";
+import { playNotificationSound } from "./notificationService.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
 import { createSecureId } from "./secureId.js";
@@ -2138,7 +2138,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
         rows.forEach(row => knownMessageIds.current.add(row.id));
         if (incoming.length && document.visibilityState === "visible") {
           const latestIncoming = incoming[incoming.length - 1];
-          void playMessageSound("inapp-recebida", { messageId: latestIncoming.id, preferences: messageRuntimeRef.current.messagePreferences });
+          void playNotificationSound(messageRuntimeRef.current.messagePreferences, { notificationId: latestIncoming.id, type: "chat.message" });
         }
         incoming.forEach(row => {
           const senderKind = conversation.person?.kind;
@@ -2238,7 +2238,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
     setSending(true);
     try {
       const message = await sendDirectMessage(client, userId, conversation.id, draft);
-      void playMessageSound("inapp-enviada", { messageId: message.id, preferences: messagePreferences });
+      void playNotificationSound(messagePreferences, { notificationId: `sent:${message.id}`, type: "chat.message" });
       setMessages(current => [...current, message]);
       setDraft("");
       await refreshConversations();

@@ -43,7 +43,6 @@ import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } fro
 import { loadAvailableFoodMenu } from "./foodService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
 import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markConversationNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
-import { playMessageSound } from "./messageSoundService.js";
 import { installInterfaceSoundInteractions } from "./uiSoundService.js";
 
 function Toast({ message, onClose }) {
@@ -1663,7 +1662,9 @@ function AppContent() {
         const sameActiveConversation = item.type === "chat.message" && notificationViewRef.current.pathname === "/messages"
           && targetParams.get("conversation") && targetParams.get("conversation") === currentParams.get("conversation");
         if (!sameActiveConversation) setLiveNotification(item);
-        if (item.type !== "chat.message" && document.visibilityState === "visible" && notificationViewRef.current.pathname !== item.targetRoute?.split("?")[0]) void playNotificationSound(notificationViewRef.current.preferences);
+        if (!sameActiveConversation && document.visibilityState === "visible") {
+          void playNotificationSound(notificationViewRef.current.preferences, { notificationId: item.id, type: item.type });
+        }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "fortalfy_notifications", filter: `recipient_user_id=eq.${accountUserId}` }, payload => {
         const item = notificationFromRow(payload.new);
@@ -1944,12 +1945,12 @@ function AppContent() {
   useEffect(() => {
     const listener = event => {
       if (event.data?.type === "FORTALFY_PUSH_NOTIFICATION") {
-        if (event.data.notificationType === "chat.message" && event.data.soundEnabled !== false) {
+        if (event.data.soundEnabled !== false) {
           const targetParams = new URLSearchParams(event.data.route?.split("?")[1] || "");
           const currentParams = new URLSearchParams(location.search);
-          const sameActiveConversation = location.pathname === "/messages"
+          const sameActiveConversation = event.data.notificationType === "chat.message" && location.pathname === "/messages"
             && targetParams.get("conversation") && targetParams.get("conversation") === currentParams.get("conversation");
-          if (!sameActiveConversation) void playMessageSound("push-recebida", { messageId: event.data.id, preferences: notificationPreferences });
+          if (!sameActiveConversation) void playNotificationSound(notificationPreferences, { notificationId: event.data.id, type: event.data.notificationType });
         }
         return;
       }

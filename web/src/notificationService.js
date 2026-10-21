@@ -18,6 +18,19 @@ export const NOTIFICATION_PREFERENCES_DEFAULTS = Object.freeze({
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo",
 });
 
+const playedNotificationSounds = new Set();
+const pendingNotificationSounds = new Set();
+const notificationPreferenceByType = Object.freeze({
+  post_like: "likes_enabled", "social.like": "likes_enabled",
+  post_comment: "comments_enabled", "social.comment": "comments_enabled", "social.reply": "comments_enabled",
+  "social.mention": "mentions_enabled",
+  message: "messages_enabled", nutritionist_message: "messages_enabled", personal_message: "messages_enabled", "chat.message": "messages_enabled",
+  workout_reminder: "workout_reminders_enabled", "workout.schedule_changed": "workout_reminders_enabled",
+  shop: "shop_updates_enabled", product_delivery: "shop_updates_enabled", food_delivery: "shop_updates_enabled", "shop.order_update": "shop_updates_enabled",
+  official_promotion: "marketing_enabled",
+  "partner.request_accepted": "partner_updates_enabled", "professional.approved": "partner_updates_enabled", "professional.review_update": "partner_updates_enabled",
+});
+
 const BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 export function notificationErrorMessage(error, fallback = "Não foi possível concluir esta ação.") {
@@ -189,9 +202,23 @@ export async function sendTestNotification() {
   });
 }
 
-export async function playNotificationSound(preferences, { preview = false } = {}) {
+export async function playNotificationSound(preferences, { preview = false, notificationId, type } = {}) {
   const effectivePreferences = preferences || NOTIFICATION_PREFERENCES_DEFAULTS;
   if (effectivePreferences.sound_enabled === false) return false;
+  const categoryPreference = notificationPreferenceByType[type];
+  if (!preview && categoryPreference && effectivePreferences[categoryPreference] === false) return false;
   if (!preview && isWithinMessageQuietHours(effectivePreferences)) return false;
-  return playNotificationCue();
+  const key = notificationId ? String(notificationId) : "";
+  if (key && (playedNotificationSounds.has(key) || pendingNotificationSounds.has(key))) return false;
+  if (key) pendingNotificationSounds.add(key);
+  try {
+    const played = await playNotificationCue();
+    if (played && key) {
+      playedNotificationSounds.add(key);
+      if (playedNotificationSounds.size > 500) playedNotificationSounds.delete(playedNotificationSounds.values().next().value);
+    }
+    return played;
+  } finally {
+    if (key) pendingNotificationSounds.delete(key);
+  }
 }

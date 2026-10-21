@@ -35,7 +35,7 @@ function getAudioPlayer(kind) {
 export function primeMessageSounds() {
   if (audioUnlockStarted || typeof Audio === "undefined") return;
   audioUnlockStarted = true;
-  for (const kind of ["push-recebida", "inapp-recebida", "inapp-enviada"]) {
+  for (const kind of ["push-recebida", "inapp-recebida", "inapp-enviada", "notification"]) {
     const audio = getAudioPlayer(kind);
     if (!audio) continue;
     audio.muted = true;
