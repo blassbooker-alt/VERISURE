@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BellRing, Check, CircleAlert, Clock3, LoaderCircle, Volume2, VolumeX } from "lucide-react";
 import {
-  disableWebPush, enableWebPush, loadNotificationPreferences, notificationErrorMessage, playNotificationSound, sendTestNotification,
+  disableWebPush, enableWebPush, loadNotificationPreferences, notificationErrorMessage, playNotificationSound, sendTestNotification, syncWebPushSubscription,
   NOTIFICATION_PREFERENCES_DEFAULTS, saveNotificationPreferences,
 } from "./notificationService.js";
 import { isInterfaceSoundEnabled, setInterfaceSoundEnabled } from "./uiSoundService.js";
@@ -34,9 +34,13 @@ export default function NotificationSettings({ client, userId }) {
     loadNotificationPreferences(client, userId).then(value => { if (active) setPreferences(value); })
       .catch(failure => { if (active) setError(notificationErrorMessage(failure, "Não foi possível carregar as preferências.")); });
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistration().then(registration => registration?.pushManager?.getSubscription())
-        .then(subscription => { if (active) setPushActive(Boolean(subscription)); })
-        .catch(() => {});
+      syncWebPushSubscription(client, userId)
+        .then(status => { if (active) setPushActive(status.active); })
+        .catch(failure => {
+          if (!active) return;
+          setPushActive(false);
+          setError(notificationErrorMessage(failure, "N\u00e3o foi poss\u00edvel sincronizar este aparelho. Toque em Ativar notifica\u00e7\u00f5es para tentar novamente."));
+        });
     }
     return () => { active = false; };
   }, [client, userId]);
@@ -126,7 +130,7 @@ export default function NotificationSettings({ client, userId }) {
   return <section className="notification-settings-card" aria-labelledby="notification-settings-heading">
     <div className="notification-settings-heading"><span className="notification-settings-icon"><BellRing size={19} /></span><div><span className="eyebrow">AVISOS NO SEU RITMO</span><h2 id="notification-settings-heading">Notificações</h2><p>Escolha quais avisos receber e em que horário.</p></div></div>
     {!userId && <p className="notification-settings-notice">Entre na sua conta para sincronizar notificações e preferências entre dispositivos.</p>}
-    {userId && <div className="notification-push-card"><div><strong>Notificações neste dispositivo</strong><p>{pushActive ? "Este dispositivo pode receber avisos mesmo com o Fortalfy fechado." : "Receba mensagens e atualizações importantes fora do app."}</p></div>{pushActive ? <button type="button" className="button subtle small-button" onClick={deactivate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : "Desativar"}</button> : permission === "denied" ? <span className="notification-permission-label">Ative nas configurações do navegador</span> : <button type="button" className="button primary small-button" onClick={activate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : "Ativar notificações"}</button>}</div>}
+    {userId && <div className="notification-push-card"><div><strong>Notificações neste dispositivo</strong><p>{pushActive ? "Este dispositivo está sincronizado para receber avisos na barra, mesmo com o Fortalfy em segundo plano ou fechado." : "Ative as notificações do sistema para receber mensagens e atualizações em segundo plano."}</p></div>{pushActive ? <button type="button" className="button subtle small-button" onClick={deactivate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : "Desativar"}</button> : permission === "denied" ? <span className="notification-permission-label">Ative nas configurações do navegador</span> : <button type="button" className="button primary small-button" onClick={activate} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : "Ativar notificações"}</button>}</div>}
     {permission === "default" && !pushActive && <p className="notification-settings-explainer">A permissão só será solicitada quando você tocar em “Ativar notificações”.</p>}
     {pushActive && <div className="notification-test-card"><div><strong>Testar notificação</strong><p>Envia um aviso de teste para a barra de notificações deste telefone.</p></div><button type="button" className="button subtle small-button" onClick={sendTest} disabled={busy}>{busy ? <LoaderCircle className="spin" size={15} /> : "Enviar teste"}</button></div>}
     <label className="notification-preview-setting"><span><strong>Pr&eacute;via das mensagens na tela bloqueada</strong><small>O sistema do aparelho tamb&eacute;m pode ocultar o conte&uacute;do.</small></span><select value={preferences.message_preview_mode || "sender_only"} onChange={event => updatePreferences({ message_preview_mode: event.target.value })} disabled={!userId}><option value="full">Mostrar a mensagem completa</option><option value="sender_only">Mostrar apenas quem enviou</option><option value="hidden">Ocultar conte&uacute;do</option></select></label>

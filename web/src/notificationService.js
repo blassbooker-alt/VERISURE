@@ -139,6 +139,33 @@ export async function saveNotificationPreferences(client, userId, preferences) {
   if (error) throw error;
 }
 
+function pushPlatform() {
+  const userAgent = navigator.userAgent;
+  const isIos = /iPhone|iPad|iPod/i.test(userAgent)
+    || (/Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1);
+  return isIos ? "ios_pwa" : /Android/i.test(userAgent) ? "android_pwa" : "web";
+}
+
+async function registerPushSubscription(client, userId, subscription) {
+  if (!client || !userId) throw new Error("Entre na sua conta para ativar as notifica\u00e7\u00f5es.");
+  const { error } = await client.rpc("register_fortal_push_subscription", {
+    p_subscription: subscription.toJSON(),
+    p_platform: pushPlatform(),
+    p_device_name: navigator.userAgent.slice(0, 160),
+  });
+  if (error) throw error;
+}
+
+export async function syncWebPushSubscription(client, userId) {
+  if (!client || !userId || !("serviceWorker" in navigator) || !("PushManager" in window)) return { active: false };
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) return { active: false };
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription || typeof Notification === "undefined" || Notification.permission !== "granted") return { active: false };
+  await registerPushSubscription(client, userId, subscription);
+  return { active: true, subscription };
+}
+
 export async function enableWebPush(client, userId) {
   if (!client || !userId) throw new Error("Entre na sua conta para ativar as notificações.");
   const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -159,15 +186,9 @@ export async function enableWebPush(client, userId) {
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription()
     || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeBase64Url(vapidPublicKey) });
-  const subscriptionJson = subscription.toJSON();
-  const userAgent = navigator.userAgent;
-  const platform = isIos ? "ios_pwa" : /Android/i.test(userAgent) ? "android_pwa" : "web";
-  const { error } = await client.rpc("register_fortal_push_subscription", {
-    p_subscription: subscriptionJson,
-    p_platform: platform,
-    p_device_name: userAgent.slice(0, 160),
-  });
-  if (error) {
+  try {
+    await registerPushSubscription(client, userId, subscription);
+  } catch (error) {
     await subscription.unsubscribe().catch(() => {});
     throw error;
   }
