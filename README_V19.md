@@ -13,7 +13,7 @@
 - Tela inicial simplificada: comparação de planos e catálogo de módulos começam recolhidos, continuam acessíveis sem perder funcionalidades e a busca expande os resultados do catálogo quando necessário.
 - Cadastro local deixou de persistir senhas novas em texto legível: usa PBKDF2 com salt aleatório e 310.000 iterações; contas legadas migram ao hash após um login local bem-sucedido.
 - Navegação inferior com cinco destinos: Início, Feed, Food, Pass e Perfil.
-- FortalCreator disponível como cartão direto em “Explore a Fortalfy” e como atalho destacado no topo do menu mobile, tanto no navegador quanto no app instalado.
+- FortalCreator disponível como cartão direto em “Explore a Fortalfy” e como atalho destacado e fixo no topo do menu mobile, inclusive durante a rolagem, tanto no navegador quanto no app instalado.
 - Landing do FortalCreator com galeria editorial de unboxing ilustrativa, imagens otimizadas, carrossel mobile, lightbox com navegação acessível e avisos de transparência; recebimentos e colaborações dependem de critérios, disponibilidade e seleção.
 - Prévia no telefone pela rede local: execute `node serve-phone-preview.js` na pasta do projeto e abra `http://<IP-local-do-computador>:4173/` no telefone conectado à mesma rede Wi-Fi.
 - Publicação HTTPS pelo GitHub Pages: o workflow `.github/workflows/pages.yml` instala as dependências, cria o build de produção de `web/` e publica somente `web/dist/`. Para ativá-lo, envie as alterações para a branch `main`, selecione **GitHub Actions** em **Settings > Pages > Build and deployment > Source** e acompanhe **Actions** até o deploy concluir. O código que você enviar ao repositório pode ficar público; revise o conteúdo do repositório antes de publicá-lo.
