@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, BadgeCheck, BookOpen, Camera, CheckCircle2, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users, X } from "lucide-react";
 import { loadProfessionalApplications, professionalStatusLabel } from "./professionalService.js";
 import Brand from "./Brand.jsx";
@@ -277,7 +278,7 @@ function CreatorUnboxingGallery({ onApply, onLearn }) {
       </div>
       <p className="creator-unboxing-transparency">As imagens são ilustrativas e representam conceitos de campanha. O recebimento de produtos, convites e colaborações não é automático e depende de critérios, disponibilidade e seleção da Fortalfy.</p>
     </section>
-    {lightboxIndex !== null && <div className="creator-unboxing-lightbox" role="presentation" onMouseDown={event => event.target === event.currentTarget && setLightboxIndex(null)}>
+    {lightboxIndex !== null && createPortal(<div className="creator-unboxing-lightbox" role="presentation" onMouseDown={event => event.target === event.currentTarget && setLightboxIndex(null)}>
       <section className="creator-unboxing-dialog" ref={lightboxRef} role="dialog" aria-modal="true" aria-label="Visualização de imagens ilustrativas FortalCreator">
         <button ref={closeButtonRef} type="button" className="creator-unboxing-close" aria-label="Fechar imagem" onClick={() => setLightboxIndex(null)}><X size={23}/></button>
         <button type="button" className="creator-unboxing-lightbox-arrow creator-unboxing-lightbox-previous" aria-label="Imagem anterior" onClick={() => setLightboxIndex(index => (index - 1 + unboxingImages.length) % unboxingImages.length)}><ArrowLeft size={22}/></button>
@@ -287,7 +288,7 @@ function CreatorUnboxingGallery({ onApply, onLearn }) {
         </figure>
         <button type="button" className="creator-unboxing-lightbox-arrow creator-unboxing-lightbox-next" aria-label="Próxima imagem" onClick={() => setLightboxIndex(index => (index + 1) % unboxingImages.length)}><ArrowRight size={22}/></button>
       </section>
-    </div>}
+    </div>, document.body)}
   </>;
 }
 

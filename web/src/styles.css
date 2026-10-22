@@ -253,10 +253,10 @@ img { display: block; max-width: 100%; }
 .creator-unboxing-actions > button { transition:background-color .18s ease,box-shadow .18s ease,transform .18s ease; }
 .creator-unboxing-actions > button:active { transform:scale(.98); }
 .creator-unboxing-carousel-wrap { display:none; }
-.creator-unboxing-lightbox { position:fixed; z-index:1000; inset:0; display:grid; place-items:center; padding:20px; background:#07150feF; }
-.creator-unboxing-dialog { position:relative; display:grid; grid-template-columns:48px minmax(0,1fr) 48px; align-items:center; gap:clamp(8px,2vw,22px); width:min(100%,1040px); max-height:100%; }
-.creator-unboxing-dialog figure { display:grid; justify-items:center; gap:12px; min-width:0; max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px); margin:0; }
-.creator-unboxing-dialog figure img { display:block; width:auto; max-width:100%; height:auto; max-height:calc(100vh - 112px); max-height:calc(100dvh - 112px); border-radius:14px; object-fit:contain; }
+.creator-unboxing-lightbox { position:fixed; z-index:1000; inset:0; box-sizing:border-box; width:100%; height:100vh; height:100dvh; display:grid; place-items:center; overflow:auto; padding:max(20px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left)); background:#07150feF; }
+.creator-unboxing-dialog { position:relative; display:grid; grid-template-columns:48px minmax(0,1fr) 48px; align-items:center; gap:clamp(8px,2vw,22px); width:min(100%,1040px); max-height:100%; min-height:0; }
+.creator-unboxing-dialog figure { display:grid; justify-items:center; gap:12px; min-width:0; min-height:0; max-height:calc(100dvh - 40px); margin:0; }
+.creator-unboxing-dialog figure img { display:block; width:auto; max-width:100%; height:auto; max-height:min(80dvh,calc(100dvh - 120px)); border-radius:14px; object-fit:contain; }
 .creator-unboxing-dialog figcaption { max-width:100%; color:#f4f8f4; font-size:12px; line-height:1.5; text-align:center; }
 .creator-unboxing-close,.creator-unboxing-lightbox-arrow { display:grid; width:46px; height:46px; place-items:center; border:1px solid #ffffff4d; border-radius:50%; color:#fff; background:#ffffff1a; cursor:pointer; }
 .creator-unboxing-close { position:absolute; z-index:1; top:0; right:0; }
@@ -356,10 +356,10 @@ img { display: block; max-width: 100%; }
   .creator-unboxing-cta p { font-size:13px; }
   .creator-unboxing-actions { display:grid; grid-template-columns:1fr; gap:8px; }
   .creator-unboxing-actions > button { width:100%; min-height:48px; }
-  .creator-unboxing-lightbox { padding:12px; }
-  .creator-unboxing-dialog { grid-template-columns:40px minmax(0,1fr) 40px; gap:5px; padding-top:48px; }
-  .creator-unboxing-dialog figure { max-height:calc(100vh - 84px); max-height:calc(100dvh - 84px); }
-  .creator-unboxing-dialog figure img { max-height:calc(100vh - 160px); max-height:calc(100dvh - 160px); }
+  .creator-unboxing-lightbox { padding: max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); }
+  .creator-unboxing-dialog { grid-template-columns:40px minmax(0,1fr) 40px; gap:5px; padding-top:48px; max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px); }
+  .creator-unboxing-dialog figure { max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  .creator-unboxing-dialog figure img { max-height:min(72dvh,calc(100dvh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); }
   .creator-unboxing-close { top:-44px; }
   .creator-unboxing-lightbox-arrow,.creator-unboxing-close { width:40px; height:40px; }
   .creator-unboxing-dialog figcaption { font-size:11px; }
