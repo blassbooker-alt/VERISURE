@@ -3,9 +3,11 @@ import ReactDOM from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { initializeThemePreference } from "./themeService.js";
+import { initializeAccessibilityPreferences } from "./accessibilityService.js";
 import "./styles.css";
 
 initializeThemePreference();
+initializeAccessibilityPreferences();
 
 class StartupErrorBoundary extends React.Component {
   state = { failed: false };

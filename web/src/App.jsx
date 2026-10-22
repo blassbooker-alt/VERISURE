@@ -20,6 +20,7 @@ const FortalfyStudio = lazy(() => import("./FortalfyStudio.jsx"));
 const FortalCreator = lazy(() => import("./FortalCreator.jsx"));
 const PerformanceDashboard = lazy(() => import("./PerformanceDashboard.jsx"));
 const ThemeSettings = lazy(() => import("./ThemeSettings.jsx"));
+const AccessibilitySettings = lazy(() => import("./AccessibilitySettings.jsx"));
 const NotificationSettings = lazy(() => import("./NotificationSettings.jsx"));
 const StoryExperience = lazy(() => import("./Stories.jsx"));
 const WeeklyClientPlan = lazy(() => import("./WeeklyPlans.jsx").then(module => ({ default: module.WeeklyClientPlan })));
@@ -43,6 +44,10 @@ import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
+import {
+  applyAccessibilityPreferences, DEFAULT_ACCESSIBILITY_PREFERENCES, getAccountAccessibilityPreferences,
+  normalizeAccessibilityPreferences, readAccessibilityPreferences, saveAccessibilityPreferences,
+} from "./accessibilityService.js";
 import { loadNotificationPreferences, loadNotifications, markAllNotificationsRead as markAllRemoteNotificationsRead, markConversationNotificationsRead, markNotificationRead as markRemoteNotificationRead, notificationErrorMessage, notificationFromRow, playNotificationSound } from "./notificationService.js";
 import { installInterfaceSoundInteractions } from "./uiSoundService.js";
 
@@ -1458,6 +1463,9 @@ function AppContent() {
   const [authSession, setAuthSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [themePreference, setThemePreference] = useState(() => readThemePreference());
+  const [accessibilityPreferences, setAccessibilityPreferences] = useState(() => readAccessibilityPreferences());
+  const accessibilityPreferencesRef = useRef(accessibilityPreferences);
+  const accessibilitySaveQueue = useRef(Promise.resolve());
   const [socialProfile, setSocialProfile] = useState(null);
   const [socialProfileError, setSocialProfileError] = useState("");
   const [passwordRecovery, setPasswordRecovery] = useState(() => hasPasswordRecoveryCallback());
@@ -1704,6 +1712,26 @@ function AppContent() {
     setThemePreference(accountUserId ? getAccountThemePreference(authSession?.user) : readThemePreference());
   }, [accountUserId, authReady, authSession?.user?.user_metadata]);
   useEffect(() => {
+    if (!authReady) return;
+    const preferences = accountUserId
+      ? getAccountAccessibilityPreferences(authSession?.user)
+      : readAccessibilityPreferences();
+    accessibilityPreferencesRef.current = preferences;
+    setAccessibilityPreferences(preferences);
+  }, [accountUserId, authReady]);
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const update = () => applyAccessibilityPreferences(accessibilityPreferences, media?.matches ?? false);
+    update();
+    if (!media) return undefined;
+    if (media.addEventListener) media.addEventListener("change", update);
+    else media.addListener?.(update);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener("change", update);
+      else media.removeListener?.(update);
+    };
+  }, [accessibilityPreferences]);
+  useEffect(() => {
     const media = window.matchMedia?.("(prefers-color-scheme: dark)");
     if (!media) { applyThemePreference(themePreference, true); return undefined; }
     const update = () => applyThemePreference(themePreference, media.matches);
@@ -1724,6 +1752,30 @@ function AppContent() {
       console.error("Não foi possível sincronizar a preferência de aparência.", error);
       notify(error.localSaved ? "Tema ativado e salvo neste aparelho. A sincronização será tentada novamente ao entrar na conta." : "Tema alterado nesta sessão, mas não foi possível salvar a preferência. Verifique o espaço disponível no navegador e sua conexão.");
     }
+  };
+  const changeAccessibilityPreferences = patch => {
+    const preferences = normalizeAccessibilityPreferences({ ...accessibilityPreferencesRef.current, ...patch });
+    accessibilityPreferencesRef.current = preferences;
+    setAccessibilityPreferences(preferences);
+    const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    applyAccessibilityPreferences(preferences, motion);
+    const userId = accountUserId;
+    const save = accessibilitySaveQueue.current.catch(() => {}).then(
+      () => saveAccessibilityPreferences(supabase, userId, preferences),
+    );
+    accessibilitySaveQueue.current = save.catch(() => {});
+    return save.then(result => {
+      notify(result.synced
+        ? "Preferências de acessibilidade salvas na sua conta."
+        : "Preferências de acessibilidade salvas neste aparelho.");
+      return result;
+    }).catch(error => {
+      console.error("Não foi possível sincronizar as preferências de acessibilidade.", error);
+      notify(error.localSaved
+        ? "Acessibilidade atualizada e salva neste aparelho. A sincronização será tentada novamente quando possível."
+        : "Acessibilidade atualizada nesta sessão, mas não foi possível salvá-la. Verifique o espaço disponível e sua conexão.");
+      throw error;
+    });
   };
   useEffect(() => {
     if (!authReady) return undefined;
@@ -2030,7 +2082,7 @@ function AppContent() {
       <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
       <Route path="/restaurants" element={<Navigate to="/food" replace />} />
       <Route path="/results" element={<Navigate to="/progress" replace />} />
-      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /><Link className="button subtle notification-settings-link" to="/settings/notifications"><Bell size={17} /> Preferências de notificação <ArrowRight size={16} /></Link>{!isAppInstalled && <section className="install-settings-card"><span className="install-settings-icon"><Download size={20} /></span><div className="install-settings-copy"><h2>Baixe o app Fortalfy</h2><p>Tenha acesso rápido à Fortalfy direto pela tela inicial do seu celular.</p></div><button type="button" className="button primary install-settings-button" onClick={startInstall}>Baixar app <ArrowRight size={16} /></button></section>}</Screen>} />
+      <Route path="/settings" element={<Screen className="settings-screen" title="Configurações" subtitle="SUA EXPERIÊNCIA FORTALFY"><ThemeSettings value={themePreference} onChange={changeThemePreference} /><AccessibilitySettings preferences={accessibilityPreferences} onChange={changeAccessibilityPreferences} onReset={() => changeAccessibilityPreferences(DEFAULT_ACCESSIBILITY_PREFERENCES)} /><Link className="button subtle notification-settings-link" to="/settings/notifications"><Bell size={17} /> Preferências de notificação <ArrowRight size={16} /></Link>{!isAppInstalled && <section className="install-settings-card"><span className="install-settings-icon"><Download size={20} /></span><div className="install-settings-copy"><h2>Baixe o app Fortalfy</h2><p>Tenha acesso rápido à Fortalfy direto pela tela inicial do seu celular.</p></div><button type="button" className="button primary install-settings-button" onClick={startInstall}>Baixar app <ArrowRight size={16} /></button></section>}</Screen>} />
       <Route path="/settings/notifications" element={<Screen className="settings-screen notification-settings-screen" title="Notificações" subtitle="SUA EXPERIÊNCIA FORTALFY"><NotificationSettings client={supabase} userId={accountUserId} /></Screen>} />
       <Route path="/notifications" element={<Screen className="notification-screen"><NotificationCenter page notifications={notifications} loading={notificationLoading} error={notificationError} onRetry={refreshNotifications} onClose={() => navigate(-1)} onRead={markNotificationRead} onReadAll={markAllNotificationsRead} onNavigate={openNotificationTarget} /></Screen>} />
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
