@@ -358,7 +358,8 @@ img { display: block; max-width: 100%; }
   .creator-unboxing { gap:16px; padding:20px 16px; border-radius:19px; }
   .creator-unboxing-heading h2 { font-size:clamp(1.6875rem,8vw,2.25rem); }
   .creator-unboxing-heading > p { font-size:0.875rem; }
-  .creator-gallery-track { height:clamp(370px,112vw,490px); gap:10px; padding:2px 2px 8px; scroll-snap-type:x mandatory; }
+  .creator-gallery-track { height:clamp(370px,112vw,490px); gap:10px; overflow-x:auto; overflow-y:hidden; padding:2px 2px 8px; overscroll-behavior-x:contain; scroll-padding-inline:8px; scroll-snap-type:x mandatory; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
+  .creator-gallery-track::-webkit-scrollbar { display:none; }
   .creator-gallery-card,.creator-gallery-card.is-active { flex:0 0 min(84%,360px); border-radius:15px; scroll-snap-align:center; }
   .creator-gallery-card:not(.is-active) .creator-gallery-image { filter:brightness(.84); transform:none; }
   .creator-gallery-card:not(.is-active) .creator-gallery-zoom { opacity:1; }

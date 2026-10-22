@@ -203,7 +203,7 @@ export default function CreatorGallery({ onApply, onLearn }) {
             </button>;
           })}
         </div>
-        <p className="creator-gallery-hint" aria-hidden="true">Deslize para explorar todas as imagens</p>
+        <p className="creator-gallery-hint" aria-hidden="true">Arraste para o lado para ver todas as fotos</p>
         <div className="creator-gallery-controls">
           <button type="button" className="creator-gallery-arrow" aria-label="Imagem anterior" onClick={() => scrollToImage((activeIndex - 1 + images.length) % images.length)}><ArrowLeft size={18}/></button>
           <span className="creator-gallery-count" aria-live="polite">{String(activeIndex + 1).padStart(2, "0")} <span>/ {String(images.length).padStart(2, "0")}</span></span>
