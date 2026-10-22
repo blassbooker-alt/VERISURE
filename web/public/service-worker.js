@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v25";
+const CACHE = "fortalfy-pwa-v26";
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const response = await fetch("./precache-manifest.json", { cache: "reload" });
@@ -38,7 +38,7 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) return;
   if (event.request.mode === "navigate") {
-    event.respondWith(fetch(event.request).catch(async () => (await caches.match(event.request)) || caches.match("./")));
+    event.respondWith(fetch(new Request(event.request, { cache: "reload" })).catch(async () => (await caches.match(event.request)) || caches.match("./")));
     return;
   }
   event.respondWith(caches.match(event.request).then(async cached => {
