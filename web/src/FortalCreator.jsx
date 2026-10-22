@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { createPortal } from "react-dom";
-import { ArrowLeft, ArrowRight, BadgeCheck, BookOpen, Camera, CheckCircle2, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, BookOpen, Camera, CheckCircle2, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users } from "lucide-react";
 import { loadProfessionalApplications, professionalStatusLabel } from "./professionalService.js";
 import Brand from "./Brand.jsx";
+import CreatorGallery from "./CreatorGallery.jsx";
 import {
   applyToCreatorCampaign, authorizeCreatorInstructor, createCreatorCampaign, createCreatorCourse,
   createCreatorCourseLesson, createCreatorLive, enrollFreeCreatorCourse,
@@ -34,18 +34,6 @@ const creatorSteps = [
   { title: "Produza e publique", description: "Compartilhe conteúdos autorais nas redes em que você já está presente." },
   { title: "Aprenda e evolua", description: "Aprimore habilidades e troque experiências com a comunidade." },
   { title: "Explore colaborações", description: "Acompanhe oportunidades compatíveis com seu perfil e sua jornada." },
-];
-const unboxingImages = [
-  { file: "10_pack_completo.jpg", alt: "Creator apresenta o kit completo de produtos Fortalfy em uma caixa aberta" },
-  { file: "01_abertura_da_caixa.jpg", alt: "Creator abrindo uma caixa Fortalfy com itens de treino sobre a mesa" },
-  { file: "04_reacao_do_creator.jpg", alt: "Creator observa uma camiseta e produtos em uma caixa Fortalfy aberta" },
-  { file: "08_unboxing_no_treino.jpg", alt: "Creator registra o unboxing de uma caixa Fortalfy em um espaço de treino" },
-  { file: "02_mostrando_camiseta.jpg", alt: "Creator apresenta uma camiseta Fortalfy diante de uma caixa com acessórios" },
-  { file: "05_camisa_no_espelho.jpg", alt: "Creator mostra uma camiseta Fortalfy diante do espelho em um espaço de treino" },
-  { file: "03_itens_sobre_a_mesa.jpg", alt: "Caixa de unboxing Fortalfy aberta com camiseta e acessórios organizados" },
-  { file: "07_creator_separando_os_itens.jpg", alt: "Creator organiza produtos Fortalfy ao lado de uma caixa aberta" },
-  { file: "06_acessorios_de_academia.jpg", alt: "Caixa Fortalfy com camiseta e acessórios de treino apresentados em detalhe" },
-  { file: "09_detalhe_dos_produtos.jpg", alt: "Detalhe de camiseta e squeeze Fortalfy em uma caixa de unboxing aberta" },
 ];
 export default function FortalCreator({ session, client, notify }) {
   const [section, setSection] = useState("Visão geral");
@@ -160,7 +148,7 @@ function CreatorLanding({ onApply, onAcademy, onLevels }) {
       <p className="creator-opportunity-note"><LockKeyhole size={15}/> Oportunidades de colaboração dependem dos critérios e da seleção da Fortalfy; participação ou benefícios não são automáticos.</p>
     </section>
 
-    <CreatorUnboxingGallery onApply={onApply} onLearn={() => scrollToCreatorSection("creator-about")} />
+    <CreatorGallery onApply={onApply} onLearn={() => scrollToCreatorSection("creator-about")} />
 
     <section className="creator-academy-feature" aria-labelledby="creator-academy-title"><div className="creator-academy-copy"><span className="eyebrow">ACADEMIA FORTALCREATOR</span><h2 id="creator-academy-title">Aprenda a criar melhor.</h2><p>A Academia foi pensada para apoiar seu desenvolvimento com conteúdos sobre criação de vídeos, edição, marketing digital, engajamento, marca pessoal e publicidade.</p><p className="creator-academy-pricing">A disponibilidade do catálogo depende da configuração do programa. Os cursos podem ser gratuitos em períodos promocionais ou vendidos individualmente; o preço será informado antes da compra.</p><button type="button" className="button primary" onClick={onAcademy}>Conhecer a Academia <ArrowRight size={16}/></button></div><div className="creator-academy-visual"><img src="/assets/creator/03_fortalfy_no_cotidiano.jpg" alt="Criadora estudando e planejando conteúdo em um ambiente iluminado" loading="lazy" decoding="async"/><span><BookOpen size={16}/> Aprendizado no seu ritmo</span></div></section>
 
@@ -172,124 +160,6 @@ function CreatorLanding({ onApply, onAcademy, onLevels }) {
 
     <CreatorLandingFooter onAcademy={onAcademy}/>
   </div>;
-}
-
-function CreatorUnboxingGallery({ onApply, onLearn }) {
-  const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const carouselRef = useRef(null);
-  const lightboxRef = useRef(null);
-  const closeButtonRef = useRef(null);
-  const triggerButtonRef = useRef(null);
-  const isLightboxOpen = lightboxIndex !== null;
-
-  useEffect(() => {
-    if (!isLightboxOpen) return undefined;
-    const previousFocus = triggerButtonRef.current || document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeButtonRef.current?.focus();
-    const handleKeyDown = event => {
-      if (event.key === "Escape") setLightboxIndex(null);
-      if (event.key === "ArrowRight") setLightboxIndex(index => (index + 1) % unboxingImages.length);
-      if (event.key === "ArrowLeft") setLightboxIndex(index => (index - 1 + unboxingImages.length) % unboxingImages.length);
-      if (event.key === "Tab") {
-        const buttons = lightboxRef.current?.querySelectorAll("button:not([disabled])");
-        if (!buttons?.length) return;
-        const first = buttons[0];
-        const last = buttons[buttons.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-      if (previousFocus instanceof HTMLElement && document.contains(previousFocus)) previousFocus.focus();
-    };
-  }, [isLightboxOpen]);
-
-  function scrollToImage(index) {
-    const track = carouselRef.current;
-    const slide = track?.querySelector(`[data-unboxing-slide="${index}"]`);
-    if (!track || !slide) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    track.scrollBy({ left: slide.getBoundingClientRect().left - track.getBoundingClientRect().left, behavior: reduceMotion ? "auto" : "smooth" });
-  }
-
-  function handleCarouselScroll() {
-    const track = carouselRef.current;
-    if (!track) return;
-    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
-    const slides = [...track.querySelectorAll("[data-unboxing-slide]")];
-    const nearestIndex = slides.reduce((nearest, slide, index) => {
-      const distance = Math.abs(slide.getBoundingClientRect().left + slide.clientWidth / 2 - trackCenter);
-      return distance < nearest.distance ? { index, distance } : nearest;
-    }, { index: 0, distance: Infinity }).index;
-    setCarouselIndex(nearestIndex);
-  }
-
-  const renderImageButton = (image, index, className) => (
-    <button
-      type="button"
-      className={className}
-      aria-label={`Ampliar imagem ${index + 1}: ${image.alt}`}
-      onClick={event => { triggerButtonRef.current = event.currentTarget; setLightboxIndex(index); }}
-    >
-      <img src={`/assets/creator/unboxing/${image.file}`} alt={image.alt} width="1400" height="1750" loading="lazy" decoding="async"/>
-    </button>
-  );
-
-  return <>
-    <section className="creator-unboxing" aria-labelledby="creator-unboxing-title">
-      <div className="creator-unboxing-heading">
-        <span className="eyebrow">CONTEÚDO, COMUNIDADE E POSSIBILIDADES</span>
-        <h2 id="creator-unboxing-title">Conteúdo que aproxima marcas e creators</h2>
-        <p>Creators podem mostrar sua rotina, seus conteúdos e suas experiências de forma autêntica, conectando comunidade, criatividade e novas possibilidades.</p>
-      </div>
-      <div className="creator-unboxing-editorial" aria-label="Galeria ilustrativa de unboxing">
-        {unboxingImages.slice(0, 5).map((image, index) => renderImageButton(image, index, `creator-unboxing-photo${index === 0 ? " creator-unboxing-photo-main" : ""}`))}
-      </div>
-      <div className="creator-unboxing-more" aria-label="Mais cenas ilustrativas da campanha">
-        {unboxingImages.slice(5).map((image, index) => renderImageButton(image, index + 5, "creator-unboxing-photo"))}
-      </div>
-      <div className="creator-unboxing-carousel-wrap">
-        <div className="creator-unboxing-carousel" ref={carouselRef} onScroll={handleCarouselScroll} role="region" aria-label="Carrossel de imagens ilustrativas">
-          {unboxingImages.map((image, index) => <div className="creator-unboxing-slide" data-unboxing-slide={index} key={image.file}>
-            {renderImageButton(image, index, "creator-unboxing-photo")}
-          </div>)}
-        </div>
-        <div className="creator-unboxing-carousel-controls">
-          <button type="button" className="creator-unboxing-arrow" aria-label="Imagem anterior" onClick={() => scrollToImage((carouselIndex - 1 + unboxingImages.length) % unboxingImages.length)}><ArrowLeft size={18}/></button>
-          <div className="creator-unboxing-dots" role="group" aria-label="Escolher imagem do carrossel">
-            {unboxingImages.map((image, index) => <button type="button" key={image.file} className={carouselIndex === index ? "is-active" : ""} aria-label={`Ir para imagem ${index + 1} de ${unboxingImages.length}`} aria-current={carouselIndex === index ? "true" : undefined} onClick={() => scrollToImage(index)}/>)}
-          </div>
-          <button type="button" className="creator-unboxing-arrow" aria-label="Próxima imagem" onClick={() => scrollToImage((carouselIndex + 1) % unboxingImages.length)}><ArrowRight size={18}/></button>
-        </div>
-      </div>
-      <p className="creator-unboxing-disclosure">Imagens ilustrativas de uma campanha de unboxing. O recebimento de produtos e as oportunidades de colaboração dependem de critérios, disponibilidade e seleção da Fortalfy.</p>
-      <div className="creator-unboxing-cta">
-        <div><h3>Mostre sua criatividade para o mundo</h3><p>Crie conteúdos autênticos, desenvolva sua presença digital e faça parte de uma comunidade que também está evoluindo.</p></div>
-        <div className="creator-unboxing-actions">
-          <button type="button" className="button creator-unboxing-primary" onClick={onApply}>Quero ser FortalCreator <ArrowRight size={16}/></button>
-          <button type="button" className="creator-unboxing-secondary" onClick={onLearn}>Conhecer o programa</button>
-        </div>
-      </div>
-      <p className="creator-unboxing-transparency">As imagens são ilustrativas e representam conceitos de campanha. O recebimento de produtos, convites e colaborações não é automático e depende de critérios, disponibilidade e seleção da Fortalfy.</p>
-    </section>
-    {lightboxIndex !== null && createPortal(<div className="creator-unboxing-lightbox" role="presentation" onMouseDown={event => event.target === event.currentTarget && setLightboxIndex(null)}>
-      <section className="creator-unboxing-dialog" ref={lightboxRef} role="dialog" aria-modal="true" aria-label="Visualização de imagens ilustrativas FortalCreator">
-        <button ref={closeButtonRef} type="button" className="creator-unboxing-close" aria-label="Fechar imagem" onClick={() => setLightboxIndex(null)}><X size={23}/></button>
-        <button type="button" className="creator-unboxing-lightbox-arrow creator-unboxing-lightbox-previous" aria-label="Imagem anterior" onClick={() => setLightboxIndex(index => (index - 1 + unboxingImages.length) % unboxingImages.length)}><ArrowLeft size={22}/></button>
-        <figure>
-          <img src={`/assets/creator/unboxing/${unboxingImages[lightboxIndex].file}`} alt={unboxingImages[lightboxIndex].alt} width="1400" height="1750"/>
-          <figcaption aria-live="polite">{lightboxIndex + 1} de {unboxingImages.length} · {unboxingImages[lightboxIndex].alt}</figcaption>
-        </figure>
-        <button type="button" className="creator-unboxing-lightbox-arrow creator-unboxing-lightbox-next" aria-label="Próxima imagem" onClick={() => setLightboxIndex(index => (index + 1) % unboxingImages.length)}><ArrowRight size={22}/></button>
-      </section>
-    </div>, document.body)}
-  </>;
 }
 
 function CreatorLandingFooter({ onAcademy }) {
