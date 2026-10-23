@@ -38,7 +38,7 @@ import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
 } from "./partnerService.js";
-import { fortalfyAsset, publicAsset, visualPackAsset } from "./assetPath.js";
+import { brandCampaignAsset, fortalfyAsset, publicAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
@@ -338,14 +338,14 @@ function PhotoCard({ image, alt, className = "" }) {
 }
 
 const HOME_MODULES = [
-  { to: "/workout", skin: "movement", tag: "NO SEU RITMO", name: "MOVIMENTO", title: "Seu próximo passo começa com você.", description: "Registre seus treinos e cuide da sua rotina.", icon: Dumbbell },
+  { to: "/workout", skin: "movement", tag: "NO SEU RITMO", name: "MOVIMENTO", title: "Seu próximo passo começa com você.", description: "Registre seus treinos e cuide da sua rotina.", image: brandCampaignAsset("fortalfy_gym_01_treino.jpg") },
   { to: "/pass", skin: "pass", tag: "DESCUBRA PERTO DE VOCÊ", name: "FORTALPASS", title: "Seu próximo treino começa aqui.", description: "Encontre academias e profissionais aprovados.", image: visualPackAsset("fortalfy-pack-gym-interior.jpg") },
-  { to: "/feed", skin: "community", tag: "COMUNIDADE FORTALFY", name: "COMUNIDADE", title: "Inspiração que cresce junto.", description: "Compartilhe sua rotina e descubra a comunidade.", icon: Users },
+  { to: "/feed", skin: "community", tag: "COMUNIDADE FORTALFY", name: "COMUNIDADE", title: "Inspiração que cresce junto.", description: "Compartilhe sua rotina e descubra a comunidade.", image: brandCampaignAsset("fortalfy_gym_20_manifesto.jpg") },
   { to: "/reels", skin: "reels", tag: "VÍDEOS DA COMUNIDADE", name: "FORTALREELS", title: "Inspire-se em movimento.", description: "Conteúdo fitness em formato vertical.", image: visualPackAsset("fortalfy-pack-reels-training.jpg") },
   { to: "/creator", skin: "creator", tag: "PROGRAMA DE CRIADORES", name: "FORTALCREATOR", title: "Sua criatividade pode abrir novos caminhos.", description: "Crie conteúdo, aprenda e conecte-se com a comunidade.", image: publicAsset("creator/06_torne_se_um_fortalcreator.jpg") },
   { to: "/food", skin: "food", tag: "COMER BEM, COM LEVEZA", name: "FORTALFOOD", title: "Descubra escolhas para sua rotina.", description: "Conheça cardápios publicados por parceiros.", image: visualPackAsset("fortalfy-pack-food-card.jpg") },
-  { to: "/nutrition", skin: "nutrition", tag: "ESCOLHAS DO DIA A DIA", name: "NUTRIÇÃO", title: "Cuide da sua alimentação com leveza.", description: "Registre refeições e acompanhe sua rotina.", icon: Utensils },
-  { to: "/progress", skin: "progress", tag: "SEU CAMINHO", name: "PROGRESSO", title: "Perceba cada passo da jornada.", description: "Acompanhe os registros que você escolheu fazer.", icon: Activity },
+  { to: "/nutrition", skin: "nutrition", tag: "ESCOLHAS DO DIA A DIA", name: "NUTRIÇÃO", title: "Cuide da sua alimentação com leveza.", description: "Registre refeições e acompanhe sua rotina.", image: brandCampaignAsset("fortalfy_gym_08_whey_shake.jpg") },
+  { to: "/progress", skin: "progress", tag: "SEU CAMINHO", name: "PROGRESSO", title: "Perceba cada passo da jornada.", description: "Acompanhe os registros que você escolheu fazer.", image: brandCampaignAsset("fortalfy_gym_19_constancia.jpg") },
   { to: "/shop", skin: "shop", tag: "SEU RITUAL DE BEM-ESTAR", name: "FORTALSHOP", title: "Encontre o que move você.", description: "Explore o catálogo Fortalfy.", image: visualPackAsset("fortalfy-pack-wellness-product.jpg") },
 ];
 
@@ -396,6 +396,11 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
           <Link to="/creator"><Sparkles size={18} /><span>Quero ser creator</span><ArrowUpRight size={16} /></Link>
           <Link to="/shop"><ShoppingBag size={18} /><span>Quero explorar produtos</span><ArrowUpRight size={16} /></Link>
         </div>
+      </section>
+      <section className="home-brand-campaign" aria-label="Campanhas Fortalfy">
+        <article><img src={brandCampaignAsset("fortalfy_gym_01_treino.jpg")} alt="Campanha Fortalfy de treino de força e performance" loading="lazy" decoding="async" /><span>FORÇA QUE SE CONSTRÓI</span></article>
+        <article><img src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="Campanha Fortalfy de nutrição e whey protein" loading="lazy" decoding="async" /><span>NUTRIÇÃO FAZ PARTE DO TREINO</span></article>
+        <article><img src={brandCampaignAsset("fortalfy_gym_14_hiit.jpg")} alt="Campanha Fortalfy de intensidade e movimento" loading="lazy" decoding="async" /><span>INTENSIDADE NO SEU RITMO</span></article>
       </section>
       <section className="home-ecosystem" id="home-ecosystem" aria-labelledby="home-ecosystem-title">
         <div className="module-catalog-heading">

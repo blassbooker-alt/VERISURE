@@ -10071,3 +10071,112 @@ html[data-theme="dark"] .professional-root :is(p, small, .dash-panel-head p, .da
   border-color: var(--color-border);
   border-radius: 12px;
 }
+/* Fortalfy performance identity refresh: semantic color tokens for every route and theme. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-background: #f4f7f2;
+  --color-background-secondary: #e8f0e8;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #eef4ed;
+  --color-surface-elevated: #ffffff;
+  --color-text-primary: #14201b;
+  --color-text-secondary: #5c6b63;
+  --color-border: #d7e2d9;
+  --color-primary: #83c900;
+  --color-primary-foreground: #14201b;
+  --color-success: #278a45;
+  --color-danger: #c83b3b;
+  --color-input-background: #ffffff;
+  --color-navigation-background: #ffffff;
+  --color-focus: #397b25;
+  --canvas: #f4f7f2;
+  --card: #ffffff;
+  --line: #d7e2d9;
+  --ink-950: #14201b;
+  --ink-700: #5c6b63;
+  --quiet: #5c6b63;
+  --brand-lime: #a7f000;
+  --brand-shadow-sm: 0 6px 20px #173a2410;
+  --brand-shadow-md: 0 14px 34px #173a2417;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-background: #050807;
+  --color-background-secondary: #0d1715;
+  --color-surface: #12211e;
+  --color-surface-secondary: #172a25;
+  --color-surface-elevated: #1b302a;
+  --color-text-primary: #f5f7f2;
+  --color-text-secondary: #a7b3ad;
+  --color-border: #263b34;
+  --color-primary: #b7ff00;
+  --color-primary-foreground: #07110f;
+  --color-success: #8dff45;
+  --color-danger: #ff5c5c;
+  --color-input-background: #0d1715;
+  --color-navigation-background: #0d1715;
+  --color-focus: #b7ff00;
+  --canvas: #050807;
+  --card: #12211e;
+  --line: #263b34;
+  --ink-950: #f5f7f2;
+  --ink-700: #c3cec8;
+  --quiet: #a7b3ad;
+  --brand-lime: #b7ff00;
+  --brand-shadow-sm: 0 7px 22px #0005;
+  --brand-shadow-md: 0 16px 38px #0007;
+}
+
+.mobile-app { color: var(--color-text-primary); background-color: var(--color-background); background-image: radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent 520px), radial-gradient(ellipse at 96% 24%, color-mix(in srgb, var(--color-primary) 4%, transparent), transparent 460px); letter-spacing: normal; text-wrap: initial; }
+.mobile-header { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-background-secondary) 93%, transparent); border-color: var(--color-border); }
+.mobile-app :is(.screen-heading h1, .module-catalog-heading h2, .creator-page h2, .shop-screen h1, .performance-hero h2) { font-weight: 850; letter-spacing: -.045em; text-wrap: balance; }
+.mobile-app :is(.button.primary, .hero-cta, .button.lime-button) { color: var(--color-primary-foreground); background: var(--color-primary); border: 1px solid color-mix(in srgb, var(--color-primary) 75%, white); box-shadow: 0 7px 20px color-mix(in srgb, var(--color-primary) 19%, transparent); font-weight: 800; }
+.mobile-app :is(.button.primary, .hero-cta, .button.lime-button):hover { filter: brightness(1.06); transform: translateY(-1px); }
+.mobile-app :is(.button.subtle, .icon-button, .bottom-nav, .navigation-drawer, .mobile-header) { border-color: var(--color-border); }
+.mobile-app :is(.feed-post, .dash-panel, .dash-metric, .performance-card, .creator-card, .creator-pillar-card, .creator-step-card, .shop-product-card, .food-card, .meal-list, .weekly-plan-card) { border-color: var(--color-border); border-radius: 16px; box-shadow: var(--brand-shadow-sm); }
+.mobile-app :is(.feed-post, .dash-panel, .dash-metric, .performance-card, .creator-card, .creator-pillar-card, .creator-step-card, .shop-product-card, .food-card, .meal-list, .weekly-plan-card) { background-color: var(--color-surface); }
+.mobile-app :is(input, textarea, select) { border-color: var(--color-border); background-color: var(--color-input-background); }
+.mobile-app :is(.screen-content, .dash-main, .creator-page) { color: var(--color-text-primary); }
+.mobile-app :is(.screen-intro, .creator-page p, .dash-panel p, .performance-card p) { color: var(--color-text-secondary); }
+.mobile-app :is(a, button) { -webkit-tap-highlight-color: transparent; }
+.mobile-app :is(a, button, .module-card, .shop-product-card, .feed-post) { transition: color .16s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+
+.home-brand-campaign { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 20px 0 34px; }
+.home-brand-campaign article { min-width: 0; position: relative; aspect-ratio: 1.45; overflow: hidden; margin: 0; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); box-shadow: var(--brand-shadow-sm); }
+.home-brand-campaign img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transition: transform .3s ease; }
+.home-brand-campaign article::after { position: absolute; inset: 35% 0 0; content: ""; background: linear-gradient(transparent, #050807d9); pointer-events: none; }
+.home-brand-campaign span { position: absolute; z-index: 1; right: 12px; bottom: 12px; left: 12px; color: #f5f7f2; font-size: clamp(.7rem, 1.2vw, .95rem); font-weight: 850; letter-spacing: .04em; text-shadow: 0 2px 8px #000; }
+.home-brand-campaign article:hover img { transform: scale(1.035); }
+
+.creator-screen .creator-hero { background: linear-gradient(116deg, #07110f 0%, #0d241b 52%, #183e26 100%); border: 1px solid var(--color-border); box-shadow: var(--brand-shadow-md); }
+.creator-screen .creator-hero::after { background: linear-gradient(90deg, #050807f7 0%, #07110fe8 38%, #07110f8f 68%, #07110f26 100%); }
+.creator-screen .creator-hero-photo { width: 64%; object-position: 78% 48%; }
+.creator-screen .creator-hero-kicker, .creator-screen .creator-level-number { color: var(--color-primary); }
+.creator-screen .creator-hero-image-note { border: 1px solid #ffffff24; background: #07110fcc; backdrop-filter: blur(12px); }
+.creator-screen .creator-pillar-photo img, .creator-screen .creator-audience-card > img { object-position: center 37%; }
+.creator-screen .creator-tabs button.selected { color: var(--color-primary-foreground); background: var(--color-primary); border-color: var(--color-primary); }
+
+.shop-screen .shop-editorial { border: 1px solid var(--color-border); background: linear-gradient(110deg, #07110f, #172a25); }
+.shop-screen .shop-editorial::after { background: linear-gradient(90deg, #050807f5 0%, #07110fd9 38%, #07110f38 100%); }
+.shop-screen .shop-editorial-banner { object-position: 82% 46%; }
+.shop-screen .shop-editorial-label { color: var(--color-primary); }
+.shop-screen .shop-catalog-heading .eyebrow { color: var(--color-primary); }
+
+@media (max-width: 700px) {
+  .home-brand-campaign { display: flex; gap: 11px; overflow-x: auto; margin: 16px -1px 28px; padding: 2px 1px 10px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+  .home-brand-campaign article { flex: 0 0 min(76vw, 330px); aspect-ratio: 1.25; scroll-snap-align: start; }
+  .creator-screen .creator-hero { min-height: 360px; }
+  .creator-screen .creator-hero-photo { width: 100%; opacity: .64; object-position: 76% center; }
+  .creator-screen .creator-hero::after { background: linear-gradient(90deg, #050807ed, #07110fa8 72%, #07110f70); }
+  .creator-screen .creator-hero-content { max-width: 100%; }
+  .shop-screen .shop-editorial { min-height: 190px; padding: 15px; border-radius: 15px; background: #07110f; }
+  .shop-screen .shop-editorial::after { display: block; background: linear-gradient(90deg, #050807f2 0%, #050807cf 52%, #0508072b 100%); }
+  .shop-screen .shop-editorial-banner { display: block; left: auto; width: 62%; opacity: .8; object-position: 84% center; }
+  .shop-screen .shop-editorial-copy { width: 74%; }
+  .home-brand-campaign span { font-size: .72rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-app :is(a, button, .module-card, .shop-product-card, .feed-post, .home-brand-campaign img) { transition-duration: .01ms !important; }
+}

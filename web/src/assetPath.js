@@ -8,6 +8,11 @@ export function visualPackAsset(filename) {
   return `${basePath}assets/visual-pack/${filename}`;
 }
 
+export function brandCampaignAsset(filename) {
+  const basePath = import.meta.env?.BASE_URL || "/";
+  return `${basePath}assets/brand-campaign/${filename}`;
+}
+
 export function publicAsset(filename) {
   const basePath = import.meta.env?.BASE_URL || "/";
   return `${basePath}assets/${filename}`;

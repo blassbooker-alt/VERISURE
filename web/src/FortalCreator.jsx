@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, BadgeCheck, BookOpen, Camera, CheckCircle2, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users } from "lucide-react";
 import { loadProfessionalApplications, professionalStatusLabel } from "./professionalService.js";
 import Brand from "./Brand.jsx";
+import { brandCampaignAsset } from "./assetPath.js";
 import CreatorGallery from "./CreatorGallery.jsx";
 import {
   applyToCreatorCampaign, authorizeCreatorInstructor, createCreatorCampaign, createCreatorCourse,
@@ -20,14 +21,14 @@ const levels = [
   { name: "Oficial", color: "official", criteria: "Desempenho sustentado, qualidade e regularidade de conteúdo.", perks: "Possibilidade de campanhas oficiais conforme seleção e disponibilidade." },
 ];
 const creatorPillars = [
-  { image: "02_comunidade_em_crescimento.jpg", icon: Clapperboard, title: "Crie conteúdo", description: "Transforme suas ideias em vídeos, fotos e histórias com a sua identidade." },
-  { image: "04_conexoes_reais.jpg", icon: GraduationCap, title: "Aprenda novas habilidades", description: "Desenvolva repertório para criar, editar e comunicar com mais confiança." },
-  { image: "05_identidade_da_marca.jpg", icon: HeartHandshake, title: "Conecte-se com uma comunidade", description: "Troque experiências com pessoas que também estão construindo sua jornada." },
+  { image: "fortalfy_gym_09_motivacao.jpg", icon: Clapperboard, title: "Crie conteúdo", description: "Transforme suas ideias em vídeos, fotos e histórias com a sua identidade." },
+  { image: "fortalfy_gym_11_superiores.jpg", icon: GraduationCap, title: "Aprenda novas habilidades", description: "Desenvolva repertório para criar, editar e comunicar com mais confiança." },
+  { image: "fortalfy_gym_20_manifesto.jpg", icon: HeartHandshake, title: "Conecte-se com uma comunidade", description: "Troque experiências com pessoas que também estão construindo sua jornada." },
 ];
 const creatorAudiences = [
-  { image: "07_inicio_de_uma_jornada.jpg", title: "Quem está começando", description: "Dê forma às primeiras ideias e descubra seu jeito de criar." },
-  { image: "08_criatividade_em_movimento.jpg", title: "Quem já compartilha", description: "Dê consistência a vídeos e fotografias que já fazem parte da sua rotina." },
-  { image: "10_cresca_com_a_fortalfy.jpg", title: "Quem fortalece sua marca", description: "Amplie sua presença digital e desenvolva competências profissionais." },
+  { image: "fortalfy_gym_04_forca.jpg", title: "Quem está começando", description: "Dê forma às primeiras ideias e descubra seu jeito de criar." },
+  { image: "fortalfy_gym_14_hiit.jpg", title: "Quem já compartilha", description: "Dê consistência a vídeos e fotografias que já fazem parte da sua rotina." },
+  { image: "fortalfy_gym_19_constancia.jpg", title: "Quem fortalece sua marca", description: "Amplie sua presença digital e desenvolva competências profissionais." },
 ];
 const creatorSteps = [
   { title: "Crie seu perfil", description: "Apresente quem você é e o tipo de conteúdo que deseja desenvolver." },
@@ -101,7 +102,7 @@ export default function FortalCreator({ session, client, notify }) {
   }, [client, section, userId]);
 
   return <div className="creator-page">
-    <header className="creator-hero" id="creator-top"><img className="creator-hero-photo" src="/assets/creator/06_torne_se_um_fortalcreator.jpg" alt="" aria-hidden="true" fetchpriority="high"/><div className="creator-hero-content"><span className="creator-hero-kicker">PROGRAMA DE CRIADORES FORTALFY</span><h2>Sua criatividade pode abrir novos caminhos.</h2><p>Faça parte do FortalCreator e desenvolva sua presença digital com conteúdo, aprendizado e comunidade.</p><div className="creator-hero-actions"><button type="button" className="button primary" onClick={() => { setSection("Minha candidatura"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Quero ser FortalCreator <ArrowRight size={16}/></button><button type="button" className="creator-hero-secondary" onClick={() => { setSection("Visão geral"); window.setTimeout(() => scrollToCreatorSection("creator-about"), 0); }}>Conhecer o programa</button></div></div><div className="creator-hero-image-note"><img src="/assets/creator/01_conheca_a_fortalfy.jpg" alt="" aria-hidden="true"/><span><strong>Ideias que ganham espaço</strong><small>Uma jornada de criação e aprendizado</small></span></div><span className="creator-hero-icon" aria-hidden="true"><Clapperboard size={34}/></span></header>
+    <header className="creator-hero" id="creator-top"><img className="creator-hero-photo" src={brandCampaignAsset("fortalfy_gym_20_manifesto.jpg")} alt="" aria-hidden="true" fetchpriority="high"/><div className="creator-hero-content"><span className="creator-hero-kicker">PROGRAMA DE CRIADORES FORTALFY</span><h2>Sua criatividade pode abrir novos caminhos.</h2><p>Faça parte do FortalCreator e desenvolva sua presença digital com conteúdo, aprendizado e comunidade.</p><div className="creator-hero-actions"><button type="button" className="button primary" onClick={() => { setSection("Minha candidatura"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Quero ser FortalCreator <ArrowRight size={16}/></button><button type="button" className="creator-hero-secondary" onClick={() => { setSection("Visão geral"); window.setTimeout(() => scrollToCreatorSection("creator-about"), 0); }}>Conhecer o programa</button></div></div><div className="creator-hero-image-note"><img src={brandCampaignAsset("fortalfy_gym_13_acessorios.jpg")} alt="" aria-hidden="true"/><span><strong>Ideias que ganham espaço</strong><small>Uma jornada de criação e aprendizado</small></span></div><span className="creator-hero-icon" aria-hidden="true"><Clapperboard size={34}/></span></header>
     <nav className="creator-tabs" aria-label="Seções FortalCreator">{sections.map(item => <button key={item} type="button" className={section === item ? "selected" : ""} aria-current={section === item ? "page" : undefined} onClick={() => setSection(item)}>{item}</button>)}</nav>
 
     {section === "Minha candidatura" && <section className="creator-card creator-application"><span className="eyebrow">CANDIDATURA OFICIAL</span><h2>Inscrição e acompanhamento</h2>
@@ -133,12 +134,12 @@ function CreatorLanding({ onApply, onAcademy, onLevels }) {
   return <div className="creator-landing">
     <section className="creator-landing-section creator-about" id="creator-about" aria-labelledby="creator-about-title">
       <div className="creator-section-heading"><span className="eyebrow">CRIATIVIDADE COM PROPÓSITO</span><h2 id="creator-about-title">O que é o FortalCreator?</h2><p>O FortalCreator é um programa para pessoas que desejam criar conteúdo, desenvolver sua presença digital, conectar-se com uma comunidade ativa e evoluir profissionalmente.</p></div>
-      <div className="creator-pillar-grid">{creatorPillars.map(({ image, icon: Icon, title, description }) => <article className="creator-pillar-card" key={title}><div className="creator-pillar-photo"><img src={`/assets/creator/${image}`} alt="" loading="lazy" decoding="async"/><span><Icon size={19}/></span></div><div><h3>{title}</h3><p>{description}</p></div></article>)}</div>
+      <div className="creator-pillar-grid">{creatorPillars.map(({ image, icon: Icon, title, description }) => <article className="creator-pillar-card" key={title}><div className="creator-pillar-photo"><img src={brandCampaignAsset(image)} alt="" loading="lazy" decoding="async"/><span><Icon size={19}/></span></div><div><h3>{title}</h3><p>{description}</p></div></article>)}</div>
     </section>
 
     <section className="creator-landing-section creator-audience" aria-labelledby="creator-audience-title">
       <div className="creator-section-heading"><span className="eyebrow">DIFERENTES CAMINHOS, UMA MESMA VONTADE DE CRIAR</span><h2 id="creator-audience-title">Para quem é?</h2><p>Para pessoas adultas que querem compartilhar ideias e construir uma presença digital com autenticidade.</p></div>
-      <div className="creator-audience-grid">{creatorAudiences.map(item => <article className="creator-audience-card" key={item.title}><img src={`/assets/creator/${item.image}`} alt="" loading="lazy" decoding="async"/><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}</div>
+      <div className="creator-audience-grid">{creatorAudiences.map(item => <article className="creator-audience-card" key={item.title}><img src={brandCampaignAsset(item.image)} alt="" loading="lazy" decoding="async"/><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}</div>
       <div className="creator-interest-list" aria-label="Áreas de interesse"><span>Lifestyle</span><span>Tecnologia</span><span>Moda</span><span>Beleza</span><span>Fitness</span><span>Bem-estar</span><span>Marketing digital</span><span>Edição</span></div>
     </section>
 

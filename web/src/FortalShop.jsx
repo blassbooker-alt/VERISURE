@@ -5,7 +5,7 @@ import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 import { filterShopProducts, getShopDepartment, shopProducts } from "./shopData.js";
 import { addShopCartItem, getShopCartLineKey, getShopCartOptionsLabel, getShopCartProduct, getShopCartSummary, removeShopCartItem, updateShopCartQuantity } from "./shopCartService.js";
-import { visualPackAsset } from "./assetPath.js";
+import { brandCampaignAsset, visualPackAsset } from "./assetPath.js";
 
 const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 const marketplaceProducts = shopProducts.filter(product => product.sku);
@@ -139,7 +139,7 @@ export default function FortalShop({ cart, setCart, initialDialog = "", notify }
         </div>
       </section>
       <section className="shop-editorial" aria-label="Destaque FortalShop">
-        <img className="shop-editorial-banner" src={visualPackAsset("fortalfy-pack-wellness-product.jpg")} alt="" />
+        <img className="shop-editorial-banner" src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="" />
         <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Suplementos, acessórios e tecnologia para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
       </section>
       <section className="shop-departments" aria-label="Explore por departamento">
