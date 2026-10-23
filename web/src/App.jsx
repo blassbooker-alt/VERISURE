@@ -227,34 +227,108 @@ function Screen({ children, title, subtitle, location = false, className = "", a
 }
 
 function PublicLanding() {
+  const journeys = [
+    { title: "Movimento", detail: "Treino", image: "fortalfy-pack-training-card.jpg", alt: "Pessoa treinando em um estúdio claro e acolhedor", to: "/workout", icon: Dumbbell },
+    { title: "Profissionais", detail: "Acompanhamento", image: "fortalfy-pack-professional-consultation.jpg", alt: "Profissional conversa com uma aluna em um ambiente iluminado", to: "/pass", icon: BadgeCheck },
+    { title: "Alimentação", detail: "Rotina", image: "fortalfy-pack-food-breakfast.jpg", alt: "Café da manhã colorido preparado com frutas e alimentos frescos", to: "/food", icon: Utensils },
+  ];
   const experiences = [
-    { title: "FortalPass", image: "fortalfy-pack-gym-interior.jpg", alt: "Academia clara com equipamentos de treino", description: "Explore academias, estúdios e profissionais parceiros." , to: "/pass" },
-    { title: "FortalReels", image: "fortalfy-pack-reels-training.jpg", alt: "Treino de mobilidade em um estúdio iluminado", description: "Encontre ideias de movimento em vídeos curtos.", to: "/reels" },
-    { title: "FortalFood", image: "fortalfy-pack-food-card.jpg", alt: "Prato equilibrado com vegetais, quinoa e frango", description: "Descubra cardápios e escolhas para a rotina.", to: "/food" },
-    { title: "FortalShop", image: "fortalfy-pack-wellness-product.jpg", alt: "Acessórios de bem-estar em tons naturais", description: "Conheça o catálogo de produtos Fortalfy.", to: "/shop" },
+    { title: "Movimento", description: "Encontre uma forma de se movimentar que combine com seu momento.", image: "fortalfy-pack-training-pilates.jpg", alt: "Pessoa praticando pilates em um estúdio de luz natural", to: "/workout", label: "TREINO" },
+    { title: "Profissionais", description: "Conheça academias e parceiros com cadastro aprovado.", image: "fortalfy-pack-professional-team.jpg", alt: "Profissionais de bem-estar em um espaço de atendimento", to: "/pass", label: "FORTALPASS" },
+    { title: "Alimentação", description: "Descubra opções e cardápios compartilhados por parceiros.", image: "fortalfy-pack-food-card.jpg", alt: "Refeição equilibrada com vegetais frescos e proteínas", to: "/food", label: "FORTALFOOD" },
+    { title: "Comunidade", description: "Inspire-se, compartilhe experiências e siga no seu próprio ritmo.", image: "fortalfy-pack-community-card.jpg", alt: "Grupo diverso compartilhando um momento de bem-estar", to: "/feed", label: "FORTALFY COMUNIDADE" },
   ];
-  const campaigns = [
-    { image: "fortalfy-v2-tapete.png", alt: "Campanha Fortalfy com atleta alongando sobre um tapete de treino", label: "Movimento e conforto" },
-    { image: "fortalfy-v2-whey.png", alt: "Campanha Fortalfy Whey com atleta e embalagem do produto", label: "Fortalfy Whey" },
-    { image: "fortalfy-v2-creatina.png", alt: "Campanha Fortalfy Creatina com atleta e embalagem do produto", label: "Fortalfy Creatina" },
-    { image: "fortalfy-v2-pre-treino.png", alt: "Campanha Fortalfy pré-treino com atleta e embalagem do produto", label: "Pré-treino" },
-    { image: "fortalfy-v2-smartwatch.png", alt: "Campanha Fortalfy com atleta usando smartwatch esportivo", label: "Tecnologia e movimento" },
-    { image: "fortalfy-v2-acessorios.png", alt: "Campanha Fortalfy de acessórios para treino com atleta e equipamentos", label: "Acessórios de treino" },
-  ];
+  const scrollToSection = (event, sectionId) => {
+    event.preventDefault();
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+  };
   return <main className="public-landing">
-    <header className="public-header"><Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link><nav aria-label="Navegação institucional"><a href="#como-funciona">Como funciona</a><a href="#experiencias">Experiências</a><a href="#sobre">Sobre a Fortalfy</a></nav><div className="public-header-actions"><Link to="/feed" className="public-login-link">Entrar</Link><Link to="/feed" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link></div></header>
-    <section className="public-hero">
-      <div className="public-hero-copy"><span className="eyebrow">BEM-ESTAR, MOVIMENTO E COMUNIDADE</span><h1>Seu bem-estar começa com um próximo passo.</h1><p>Treine, encontre profissionais e construa uma rotina mais saudável em um só lugar.</p><div className="public-hero-actions"><Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link><a href="#experiencias" className="button subtle">Conhecer a Fortalfy</a></div><div className="public-value-points"><span><BadgeCheck size={16} /> Profissionais parceiros</span><span><Users size={16} /> Comunidade</span><span><Activity size={16} /> Sua evolução</span></div></div>
-      <div className="public-hero-visual"><img src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher treinando força em um ambiente claro e acolhedor" fetchpriority="high" /><span>Movimento possível, no seu ritmo.</span></div>
+    <header className="public-header">
+      <Link to="/" aria-label="Fortalfy, página inicial"><Brand /></Link>
+      <nav aria-label="Navegação institucional">
+        <a href="#jornada" onClick={event => scrollToSection(event, "jornada")}>Como funciona</a>
+        <a href="#profissionais" onClick={event => scrollToSection(event, "profissionais")}>Profissionais</a>
+        <a href="#experiencias" onClick={event => scrollToSection(event, "experiencias")}>Experiências</a>
+      </nav>
+      <div className="public-header-actions">
+        <Link to="/feed" className="public-login-link">Entrar</Link>
+        <Link to="/feed" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link>
+      </div>
+    </header>
+    <section className="public-hero" aria-labelledby="public-hero-title">
+      <img className="public-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher se exercita em um estúdio claro, com espaço aberto e luz natural" fetchPriority="high" decoding="async" />
+      <div className="public-hero-copy">
+        <span className="public-hero-kicker"><Activity size={15} /> BEM-ESTAR, NO SEU RITMO</span>
+        <h1 id="public-hero-title">Seu bem-estar começa <span>no próximo passo.</span></h1>
+        <p>Treine, encontre profissionais, cuide da alimentação e acompanhe sua evolução em uma experiência feita para o seu ritmo.</p>
+        <div className="public-hero-actions">
+          <Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link>
+          <Link to="/pass" className="button subtle">Encontrar um profissional</Link>
+        </div>
+        <div className="public-value-points"><ShieldCheck size={17} /><span>Treino, alimentação e comunidade em um só lugar.</span></div>
+      </div>
+      <div className="public-hero-photo-note"><span aria-hidden="true" /><span>Um começo possível, do seu jeito.</span></div>
     </section>
-    <section className="public-how-section" id="como-funciona"><div className="public-section-heading"><span className="eyebrow">UMA ROTINA QUE CABE EM VOCÊ</span><h2>Um espaço para cuidar do seu ritmo.</h2><p>Descubra o que faz sentido para a sua jornada, sem promessas ou metas prontas.</p></div><div className="public-benefit-grid"><article><span className="public-benefit-icon"><Activity size={20} /></span><h3>Movimento</h3><p>Encontre espaços e atividades para diferentes momentos.</p></article><article><span className="public-benefit-icon"><BadgeCheck size={20} /></span><h3>Cuidado profissional</h3><p>Conheça profissionais e informações fornecidas por parceiros.</p></article><article><span className="public-benefit-icon"><Users size={20} /></span><h3>Comunidade</h3><p>Compartilhe experiências com pessoas que também estão em movimento.</p></article><article><span className="public-benefit-icon"><HeartPulse size={20} /></span><h3>Evolução pessoal</h3><p>Acompanhe os registros que você escolhe fazer, no seu tempo.</p></article></div></section>
-    <section className="public-experiences-section" id="experiencias"><div className="public-section-heading"><span className="eyebrow">EXPERIÊNCIAS FORTALFY</span><h2>Escolha por onde começar.</h2><p>Áreas conectadas para apoiar movimento, alimentação e bem-estar.</p></div><div className="public-experience-grid">{experiences.map(item => <Link to={item.to} className="public-experience-card" key={item.title}><img src={visualPackAsset(item.image)} alt={item.alt} loading="lazy" /><span><small>{item.title.toUpperCase()}</small><strong>{item.description}</strong><i aria-hidden="true"><ArrowUpRight size={17} /></i></span></Link>)}</div></section>
-    <section className="public-routine-section" id="sobre"><img src={visualPackAsset("fortalfy-pack-wellness-morning.jpg")} alt="Mulher alongando em casa pela manhã" loading="lazy" /><div><span className="eyebrow">NO SEU RITMO</span><h2>Pequenos passos também contam.</h2><p>A Fortalfy reúne ferramentas e experiências para você construir uma rotina possível, com mais clareza e apoio.</p><Link to="/feed" className="button primary">Conhecer a plataforma <ArrowRight size={16} /></Link></div></section>
-    <section className="public-campaigns-section" aria-labelledby="campaigns-title"><div className="public-section-heading"><span className="eyebrow">CAMPANHAS FORTALFY</span><h2 id="campaigns-title">Inspiração para acompanhar seu ritmo.</h2><p>Conheça as campanhas Fortalfy e explore o catálogo.</p></div><div className="public-campaign-grid">{campaigns.map(item => <Link to="/shop" className="public-campaign-card" key={item.image} aria-label={`${item.label}. Explorar Fortalfy Shop.`}><img src={publicAsset(`fortalfy/campaign/${item.image}`)} alt={item.alt} loading="lazy" decoding="async" onError={event => { event.currentTarget.onerror = null; event.currentTarget.alt = "Imagem de campanha Fortalfy indisponível; fotografia alternativa de bem-estar."; event.currentTarget.src = visualPackAsset("fortalfy-pack-wellness-product.jpg"); }} /></Link>)}</div></section>
-    <footer className="public-footer"><Link to="/" aria-label="Fortalfy, início"><Brand /></Link><span>Seu bem-estar, no seu ritmo.</span><nav aria-label="Links institucionais"><a href="#sobre">Sobre</a><Link to="/benefits-terms">Termos e benefícios</Link><a href="mailto:fortalfy@gmail.com">Suporte</a></nav><small>© {new Date().getFullYear()} Fortalfy</small></footer>
+    <section className="public-how-section" id="jornada" aria-labelledby="public-journey-title">
+      <div className="public-section-heading">
+        <span className="eyebrow">UM PASSO DE CADA VEZ</span>
+        <h2 id="public-journey-title">Cuidado que cabe na sua vida.</h2>
+        <p>Escolha por onde começar. O resto pode vir no seu tempo.</p>
+      </div>
+      <div className="public-benefit-grid">
+        {journeys.map(({ title, detail, image, alt, to, icon: Icon }, index) => <Link to={to} className="public-benefit-card" key={title}>
+          <img src={visualPackAsset(image)} alt={alt} loading="lazy" decoding="async" />
+          <span className="public-benefit-number">0{index + 1}</span>
+          <span className="public-benefit-copy"><Icon size={17} /><small>{detail}</small><strong>{title}</strong><ArrowUpRight size={17} aria-hidden="true" /></span>
+        </Link>)}
+      </div>
+    </section>
+    <section className="public-professional-section" id="profissionais" aria-labelledby="public-professional-title">
+      <div className="public-professional-photo">
+        <img src={visualPackAsset("fortalfy-pack-professional-coaching.jpg")} alt="Profissional orienta uma aluna durante um treino em um estúdio iluminado" loading="lazy" decoding="async" />
+        <span><BadgeCheck size={16} /> Cadastro de parceiros analisado</span>
+      </div>
+      <div className="public-professional-copy">
+        <span className="eyebrow">CONFIANÇA EM PRIMEIRO LUGAR</span>
+        <h2 id="public-professional-title">Encontre apoio para seguir no seu ritmo.</h2>
+        <p>Explore academias, estúdios e profissionais parceiros. A Fortalfy analisa os cadastros antes de apresentar parceiros na plataforma.</p>
+        <Link to="/pass" className="public-professional-link">Encontrar um profissional <ArrowRight size={17} /></Link>
+      </div>
+    </section>
+    <section className="public-experiences-section" id="experiencias" aria-labelledby="public-experiences-title">
+      <div className="public-section-heading public-section-heading-left">
+        <span className="eyebrow">FORTALFY, POR INTEIRO</span>
+        <h2 id="public-experiences-title">Tudo se conecta. Você escolhe o caminho.</h2>
+        <p>Recursos para acompanhar uma rotina de bem-estar mais simples e possível.</p>
+      </div>
+      <div className="public-experience-grid">{experiences.map(item => <Link to={item.to} className="public-experience-card" key={item.title}>
+        <img src={visualPackAsset(item.image)} alt={item.alt} loading="lazy" decoding="async" />
+        <span><small>{item.label}</small><strong>{item.title}</strong><span>{item.description}</span><i aria-hidden="true"><ArrowUpRight size={17} /></i></span>
+      </Link>)}</div>
+    </section>
+    <section className="public-final-cta" id="sobre" aria-labelledby="public-final-title">
+      <img src={visualPackAsset("fortalfy-pack-outdoor-wellness.jpg")} alt="Pessoas se movimentam juntas ao ar livre em um parque ao fim da tarde" loading="lazy" decoding="async" />
+      <div className="public-final-copy">
+        <span className="eyebrow">NO SEU TEMPO. DO SEU JEITO.</span>
+        <h2 id="public-final-title">Seu próximo passo começa agora.</h2>
+        <p>Pequenos passos também fazem parte de uma jornada.</p>
+        <div className="public-hero-actions">
+          <Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link>
+          <Link to="/pass" className="public-final-link">Encontrar um profissional</Link>
+        </div>
+      </div>
+    </section>
+    <footer className="public-footer">
+      <Link to="/" aria-label="Fortalfy, início"><Brand /></Link>
+      <span>Seu bem-estar, no seu ritmo.</span>
+      <nav aria-label="Links institucionais"><Link to="/benefits-terms">Termos e benefícios</Link><a href="mailto:fortalfy@gmail.com">Suporte</a></nav>
+      <small>© {new Date().getFullYear()} Fortalfy</small>
+    </footer>
   </main>;
 }
-
 function SectionTitle({ title, action, to }) {
   return <div className="section-title-row"><h2>{title}</h2>{action && <Link to={to || "/pass"} className="text-link">{action}<ArrowRight size={15} /></Link>}</div>;
 }
