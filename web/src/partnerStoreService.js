@@ -36,6 +36,26 @@ export async function loadStorefront(client, profileId) {
   };
 }
 
+// Public marketplace results are governed by the database RLS policies. Only
+// active listings from approved partner accounts/content are returned.
+export async function loadMarketplaceProducts(client) {
+  if (!client) throw new Error("A vitrine está temporariamente indisponível.");
+  const { data, error } = await client.from("partner_store_products")
+    .select("id,profile_id,name,category,description,price,image_path,is_launch,created_at")
+    .eq("is_active", true)
+    .order("is_launch", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return Promise.all((data || []).map(async product => ({
+    ...product,
+    sku: product.id,
+    image: await signMedia(client, product.image_path),
+    imageAlt: `Foto de ${product.name}`,
+    detail: product.description || "Consulte a loja parceira para obter detalhes deste produto.",
+    specs: [`Categoria: ${product.category}`, "Preço e disponibilidade informados pela loja parceira"],
+  })));
+}
+
 export async function saveStoreProduct(client, profile, userId, fields, existing = null) {
   requireStoreOwner(profile, userId);
   if (!client) throw new Error("A conexão com a loja está indisponível.");

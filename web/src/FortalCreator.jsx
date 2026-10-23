@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgeCheck, BookOpen, Camera, CheckCircle2, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, BookOpen, Camera, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users } from "lucide-react";
 import { loadProfessionalApplications, professionalStatusLabel } from "./professionalService.js";
 import Brand from "./Brand.jsx";
 import { brandCampaignAsset } from "./assetPath.js";
@@ -155,7 +155,7 @@ function CreatorLanding({ onApply, onAcademy, onLevels }) {
 
     <section className="creator-landing-section creator-landing-levels" aria-labelledby="creator-landing-levels-title"><div className="creator-section-heading"><span className="eyebrow">EVOLUÇÃO COM CONSISTÊNCIA</span><h2 id="creator-landing-levels-title">Desenvolva sua presença.</h2><p>FortalCreator Start, Pro e Oficial representam etapas de participação e desenvolvimento dentro do programa. Os critérios ainda dependem da configuração das métricas.</p></div><Levels titlePrefix="FortalCreator"/><button type="button" className="creator-inline-link" onClick={onLevels}>Ver detalhes dos níveis <ArrowRight size={15}/></button></section>
 
-    <section className="creator-testimonial" aria-labelledby="creator-testimonial-title"><div className="creator-testimonial-image"><img src="/assets/creator/09_mostre_sua_personalidade.jpg" alt="Criadora em um momento espontâneo" loading="lazy" decoding="async"/></div><div className="creator-testimonial-copy"><span className="creator-demo-label"><CheckCircle2 size={14}/> DEPOIMENTO DEMONSTRATIVO</span><h2 id="creator-testimonial-title">Toda jornada criativa começa de algum lugar.</h2><blockquote>“Eu sempre quis criar conteúdo, mas não sabia por onde começar. O FortalCreator me mostrou que posso aprender, desenvolver meu estilo e fazer parte de uma comunidade que também está evoluindo.”</blockquote><p>Texto ilustrativo. Não representa o relato de uma pessoa ou creator real.</p></div></section>
+    <section className="creator-testimonial" aria-labelledby="creator-testimonial-title"><div className="creator-testimonial-image"><img src="/assets/creator/09_mostre_sua_personalidade.jpg" alt="Conteúdo visual da campanha FortalCreator" loading="lazy" decoding="async"/></div><div className="creator-testimonial-copy"><span className="eyebrow">PROGRAMA FORTALCREATOR</span><h2 id="creator-testimonial-title">Crie com autenticidade. Evolua com consistência.</h2><p>O FortalCreator reúne oportunidades de aprendizado, campanhas e colaboração. As candidaturas e participações são avaliadas conforme os critérios e a disponibilidade do programa.</p><button type="button" className="button primary" onClick={onApply}>Conhecer o programa <ArrowRight size={16}/></button></div></section>
 
     <section className="creator-final-cta" aria-labelledby="creator-final-title"><span className="eyebrow">FORTALCREATOR</span><h2 id="creator-final-title">Seu próximo passo começa aqui.</h2><p>Comece a desenvolver sua criatividade, sua presença digital e suas conexões.</p><button type="button" className="button creator-final-button" onClick={onApply}>Quero fazer parte <ArrowRight size={16}/></button><small>A candidatura passa por análise. A participação depende dos critérios do programa.</small></section>
 

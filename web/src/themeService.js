@@ -7,7 +7,7 @@ function browserStorage() {
 }
 
 export function normalizeThemePreference(value) {
-  return THEME_PREFERENCES.includes(value) ? value : "light";
+  return THEME_PREFERENCES.includes(value) ? value : "dark";
 }
 
 export function resolveThemePreference(preference, systemPrefersDark = true) {
@@ -23,7 +23,7 @@ export function readThemePreference(storage = browserStorage(), userId = null) {
   try {
     return normalizeThemePreference(storage?.getItem(themeStorageKey(userId)));
   } catch {
-    return "light";
+    return "dark";
   }
 }
 
@@ -47,8 +47,8 @@ export function applyThemePreference(preference, systemPrefersDark = true, docum
 
 export function initializeThemePreference() {
   const preference = readThemePreference();
-  let systemPrefersDark = false;
-  try { systemPrefersDark = globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false; } catch { /* use the light default */ }
+  let systemPrefersDark = true;
+  try { systemPrefersDark = globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true; } catch { /* use the dark default */ }
   applyThemePreference(preference, systemPrefersDark);
   return preference;
 }

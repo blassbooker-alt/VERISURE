@@ -2220,8 +2220,8 @@ function AppContent() {
       <Route path="/professional/manage" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/partner/:type" element={<LivePartnerScreen client={supabase} />} />
       <Route path="/hire/:role" element={<LiveHiringScreen key={location.pathname} client={supabase} session={authSession} notify={notify} />} />
-      <Route path="/shop" element={<FortalShop cart={shopCart} setCart={setShopCart} notify={notify} />} />
-      <Route path="/cart" element={<FortalShop cart={shopCart} setCart={setShopCart} initialDialog="cart" notify={notify} />} />
+      <Route path="/shop" element={<FortalShop client={supabase} cart={shopCart} setCart={setShopCart} notify={notify} />} />
+      <Route path="/cart" element={<FortalShop client={supabase} cart={shopCart} setCart={setShopCart} initialDialog="cart" notify={notify} />} />
       <Route path="/studio" element={<FortalfyStudio artwork={studioArtwork} setArtwork={setStudioArtwork} savedArts={savedArts} setSavedArts={setSavedArts} setFeedArts={setFeedArts} notify={notify} />} />
       <Route path="/trainer" element={<Dashboard key="trainer" role="trainer" client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} onRetryProfile={retrySocialProfile} />} />
       <Route path="/nutritionist" element={<Dashboard key="nutritionist" role="nutritionist" client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} onRetryProfile={retrySocialProfile} />} />
