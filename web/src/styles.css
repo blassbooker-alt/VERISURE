@@ -8819,6 +8819,270 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 :root[data-text-scale="150"] :is(.social-guest-empty h2){
   font-size: clamp(33px, 6vw, 45px);
 }
+/* Final Fortalfy palette: calm green-tinted canvases and consistent surfaces. */
+html[data-theme="light"]:not([data-high-contrast="true"]) {
+--brand-forest: #173f2d;
+--brand-green: #245c3a;
+--brand-green-bright: #34764a;
+--brand-lime: #b9d85b;
+--brand-soft: #edf3e9;
+--page-bg: #f6f8f5;
+--surface: #ffffff;
+--text: #202923;
+--muted: #58665c;
+--border: #e2e8e2;
+--color-background: #f6f8f5;
+--color-background-secondary: #edf3e9;
+--color-surface: #ffffff;
+--color-surface-secondary: #f3f6f2;
+--color-surface-elevated: #ffffff;
+--color-text-primary: #202923;
+--color-text-secondary: #58665c;
+--color-border: #e2e8e2;
+--color-primary: #245c3a;
+--color-primary-foreground: #ffffff;
+--color-success: #286443;
+--color-danger: #a33b32;
+--color-input-background: #ffffff;
+--color-navigation-background: #ffffff;
+--color-focus: #245c3a;
+--forest: #245c3a;
+--deep: #173f2d;
+--lime: #b9d85b;
+--canvas: #f6f8f5;
+--card: #ffffff;
+--line: #e2e8e2;
+--ink-950: #202923;
+--ink-700: #46564b;
+--quiet: #58665c;
+--muted-500: #58665c;
+--brand-shadow-sm: 0 3px 12px #173a240b;
+--brand-shadow-md: 0 10px 28px #173a2414;
+--brand-shadow-surface: 0 8px 24px #173a240b;
+--brand-shadow-interaction: 0 14px 32px #173a2418;
+--brand-shadow-feature: 0 18px 42px #173a2414;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) {
+--brand-forest: #0d2016;
+--brand-green: #245c3a;
+--brand-green-bright: #34764a;
+--brand-lime: #b9d85b;
+--brand-soft: #1e3023;
+--page-bg: #0e1510;
+--surface: #172019;
+--text: #edf3ed;
+--muted: #a8b5aa;
+--border: #2e3c32;
+--color-background: #0e1510;
+--color-background-secondary: #141e16;
+--color-surface: #172019;
+--color-surface-secondary: #1c281f;
+--color-surface-elevated: #202c23;
+--color-text-primary: #edf3ed;
+--color-text-secondary: #a8b5aa;
+--color-border: #2e3c32;
+--color-primary: #b9d85b;
+--color-primary-foreground: #17200c;
+--color-success: #a6d18a;
+--color-danger: #ffb8ad;
+--color-input-background: #111a13;
+--color-navigation-background: #172019;
+--color-focus: #c5e27a;
+--forest: #245c3a;
+--deep: #0e1510;
+--lime: #b9d85b;
+--canvas: #0e1510;
+--card: #172019;
+--line: #2e3c32;
+--ink-950: #edf3ed;
+--ink-700: #c2cdc4;
+--quiet: #a8b5aa;
+--muted-500: #a8b5aa;
+--brand-shadow-sm: 0 3px 14px #00000020;
+--brand-shadow-md: 0 12px 30px #0000002b;
+--brand-shadow-surface: 0 8px 24px #00000020;
+--brand-shadow-interaction: 0 14px 32px #00000030;
+--brand-shadow-feature: 0 18px 42px #00000028;
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) body,
+html[data-theme="light"]:not([data-high-contrast="true"]) #root,
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app,
+html[data-theme="light"]:not([data-high-contrast="true"]) .app-screen,
+html[data-theme="light"]:not([data-high-contrast="true"]) .professional-root,
+html[data-theme="light"]:not([data-high-contrast="true"]) .shop-screen {
+color: var(--color-text-primary);
+background-color: var(--color-background) !important;
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app {
+background-image:
+  radial-gradient(ellipse at 10% 0%, #b7d1a51c, transparent 34rem),
+  linear-gradient(180deg, var(--color-background-secondary), var(--color-background) 23rem) !important;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app {
+background-color: var(--color-background);
+background-image:
+  radial-gradient(ellipse at 10% 0%, #31583a20, transparent 34rem),
+  linear-gradient(180deg, var(--color-background-secondary), var(--color-background) 23rem);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app :is(
+.quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
+.delivery-card, .food-card, .empty-state, .gym-card, .partner-discovery-shortcuts a, .professional-care,
+.profile-identity-card, .profile-content-section, .gym-access-card, .gym-admin-panel, .gym-access-history,
+.gym-partner-unit, .profile-post-card, .weekly-plan-card, .weekly-manager, .weekly-exercise, .weekly-meal-card,
+.weekly-empty, .partner-product-form, .partner-store-product, .social-discovery-card, .social-person-card,
+.social-messages-panel, .profile-privacy-choice, .social-profile-card, .dash-panel, .measurement-card,
+.adherence-card, .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card,
+.home-next-step, .creator-card, .creator-story, .creator-welcome
+) {
+color: var(--color-text-primary);
+background-color: var(--color-surface);
+border-color: var(--color-border);
+box-shadow: var(--brand-shadow-sm);
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+.quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
+.delivery-card, .food-card, .empty-state, .gym-card, .partner-discovery-shortcuts a, .professional-care,
+.profile-identity-card, .profile-content-section, .gym-access-card, .gym-admin-panel, .gym-access-history,
+.gym-partner-unit, .profile-post-card, .weekly-plan-card, .weekly-manager, .weekly-exercise, .weekly-meal-card,
+.weekly-empty, .partner-product-form, .partner-store-product, .social-discovery-card, .social-person-card,
+.social-messages-panel, .profile-privacy-choice, .social-profile-card, .dash-panel, .measurement-card,
+.adherence-card, .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card,
+.home-next-step, .creator-card, .creator-story, .creator-welcome
+) {
+color: var(--color-text-primary);
+background-color: var(--color-surface);
+border-color: var(--color-border);
+box-shadow: var(--brand-shadow-sm);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app :is(
+.home-next-step, .creator-card, .creator-story, .creator-welcome
+) :is(h1, h2, h3, h4, strong, p) {
+color: var(--color-text-primary);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app :is(
+.creator-card p, .creator-story-heading p, .creator-story-disclosure, .creator-status, .creator-privacy,
+.home-next-step-copy p
+) { color: var(--color-text-secondary); }
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+.home-next-step, .creator-card, .creator-story, .creator-welcome
+) :is(h1, h2, h3, h4, strong, p) {
+color: var(--color-text-primary);
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+.creator-card p, .creator-story-heading p, .creator-story-disclosure, .creator-status, .creator-privacy,
+.home-next-step-copy p
+) { color: var(--color-text-secondary); }
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .creator-welcome,
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .home-next-step-icon {
+background-color: var(--color-surface-secondary);
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .creator-welcome,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .home-next-step-icon {
+background-color: var(--color-surface-secondary);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .home-next-step-icon,
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .creator-welcome > div > svg {
+color: var(--color-primary);
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .home-next-step-icon,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .creator-welcome > div > svg {
+color: var(--color-primary);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .button.primary {
+color: var(--color-primary-foreground);
+background: var(--color-primary);
+box-shadow: 0 5px 14px #245c3a22;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button.primary {
+color: #ffffff;
+background: #245c3a;
+box-shadow: 0 5px 14px #00000030;
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .button.subtle,
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .button.light-button {
+color: var(--color-text-primary);
+background: var(--color-surface-secondary);
+border-color: var(--color-border);
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button.subtle,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button.light-button {
+color: var(--color-text-primary);
+background: var(--color-surface-elevated);
+border-color: var(--color-border);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .mobile-header,
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav {
+background-color: color-mix(in srgb, var(--color-navigation-background) 94%, transparent);
+border-color: var(--color-border);
+box-shadow: 0 5px 20px #173a240b;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .mobile-header,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav {
+background-color: color-mix(in srgb, var(--color-navigation-background) 96%, transparent);
+border-color: var(--color-border);
+box-shadow: 0 8px 24px #00000026;
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app :is(
+.filter-chip, .food-filter-chip, .shop-category-chip, .shop-sort, .feed-filters button,
+.profile-tabs button, .partner-tabs button, .social-filter-tabs button, .stories-filter-row button,
+.social-community-tabs a
+).active,
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app :is(
+.shop-category-chip.is-active, .feed-filters button.selected, .profile-tabs button.active,
+.partner-tabs button.active, .social-filter-tabs button.active, .stories-filter-row button.selected,
+.social-community-tabs a.active
+) {
+color: #ffffff;
+background-color: var(--color-primary);
+border-color: var(--color-primary);
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+.filter-chip, .food-filter-chip, .shop-category-chip, .shop-sort, .feed-filters button,
+.profile-tabs button, .partner-tabs button, .social-filter-tabs button, .stories-filter-row button,
+.social-community-tabs a
+).active,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+.shop-category-chip.is-active, .feed-filters button.selected, .profile-tabs button.active,
+.partner-tabs button.active, .social-filter-tabs button.active, .stories-filter-row button.selected,
+.social-community-tabs a.active
+) {
+color: var(--color-primary-foreground);
+background-color: var(--color-primary);
+border-color: var(--color-primary);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) :is(button, a, input, textarea, select):focus-visible,
+html[data-theme="dark"]:not([data-high-contrast="true"]) :is(button, a, input, textarea, select):focus-visible {
+outline-color: var(--color-focus, var(--color-primary));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+.mobile-app :is(.mobile-header, .bottom-nav, .home-next-step, .creator-card, .creator-story, .creator-welcome) {
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+}
 @media (max-width: 600px){
 
   :root[data-text-scale="85"] :is(.social-guest-feed-header h1){
