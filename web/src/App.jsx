@@ -38,6 +38,7 @@ import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
 } from "./partnerService.js";
+import { loadMarketplaceProducts } from "./partnerStoreService.js";
 import { brandCampaignAsset, fortalfyAsset, publicAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import { gyms, profile } from "./data.js";
@@ -372,11 +373,30 @@ const HOME_BRAND_CAMPAIGNS = [
   ["fortalfy_gym_20_manifesto.jpg", "Manifesto Fortalfy"]
 ].map(([filename, title], index) => ({ image: brandCampaignAsset(filename), title, number: String(index + 1).padStart(2, "0") }));
 
-function HomeScreen({ activity, onActivity, session, profile: accountProfile, activityStatus, activityError, notify }) {
+function HomeScreen({ activity, onActivity, session, profile: accountProfile, activityError, notify }) {
+  const [homePartners, setHomePartners] = useState([]);
+  const [homeProducts, setHomeProducts] = useState([]);
+  const [discoveryStatus, setDiscoveryStatus] = useState({ partners: "loading", products: "loading" });
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([loadApprovedPartners(supabase), loadMarketplaceProducts(supabase)]).then(([partnersResult, productsResult]) => {
+      if (!active) return;
+      setHomePartners(partnersResult.status === "fulfilled" ? partnersResult.value.slice(0, 3) : []);
+      setHomeProducts(productsResult.status === "fulfilled" ? productsResult.value.slice(0, 4) : []);
+      setDiscoveryStatus({ partners: partnersResult.status === "fulfilled" ? "ready" : "error", products: productsResult.status === "fulfilled" ? "ready" : "error" });
+    });
+    return () => { active = false; };
+  }, []);
   const metadata = session?.user?.user_metadata || {};
   const displayName = accountProfile?.display_name || metadata.display_name || metadata.full_name || metadata.name || "";
   const firstName = displayName.trim().split(/\s+/)[0];
   const isSignedIn = Boolean(session?.user?.id);
+  const today = new Date();
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 6) % 7));
+  const workoutsThisWeek = activity.workoutEntries.filter(entry => {
+    const date = new Date(`${entry.date}T00:00:00`);
+    return Number.isFinite(date.getTime()) && date >= monday && date <= today;
+  }).length;
   const nextStep = !isSignedIn
     ? { label: "Explorar parceiros", title: "Escolha por onde começar.", description: "Descubra academias e profissionais com cadastro aprovado no FortalPass.", to: "/pass", icon: MapPin }
     : activityError
@@ -386,77 +406,34 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
         : !activity.mealsLogged
           ? { label: "Abrir diário alimentar", title: "Cuide da sua rotina do seu jeito.", description: "Registre uma refeição quando fizer sentido para você, sem metas ou cobranças.", to: "/nutrition", icon: Utensils }
           : { label: "Acompanhar meu progresso", title: "Cada registro faz parte do seu caminho.", description: "Revisite suas atividades e continue no ritmo que funciona para você.", to: "/progress", icon: Activity };
-  const scrollToEcosystem = () => document.getElementById("home-ecosystem")?.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-    block: "start",
-  });
+  const scrollToEcosystem = () => document.getElementById("home-ecosystem")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  const featured = [
+    { campaign: HOME_BRAND_CAMPAIGNS[0], to: "/workout" },
+    { campaign: HOME_BRAND_CAMPAIGNS[7], to: "/nutrition" },
+    { campaign: HOME_BRAND_CAMPAIGNS[12], to: "/feed" },
+    { campaign: HOME_BRAND_CAMPAIGNS[19], to: "/creator" },
+  ];
+  const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   return <Screen className="home-screen">
     <section className="home-hero">
       <img className="home-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="" aria-hidden="true" loading="eager" decoding="async" />
-      <div className="home-hero-top"><span className="location-label">FORTALFY · BEM-ESTAR</span><span className="status-live">NO SEU RITMO</span></div>
-      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Movimento, comunidade e bem-estar para acompanhar você em cada etapa da sua jornada.</span><div className="home-hero-actions"><Link to={isSignedIn ? "/workout" : "/pass"} className="hero-cta">Começar minha jornada <ArrowRight size={16} /></Link><button type="button" className="hero-secondary-cta" onClick={scrollToEcosystem}>Explorar a Fortalfy <ArrowDownRight size={16} /></button></div></div>
-      <div className="hero-activity">
-        <div className="activity-icon"><Dumbbell size={20} /></div>
-        <div className="activity-text"><span>SEUS REGISTROS</span><strong>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</strong><small>{activityError || activityStatus}</small></div>
-        <Link to="/workout" className="circle-arrow" aria-label="Abrir registros de treino"><ArrowRight size={19} /></Link>
-      </div>
+      <div className="home-hero-top"><span className="location-label">FORTALFY · TREINO, CONTEÚDO E COMUNIDADE</span><Link to="/profile" className="home-hero-profile" aria-label="Abrir meu perfil">{accountProfile?.avatar ? <img src={accountProfile.avatar} alt="" /> : <span>{firstName?.slice(0, 1).toUpperCase() || <Users size={16} />}</span>}Meu perfil <ArrowUpRight size={14} /></Link></div>
+      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu próximo nível<br />começa hoje.</h1><span className="hero-copy">Treine, acompanhe sua evolução e encontre tudo o que precisa para manter sua rotina em movimento.</span><div className="home-hero-actions"><Link to={isSignedIn ? "/workout" : "/pass"} className="hero-cta">{isSignedIn ? "Começar treino" : "Explorar parceiros"} <ArrowRight size={16} /></Link><button type="button" className="hero-secondary-cta" onClick={scrollToEcosystem}>Explorar Fortalfy <ArrowDownRight size={16} /></button></div></div>
+      <div className="hero-activity"><div className="activity-icon"><Dumbbell size={20} /></div><div className="activity-text"><span>JORNADA DESTA SEMANA</span><strong>{workoutsThisWeek} {workoutsThisWeek === 1 ? "treino registrado" : "treinos registrados"}</strong><small>{activityError || (workoutsThisWeek ? "Registros desde segunda-feira." : "Seu primeiro registro começa sua evolução.")}</small></div><Link to="/workout" className="circle-arrow" aria-label="Abrir registros de treino"><ArrowRight size={19} /></Link></div>
     </section>
     <div className="screen-inner home-inner">
-      <section className="home-manifesto" aria-labelledby="home-manifesto-title">
-        <div className="home-manifesto-copy">
-          <span className="eyebrow">NOSSO MANIFESTO</span>
-          <h2 id="home-manifesto-title">Seu ritmo. Sua força.<br />Seu próximo passo.</h2>
-          <p>Movimento, comunidade e bem-estar para ajudar você a evoluir de forma possível, consistente e verdadeira.</p>
-          <button type="button" className="home-manifesto-link" onClick={scrollToEcosystem}>Conheça a Fortalfy <ArrowDownRight size={16} /></button>
-        </div>
-        <div className="home-intent-links" aria-label="Comece pela sua prioridade">
-          <Link to="/workout"><Dumbbell size={18} /><span>Quero me movimentar</span><ArrowUpRight size={16} /></Link>
-          <Link to="/pass"><BadgeCheck size={18} /><span>Quero encontrar um profissional</span><ArrowUpRight size={16} /></Link>
-          <Link to="/nutrition"><Utensils size={18} /><span>Quero organizar minha alimentação</span><ArrowUpRight size={16} /></Link>
-          <Link to="/progress"><Activity size={18} /><span>Quero acompanhar meu progresso</span><ArrowUpRight size={16} /></Link>
-          <Link to="/reels"><Play size={18} /><span>Quero assistir conteúdos</span><ArrowUpRight size={16} /></Link>
-          <Link to="/feed"><Users size={18} /><span>Quero participar da comunidade</span><ArrowUpRight size={16} /></Link>
-          <Link to="/creator"><Sparkles size={18} /><span>Quero ser creator</span><ArrowUpRight size={16} /></Link>
-          <Link to="/shop"><ShoppingBag size={18} /><span>Quero explorar produtos</span><ArrowUpRight size={16} /></Link>
-        </div>
+      <section className="home-journey" aria-labelledby="home-journey-title"><div className="home-section-heading"><span className="eyebrow">SUA JORNADA</span><h2 id="home-journey-title">O que você já colocou em movimento</h2><p>Um resumo dos registros reais da sua conta.</p></div>
+        <div className="home-journey-grid"><Link to="/workout" className="home-journey-card"><span className="home-journey-icon"><Dumbbell size={19} /></span><strong>{activity.workoutsLogged}</strong><span>treinos registrados</span><small>{workoutsThisWeek} nesta semana</small></Link><Link to="/nutrition" className="home-journey-card"><span className="home-journey-icon"><Utensils size={19} /></span><strong>{activity.mealsLogged}</strong><span>refeições registradas</span><small>No seu diário alimentar</small></Link><button type="button" className="home-journey-card" onClick={async () => { if (await onActivity("water")) notify("250 ml de água registrados."); }} disabled={Boolean(activityError)}><span className="home-journey-icon"><HeartPulse size={19} /></span><strong>{(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L</strong><span>água registrada</span><small>Adicionar 250 ml <Plus size={13} /></small></button></div>
+        {!activity.workoutsLogged && !activity.mealsLogged && <p className="home-journey-empty">Comece seu primeiro registro para acompanhar sua evolução. Não criamos metas ou atividades por você.</p>}
       </section>
-      <section className="home-brand-gallery" aria-labelledby="home-brand-gallery-title">
-        <div className="home-brand-gallery-heading"><span className="eyebrow">CAMPANHAS FORTALFY</span><h2 id="home-brand-gallery-title">A identidade Fortalfy em movimento</h2><p>O pack completo de fotos da marca, reunido em um s\u00f3 lugar.</p></div>
-        <div className="home-brand-campaign" aria-label="Galeria com as 20 fotos oficiais da Fortalfy">
-          {HOME_BRAND_CAMPAIGNS.map(({ image, title, number }) => <article key={image}><img src={image} alt={`${title}: campanha visual Fortalfy`} loading="lazy" decoding="async" /><span className="home-brand-campaign-brand">FORTALFY <small>{number} / 20</small></span><strong>{title}</strong></article>)}
-        </div>
-      </section>
-      <section className="home-ecosystem" id="home-ecosystem" aria-labelledby="home-ecosystem-title">
-        <div className="module-catalog-heading">
-          <span className="eyebrow">SEU UNIVERSO DE BEM-ESTAR</span>
-          <h2 id="home-ecosystem-title">Uma jornada, muitos caminhos</h2>
-          <p>Explore áreas conectadas para movimento, alimentação, conteúdo, comunidade e progresso.</p>
-        </div>
-        <div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">
-          {HOME_MODULES.map(({ to, skin, tag, name, title, description, image, icon: Icon }) => <Link to={to} className={`module-card module-card-${skin}`} key={skin}>
-            {image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="module-card-mark" aria-hidden="true"><Icon size={82} /></span>}
-            <span className="module-card-shade" aria-hidden="true" />
-            <span className="module-card-top"><span>{tag}</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
-            <span className="module-card-copy"><small>{name}</small><strong>{title}</strong><span>{description}</span></span>
-          </Link>)}
-        </div>
-      </section>
-      <section className="home-next-step" id="home-next-step" aria-labelledby="home-next-step-title">
-        <div className="home-next-step-icon"><nextStep.icon size={23} aria-hidden="true" /></div>
-        <div className="home-next-step-copy"><span className="eyebrow">SEU PRÓXIMO PASSO</span><h2 id="home-next-step-title">{nextStep.title}</h2><p>{nextStep.description}</p></div>
-        <Link to={nextStep.to} className="button primary home-next-step-action">{nextStep.label} <ArrowRight size={16} /></Link>
-      </section>
-      <section className="performance-card">
-        <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
-        {activity.workoutsLogged || activity.mealsLogged
-          ? <div className="performance-stats"><span><strong>{activity.workoutsLogged}</strong> treinos registrados</span><span><strong>{activity.mealsLogged}</strong> refeições registradas</span></div>
-          : <p className="home-empty-progress">Seu próximo passo pode começar hoje. Registre um treino ou uma refeição para acompanhar sua rotina.</p>}
-        <div className="home-local-actions"><Link to="/workout" className="performance-link">Abrir treinos <ArrowRight size={16} /></Link><Link to="/nutrition" className="performance-link">Abrir diário alimentar <ArrowRight size={16} /></Link></div>
-      </section>
-      <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
-      <div className="home-water-action"><button className="button subtle" onClick={async () => {
-        if (await onActivity("water")) notify("250 ml de água registrados.");
-      }} disabled={Boolean(activityError)}><HeartPulse size={18} /> Registrar 250 ml de água</button><span>{(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L registrados</span></div>
+      <section className="home-next-step" id="home-next-step" aria-labelledby="home-next-step-title"><div className="home-next-step-icon"><nextStep.icon size={23} aria-hidden="true" /></div><div className="home-next-step-copy"><span className="eyebrow">SEU PRÓXIMO PASSO</span><h2 id="home-next-step-title">{nextStep.title}</h2><p>{nextStep.description}</p></div><Link to={nextStep.to} className="button primary home-next-step-action">{nextStep.label} <ArrowRight size={16} /></Link></section>
+      <section className="home-ecosystem" id="home-ecosystem" aria-labelledby="home-ecosystem-title"><div className="module-catalog-heading"><span className="eyebrow">EXPLORE O ECOSSISTEMA</span><h2 id="home-ecosystem-title">Escolha seu próximo desafio</h2><p>Treino, profissionais, conteúdo e nutrição em um só lugar.</p></div><div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">{HOME_MODULES.map(({ to, skin, tag, name, title, description, image, icon: Icon }) => <Link to={to} className={`module-card module-card-${skin}`} key={skin}>{image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="module-card-mark" aria-hidden="true"><Icon size={82} /></span>}<span className="module-card-shade" aria-hidden="true" /><span className="module-card-top"><span>{tag}</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span><span className="module-card-copy"><small>{name}</small><strong>{title}</strong><span>{description}</span></span></Link>)}</div></section>
+      <section className="home-featured" aria-labelledby="home-featured-title"><div className="home-section-heading"><span className="eyebrow">INSPIRAÇÃO FORTALFY</span><h2 id="home-featured-title">Conteúdo para colocar você em movimento</h2><p>Campanhas oficiais para inspirar sua rotina. Veja também publicações da comunidade.</p></div><div className="home-featured-grid">{featured.map(({ campaign: { image, title, number }, to }) => <Link key={number} to={to} className="home-featured-card"><img src={image} alt={`Campanha Fortalfy: ${title}`} loading="lazy" decoding="async" /><span className="home-featured-label">CAMPANHA FORTALFY · {number}</span><strong>{title}</strong><span className="home-featured-arrow"><ArrowUpRight size={18} /></span></Link>)}</div><Link to="/feed" className="home-inline-link">Ver publicações da comunidade <ArrowRight size={15} /></Link></section>
+      <section className="performance-card home-performance"><div className="home-performance-heading"><div><span className="eyebrow">PROGRESSO E DESEMPENHO</span><h2>Consistência se constrói com registros</h2><p>Seus números atuais, sem metas inventadas.</p></div><img src={brandCampaignAsset("fortalfy_gym_19_constancia.jpg")} alt="" aria-hidden="true" loading="lazy" /></div><div className="home-performance-metrics"><div><strong>{workoutsThisWeek}</strong><span>treinos esta semana</span><small>Registros desde segunda-feira</small></div><div><strong>{activity.workoutsLogged}</strong><span>treinos no total</span><Link to="/progress">Ver histórico <ArrowRight size={14} /></Link></div><div><strong>{activity.mealsLogged}</strong><span>refeições no diário</span><Link to="/nutrition">Abrir diário <ArrowRight size={14} /></Link></div></div>{!activity.workoutsLogged && !activity.mealsLogged && <p className="home-empty-progress">Registre um treino ou uma refeição para começar a acompanhar sua evolução.</p>}</section>
+      <section className="home-discovery-section" aria-labelledby="home-partners-title"><div className="home-section-heading"><span className="eyebrow">FORTALPASS</span><h2 id="home-partners-title">Profissionais e parceiros</h2><p>Perfis aprovados e listagens publicadas na plataforma.</p></div>{homePartners.length ? <div className="home-live-cards">{homePartners.map(partner => <Link to={`/profile/${partner.profileId}`} className="home-live-partner" key={partner.id}><img src={partner.avatar || visualPackAsset("fortalfy-pack-professional-team.jpg")} alt={partner.avatar ? `Foto de ${partner.name}` : "Imagem de apresentação do FortalPass"} loading="lazy" /><span className="home-live-card-shade" /><span className="home-live-card-tag"><BadgeCheck size={14} /> PERFIL APROVADO</span><strong>{partner.name}</strong><small>{partner.kind === "academia" ? "Academia" : partner.kind === "personal" ? "Personal trainer" : "Nutricionista"}{partner.city ? ` · ${partner.city}` : ""}</small><span className="home-live-card-action">Ver perfil <ArrowRight size={14} /></span></Link>)}</div> : <div className="home-discovery-empty"><img src={visualPackAsset("fortalfy-pack-professional-team.jpg")} alt="Equipe profissional em ambiente de bem-estar" loading="lazy" /><div><strong>{discoveryStatus.partners === "loading" ? "Buscando parceiros" : discoveryStatus.partners === "error" ? "Parceiros temporariamente indisponíveis" : "Novos parceiros em breve"}</strong><p>{discoveryStatus.partners === "loading" ? "Carregando perfis aprovados." : discoveryStatus.partners === "error" ? "Não foi possível carregar os perfis agora." : "Ainda não há perfis aprovados para exibir nesta área."}</p><Link to="/pass">Explorar FortalPass <ArrowRight size={15} /></Link></div></div>}<Link to="/pass" className="home-inline-link">Ver academias e profissionais <ArrowRight size={15} /></Link></section>
+      <section className="home-discovery-section" aria-labelledby="home-products-title"><div className="home-section-heading"><span className="eyebrow">FORTALSHOP</span><h2 id="home-products-title">Produtos e suplementos</h2><p>Itens, fotos e preços publicados por lojas parceiras.</p></div>{homeProducts.length ? <div className="home-live-products">{homeProducts.map(product => <Link to="/shop" className="home-live-product" key={product.id}><img src={product.image || brandCampaignAsset("fortalfy_gym_02_whey.jpg")} alt={product.image ? product.imageAlt : "Imagem Fortalfy; foto do produto indisponível"} loading="lazy" /><div><span>{product.category}</span><strong>{product.name}</strong><b>{formatPrice(product.price)}</b><small>Preço publicado pela loja parceira</small></div></Link>)}</div> : <div className="home-discovery-empty home-product-empty"><img src={brandCampaignAsset("fortalfy_gym_13_acessorios.jpg")} alt="Campanha Fortalfy de acessórios para treino" loading="lazy" /><div><strong>{discoveryStatus.products === "loading" ? "Carregando o catálogo" : discoveryStatus.products === "error" ? "Catálogo temporariamente indisponível" : "Nenhum produto publicado"}</strong><p>{discoveryStatus.products === "loading" ? "Buscando produtos de lojas parceiras." : discoveryStatus.products === "error" ? "Não foi possível carregar o catálogo agora." : "Quando uma loja parceira publicar produtos ativos, eles aparecerão aqui com preço e foto reais."}</p><Link to="/shop">Abrir FortalShop <ArrowRight size={15} /></Link></div></div>}<Link to="/shop" className="home-inline-link">Explorar FortalShop <ArrowRight size={15} /></Link></section>
+      <section className="home-brand-gallery" aria-labelledby="home-brand-gallery-title"><div className="home-brand-gallery-heading"><span className="eyebrow">CAMPANHAS OFICIAIS</span><h2 id="home-brand-gallery-title">A identidade Fortalfy em movimento</h2><p>O pack completo de 20 fotos da marca, em uma galeria editorial.</p></div><div className="home-brand-campaign" aria-label="Galeria com as 20 fotos oficiais da Fortalfy">{HOME_BRAND_CAMPAIGNS.map(({ image, title, number }) => <article key={image}><img src={image} alt={`${title}: campanha visual Fortalfy`} loading="lazy" decoding="async" /><span className="home-brand-campaign-brand">FORTALFY <small>{number} / 20</small></span><strong>{title}</strong></article>)}</div></section>
+      {activityError && <p className="activity-sync-notice home-sync-status has-error" role="alert">{activityError}</p>}
     </div>
   </Screen>;
 }
