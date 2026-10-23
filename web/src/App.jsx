@@ -263,15 +263,41 @@ function PhotoCard({ image, alt, className = "" }) {
   return <img className={`photo-card ${className}`} src={image} alt={alt} loading="lazy" />;
 }
 
+const HOME_MODULES = [
+  { to: "/workout", skin: "movement", tag: "NO SEU RITMO", name: "MOVIMENTO", title: "Seu próximo passo começa com você.", description: "Registre seus treinos e cuide da sua rotina.", icon: Dumbbell },
+  { to: "/pass", skin: "pass", tag: "DESCUBRA PERTO DE VOCÊ", name: "FORTALPASS", title: "Seu próximo treino começa aqui.", description: "Encontre academias e profissionais aprovados.", image: visualPackAsset("fortalfy-pack-gym-interior.jpg") },
+  { to: "/feed", skin: "community", tag: "COMUNIDADE FORTALFY", name: "COMUNIDADE", title: "Inspiração que cresce junto.", description: "Compartilhe sua rotina e descubra a comunidade.", icon: Users },
+  { to: "/reels", skin: "reels", tag: "VÍDEOS DA COMUNIDADE", name: "FORTALREELS", title: "Inspire-se em movimento.", description: "Conteúdo fitness em formato vertical.", image: visualPackAsset("fortalfy-pack-reels-training.jpg") },
+  { to: "/creator", skin: "creator", tag: "PROGRAMA DE CRIADORES", name: "FORTALCREATOR", title: "Sua criatividade pode abrir novos caminhos.", description: "Crie conteúdo, aprenda e conecte-se com a comunidade.", image: publicAsset("creator/06_torne_se_um_fortalcreator.jpg") },
+  { to: "/food", skin: "food", tag: "COMER BEM, COM LEVEZA", name: "FORTALFOOD", title: "Descubra escolhas para sua rotina.", description: "Conheça cardápios publicados por parceiros.", image: visualPackAsset("fortalfy-pack-food-card.jpg") },
+  { to: "/nutrition", skin: "nutrition", tag: "ESCOLHAS DO DIA A DIA", name: "NUTRIÇÃO", title: "Cuide da sua alimentação com leveza.", description: "Registre refeições e acompanhe sua rotina.", icon: Utensils },
+  { to: "/progress", skin: "progress", tag: "SEU CAMINHO", name: "PROGRESSO", title: "Perceba cada passo da jornada.", description: "Acompanhe os registros que você escolheu fazer.", icon: Activity },
+  { to: "/shop", skin: "shop", tag: "SEU RITUAL DE BEM-ESTAR", name: "FORTALSHOP", title: "Encontre o que move você.", description: "Explore o catálogo Fortalfy.", image: visualPackAsset("fortalfy-pack-wellness-product.jpg") },
+];
+
 function HomeScreen({ activity, onActivity, session, profile: accountProfile, activityStatus, activityError, notify }) {
   const metadata = session?.user?.user_metadata || {};
   const displayName = accountProfile?.display_name || metadata.display_name || metadata.full_name || metadata.name || "";
   const firstName = displayName.trim().split(/\s+/)[0];
+  const isSignedIn = Boolean(session?.user?.id);
+  const nextStep = !isSignedIn
+    ? { label: "Explorar parceiros", title: "Escolha por onde começar.", description: "Descubra academias e profissionais com cadastro aprovado no FortalPass.", to: "/pass", icon: MapPin }
+    : activityError
+      ? { label: "Explorar FortalPass", title: "Seus registros continuam no seu ritmo.", description: "Não foi possível carregar o resumo agora. Enquanto isso, explore parceiros com cadastro aprovado.", to: "/pass", icon: MapPin }
+      : !activity.workoutsLogged
+        ? { label: "Registrar um treino", title: "Seu primeiro passo pode ser simples.", description: "Registre uma atividade que você já realizou. A Fortalfy não prescreve treinos.", to: "/workout", icon: Dumbbell }
+        : !activity.mealsLogged
+          ? { label: "Abrir diário alimentar", title: "Cuide da sua rotina do seu jeito.", description: "Registre uma refeição quando fizer sentido para você, sem metas ou cobranças.", to: "/nutrition", icon: Utensils }
+          : { label: "Acompanhar meu progresso", title: "Cada registro faz parte do seu caminho.", description: "Revisite suas atividades e continue no ritmo que funciona para você.", to: "/progress", icon: Activity };
+  const scrollToEcosystem = () => document.getElementById("home-ecosystem")?.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
   return <Screen className="home-screen">
     <section className="home-hero">
       <img className="home-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="" aria-hidden="true" loading="eager" decoding="async" />
       <div className="home-hero-top"><span className="location-label">FORTALFY · BEM-ESTAR</span><span className="status-live">NO SEU RITMO</span></div>
-      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Movimento, comunidade e bem-estar em um só lugar.</span><Link to="/pass" className="hero-cta">Conheça o FortalPass <ArrowRight size={16} /></Link></div>
+      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu bem-estar<br />no seu ritmo.</h1><span className="hero-copy">Movimento, comunidade e bem-estar para acompanhar você em cada etapa da sua jornada.</span><div className="home-hero-actions"><Link to={isSignedIn ? "/workout" : "/pass"} className="hero-cta">Começar minha jornada <ArrowRight size={16} /></Link><button type="button" className="hero-secondary-cta" onClick={scrollToEcosystem}>Explorar a Fortalfy <ArrowDownRight size={16} /></button></div></div>
       <div className="hero-activity">
         <div className="activity-icon"><Dumbbell size={20} /></div>
         <div className="activity-text"><span>SEUS REGISTROS</span><strong>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</strong><small>{activityError || activityStatus}</small></div>
@@ -279,43 +305,44 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
       </div>
     </section>
     <div className="screen-inner home-inner">
-      <div className="module-catalog-heading">
-        <span className="eyebrow">SEU UNIVERSO DE BEM-ESTAR</span>
-        <h2>Explore a Fortalfy</h2>
-        <p>Movimento, criação, comunidade, alimentação e bem-estar em um só lugar.</p>
-      </div>
-      <div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">
-        <Link to="/pass" className="module-card module-card-pass">
-          <img src={visualPackAsset("fortalfy-pack-gym-interior.jpg")} alt="" loading="lazy" decoding="async" />
-          <span className="module-card-shade" aria-hidden="true" />
-          <span className="module-card-top"><span>DESCUBRA PERTO DE VOCÊ</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
-          <span className="module-card-copy"><small>FORTALPASS</small><strong>Seu próximo treino começa aqui.</strong><span>Encontre academias e profissionais aprovados.</span></span>
-        </Link>
-        <Link to="/reels" className="module-card module-card-reels">
-          <img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="" loading="lazy" decoding="async" />
-          <span className="module-card-shade" aria-hidden="true" />
-          <span className="module-card-top"><span>VÍDEOS DA COMUNIDADE</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
-          <span className="module-card-copy"><small>FORTALREELS</small><strong>Inspire-se em movimento.</strong><span>Conteúdo fitness em formato vertical.</span></span>
-        </Link>
-        <Link to="/creator" className="module-card module-card-creator">
-          <img src={publicAsset("creator/06_torne_se_um_fortalcreator.jpg")} alt="" loading="lazy" decoding="async" />
-          <span className="module-card-shade" aria-hidden="true" />
-          <span className="module-card-top"><span>PROGRAMA DE CRIADORES</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
-          <span className="module-card-copy"><small>FORTALCREATOR</small><strong>Sua criatividade pode abrir novos caminhos.</strong><span>Crie conteúdo, aprenda e conecte-se com a comunidade.</span></span>
-        </Link>
-        <Link to="/food" className="module-card module-card-food">
-          <img src={visualPackAsset("fortalfy-pack-food-card.jpg")} alt="" loading="lazy" decoding="async" />
-          <span className="module-card-shade" aria-hidden="true" />
-          <span className="module-card-top"><span>COMER BEM, COM LEVEZA</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
-          <span className="module-card-copy"><small>FORTALFOOD</small><strong>Seu próximo prato favorito.</strong><span>Conheça cardápios publicados por parceiros.</span></span>
-        </Link>
-        <Link to="/shop" className="module-card module-card-shop">
-          <img src={visualPackAsset("fortalfy-pack-wellness-product.jpg")} alt="" loading="lazy" decoding="async" />
-          <span className="module-card-shade" aria-hidden="true" />
-          <span className="module-card-top"><span>SEU RITUAL DE BEM-ESTAR</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
-          <span className="module-card-copy"><small>FORTALSHOP</small><strong>Encontre o que move você.</strong><span>Explore o catálogo Fortalfy.</span></span>
-        </Link>
-      </div>
+      <section className="home-manifesto" aria-labelledby="home-manifesto-title">
+        <div className="home-manifesto-copy">
+          <span className="eyebrow">NOSSO MANIFESTO</span>
+          <h2 id="home-manifesto-title">Seu ritmo. Sua força.<br />Seu próximo passo.</h2>
+          <p>Movimento, comunidade e bem-estar para ajudar você a evoluir de forma possível, consistente e verdadeira.</p>
+          <button type="button" className="home-manifesto-link" onClick={scrollToEcosystem}>Conheça a Fortalfy <ArrowDownRight size={16} /></button>
+        </div>
+        <div className="home-intent-links" aria-label="Comece pela sua prioridade">
+          <Link to="/workout"><Dumbbell size={18} /><span>Quero me movimentar</span><ArrowUpRight size={16} /></Link>
+          <Link to="/pass"><BadgeCheck size={18} /><span>Quero encontrar um profissional</span><ArrowUpRight size={16} /></Link>
+          <Link to="/nutrition"><Utensils size={18} /><span>Quero organizar minha alimentação</span><ArrowUpRight size={16} /></Link>
+          <Link to="/progress"><Activity size={18} /><span>Quero acompanhar meu progresso</span><ArrowUpRight size={16} /></Link>
+          <Link to="/reels"><Play size={18} /><span>Quero assistir conteúdos</span><ArrowUpRight size={16} /></Link>
+          <Link to="/feed"><Users size={18} /><span>Quero participar da comunidade</span><ArrowUpRight size={16} /></Link>
+          <Link to="/creator"><Sparkles size={18} /><span>Quero ser creator</span><ArrowUpRight size={16} /></Link>
+          <Link to="/shop"><ShoppingBag size={18} /><span>Quero explorar produtos</span><ArrowUpRight size={16} /></Link>
+        </div>
+      </section>
+      <section className="home-ecosystem" id="home-ecosystem" aria-labelledby="home-ecosystem-title">
+        <div className="module-catalog-heading">
+          <span className="eyebrow">SEU UNIVERSO DE BEM-ESTAR</span>
+          <h2 id="home-ecosystem-title">Uma jornada, muitos caminhos</h2>
+          <p>Explore áreas conectadas para movimento, alimentação, conteúdo, comunidade e progresso.</p>
+        </div>
+        <div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">
+          {HOME_MODULES.map(({ to, skin, tag, name, title, description, image, icon: Icon }) => <Link to={to} className={`module-card module-card-${skin}`} key={skin}>
+            {image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="module-card-mark" aria-hidden="true"><Icon size={82} /></span>}
+            <span className="module-card-shade" aria-hidden="true" />
+            <span className="module-card-top"><span>{tag}</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span>
+            <span className="module-card-copy"><small>{name}</small><strong>{title}</strong><span>{description}</span></span>
+          </Link>)}
+        </div>
+      </section>
+      <section className="home-next-step" id="home-next-step" aria-labelledby="home-next-step-title">
+        <div className="home-next-step-icon"><nextStep.icon size={23} aria-hidden="true" /></div>
+        <div className="home-next-step-copy"><span className="eyebrow">SEU PRÓXIMO PASSO</span><h2 id="home-next-step-title">{nextStep.title}</h2><p>{nextStep.description}</p></div>
+        <Link to={nextStep.to} className="button primary home-next-step-action">{nextStep.label} <ArrowRight size={16} /></Link>
+      </section>
       <section className="performance-card">
         <div className="section-title-row"><div><span className="eyebrow">SEU RITMO CONTA</span><h2>Registros da rotina</h2></div></div>
         {activity.workoutsLogged || activity.mealsLogged
