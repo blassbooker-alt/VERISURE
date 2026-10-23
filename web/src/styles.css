@@ -9101,3 +9101,160 @@ outline-color: var(--color-focus, var(--color-primary));
     font-size: clamp(39px, 10.5vw, 48px);
   }
 }
+/* Signature details: richer light, confident greens, and tactile surfaces. */
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app {
+  background-image:
+    radial-gradient(ellipse at 9% 0%, #a9cb8d30, transparent 34rem),
+    radial-gradient(ellipse at 96% 22%, #c3d9aa20, transparent 31rem),
+    linear-gradient(180deg, var(--color-background-secondary), var(--color-background) 27rem) !important;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app {
+  background-image:
+    radial-gradient(ellipse at 9% 0%, #416a422b, transparent 34rem),
+    radial-gradient(ellipse at 96% 22%, #254c3830, transparent 31rem),
+    linear-gradient(180deg, var(--color-background-secondary), var(--color-background) 27rem);
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .home-screen .home-hero {
+  background: linear-gradient(118deg, #102a20 0%, #1b5135 48%, #347b4b 100%);
+  box-shadow: inset 0 -1px #ffffff28, 0 20px 48px #173a2418;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .home-screen .home-hero {
+  background: linear-gradient(118deg, #0a1c14 0%, #123c28 48%, #245b39 100%);
+  box-shadow: inset 0 -1px #ffffff20, 0 20px 48px #00000030;
+}
+
+.home-hello h1 {
+  max-width: 13ch;
+  text-wrap: balance;
+  letter-spacing: -.045em;
+}
+
+.home-manifesto {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 92% 4%, #b9d85b38, transparent 34%),
+    linear-gradient(128deg, #153b29 0%, #1f6240 58%, #2d7547 100%);
+  border-color: #b9d85b48;
+  box-shadow: 0 22px 54px #173a2422, inset 0 1px #ffffff26;
+}
+
+.home-manifesto::after {
+  position: absolute;
+  inset: auto -44px -105px auto;
+  width: clamp(180px, 28vw, 320px);
+  aspect-ratio: 1;
+  content: "";
+  border: 1px solid #d7ec9b28;
+  border-radius: 50%;
+  box-shadow: 0 0 0 22px #d7ec9b0c, 0 0 0 48px #d7ec9b08;
+  pointer-events: none;
+}
+
+.home-manifesto > * { position: relative; z-index: 1; }
+.home-manifesto-copy h2 { max-width: 18ch; text-wrap: balance; }
+
+.home-intent-links a {
+  background: linear-gradient(135deg, #ffffff15, #ffffff08);
+  border-color: #dff0dd35;
+  box-shadow: inset 0 1px #ffffff12;
+  backdrop-filter: blur(10px);
+}
+
+.module-card {
+  border-color: #ffffff55;
+  box-shadow: 0 12px 30px #102d2026, inset 0 1px #ffffff35;
+}
+
+.module-card::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  background: linear-gradient(145deg, #ffffff22, transparent 34%, transparent 72%, #b9d85b12);
+  pointer-events: none;
+}
+
+.module-card-arrow {
+  color: #173f2d;
+  background: linear-gradient(145deg, #d5ec84, #b9d85b);
+  box-shadow: 0 5px 16px #081b1048, inset 0 1px #ffffff9c;
+}
+
+.home-next-step {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 32px #173a2410, inset 0 1px #ffffffb0;
+}
+
+.home-next-step::before {
+  position: absolute;
+  inset: 18px auto 18px 0;
+  width: 4px;
+  content: "";
+  background: linear-gradient(180deg, #b9d85b, #34764a);
+  border-radius: 0 5px 5px 0;
+}
+
+.home-next-step-icon {
+  box-shadow: inset 0 1px #ffffff90, 0 4px 12px #173a2410;
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .button.primary {
+  background: linear-gradient(135deg, #34764a, #1d5737 72%, #17442e);
+  box-shadow: 0 7px 18px #245c3a35, inset 0 1px #ffffff32;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button.primary {
+  background: linear-gradient(135deg, #34764a, #245c3a 72%, #1d4b32);
+  box-shadow: 0 7px 18px #00000038, inset 0 1px #ffffff28;
+}
+
+.mobile-app :is(.button.primary, .button.lime-button, .button.subtle) {
+  border-radius: 14px;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+.mobile-app :is(.quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
+  .delivery-card, .food-card, .empty-state, .gym-card, .partner-discovery-shortcuts a, .professional-care,
+  .profile-identity-card, .profile-content-section, .gym-access-card, .gym-admin-panel, .gym-access-history,
+  .gym-partner-unit, .profile-post-card, .weekly-plan-card, .weekly-manager, .weekly-exercise, .weekly-meal-card,
+  .weekly-empty, .partner-product-form, .partner-store-product, .social-discovery-card, .social-person-card,
+  .social-messages-panel, .social-profile-card, .dash-panel, .measurement-card, .adherence-card,
+  .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card, .creator-card,
+  .creator-story, .creator-welcome) {
+  box-shadow: var(--brand-shadow-sm), inset 0 1px #ffffff14;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .mobile-app :is(.button.primary, .button.lime-button, .button.subtle):hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .mobile-app :is(.quick-tile, .action-row a, .action-row button, .stories-experience, .food-card,
+    .gym-card, .partner-discovery-shortcuts a, .social-discovery-card, .social-person-card,
+    .creator-card, .creator-welcome):hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
+    box-shadow: var(--brand-shadow-md), inset 0 1px #ffffff20;
+  }
+
+  .home-manifesto-link:hover {
+    background-color: #ffffff20;
+    border-color: #d7ec9b8c;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-app :is(.button.primary, .button.lime-button, .button.subtle,
+    .quick-tile, .action-row a, .action-row button, .stories-experience, .food-card,
+    .gym-card, .partner-discovery-shortcuts a, .social-discovery-card, .social-person-card,
+    .creator-card, .creator-welcome) {
+    transition: none;
+  }
+}
