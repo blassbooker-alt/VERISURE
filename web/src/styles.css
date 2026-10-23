@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-forest-950: #003d30;
-  --color-forest-900: #047031;
-  --color-forest-800: #087b45;
-  --color-forest-700: #0b8950;
+  --color-forest-950: #07120e;
+  --color-forest-900: #123c2a;
+  --color-forest-800: #1a5a3c;
+  --color-forest-700: #24784b;
   --color-lime-500: #caf319;
   --color-lime-400: #d8f54e;
-  --color-cream-50: #f7f9f6;
-  --color-sand-100: #eaf5e6;
-  --color-ink-950: #18231d;
-  --color-ink-700: #3f5146;
-  --color-muted-500: #657168;
+  --color-cream-50: #f4f7f2;
+  --color-sand-100: #e9f0e7;
+  --color-ink-950: #17251d;
+  --color-ink-700: #46574c;
+  --color-muted-500: #65736a;
   --color-success: #248a5b;
   --color-warning: #d28a20;
   --color-error: #d95c55;
@@ -27,17 +27,17 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --forest-950: #003d30;
-  --forest-900: #047031;
-  --forest-800: #087b45;
-  --forest-700: #0b8950;
+  --forest-950: #07120e;
+  --forest-900: #123c2a;
+  --forest-800: #1a5a3c;
+  --forest-700: #24784b;
   --lime-500: #caf319;
   --lime-400: #d8f54e;
-  --cream-50: #f7f9f6;
-  --sand-100: #eaf5e6;
-  --ink-950: #18231d;
-  --ink-700: #3f5146;
-  --muted-500: #657168;
+  --cream-50: #f4f7f2;
+  --sand-100: #e9f0e7;
+  --ink-950: #17251d;
+  --ink-700: #46574c;
+  --muted-500: #65736a;
   --success: #248a5b;
   --warning: #d28a20;
   --error: #d95c55;
@@ -73,11 +73,11 @@ img { display: block; max-width: 100%; }
 .app-screen { min-height: 100vh; }
 .mobile-header { height: 62px; padding: 0 19px; display: flex; align-items: center; justify-content: space-between; background: #ffffffed; border-bottom: 1px solid #e8f0ea; position: sticky; top: 0; z-index: 20; backdrop-filter: blur(16px); transition: box-shadow .22s ease, background-color .22s ease; }
 .logo-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--forest); font-size: 1.4375rem; letter-spacing: -1.05px; line-height: 1; font-weight: 900; }
-.logo-symbol { width: 31px; height: 31px; display: block; flex: 0 0 auto; object-fit: contain; background: #fff; border-radius: 9px; box-shadow: 0 2px 6px #0a3d2e18; }
+.logo-symbol { width: 38px; height: 22px; display: block; flex: 0 0 auto; object-fit: contain; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
 .logo-word { color: inherit; }
 .logo-accent { color: #78ad37; }
 .logo-mark.light { color: #fff; }
-.logo-mark.light .logo-symbol { box-shadow: 0 2px 7px #0003; }
+.logo-mark.light .logo-symbol { box-shadow: none; }
 .icon-button { width: 42px; height: 42px; display: inline-grid; place-items: center; flex: 0 0 auto; color: #244635; background: #f4f8f4; border: 1px solid #e6eee8; border-radius: 50%; }
 .location-chip { display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 20px; color: #385a47; background: #f1f7ef; font-size: 0.6875rem; font-weight: 700; }
 .screen-content { max-width: 520px; margin: 0 auto; padding: 24px 17px calc(110px + env(safe-area-inset-bottom)); }
@@ -5395,52 +5395,62 @@ html { color-scheme: dark; }
 /* Centralized Fortalfy appearance preference and account settings. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-background: #0b100c;
-  --color-background-secondary: #111a13;
-  --color-surface: #141c16;
-  --color-surface-secondary: #18221a;
-  --color-surface-elevated: #1c271e;
-  --color-text-primary: #edf3ed;
-  --color-text-secondary: #aeb9af;
-  --color-border: #2d3a30;
-  --color-primary: #c4e642;
+  --color-background: #07120e;
+  --color-background-secondary: #0b1711;
+  --color-surface: #101d17;
+  --color-surface-secondary: #13221a;
+  --color-surface-elevated: #16251d;
+  --color-text-primary: #f1f5f1;
+  --color-text-secondary: #aab8ad;
+  --color-border: #293a30;
+  --color-primary: #caf319;
   --color-primary-foreground: #17200c;
-  --color-success: #a9d67b;
+  --color-success: #a8d77b;
   --color-danger: #ffb8ad;
-  --color-input-background: #101811;
-  --color-navigation-background: #141c16;
-  --brand-shadow-sm: 0 5px 18px #00000016;
-  --brand-shadow-md: 0 12px 30px #00000024;
-}
-:root[data-theme="light"] {
-  color-scheme: light;
-  --color-background: #eff7ef;
-  --color-background-secondary: #e7f1e6;
-  --color-surface: #f7fbf6;
-  --color-surface-secondary: #eaf3e8;
-  --color-surface-elevated: #f7fbf6;
-  --color-text-primary: #193126;
-  --color-text-secondary: #52675a;
-  --color-border: #d5e4d2;
-  --color-primary: #0d7048;
-  --color-primary-foreground: #ffffff;
-  --color-success: #17633f;
-  --color-danger: #a62f29;
-  --color-input-background: #f4f9f2;
-  --color-navigation-background: #f7fbf6;
-  --color-focus: #17633f;
-  --brand-shadow-sm: 0 5px 18px #173a240d;
-  --brand-shadow-md: 0 12px 30px #173a2412;
+  --color-input-background: #0b1711;
+  --color-navigation-background: #101d17;
+  --brand-shadow-sm: 0 8px 24px #00000024;
+  --brand-shadow-md: 0 16px 38px #00000038;
   --canvas: var(--color-background);
   --card: var(--color-surface);
   --line: var(--color-border);
   --ink-950: var(--color-text-primary);
   --ink-700: var(--color-text-secondary);
-  --quiet: #58685c;
-  --muted-500: #66766a;
-  --forest: #0d7048;
-  --deep: #073d2b;
-  --lime: #a9cf22;
+  --quiet: #aab8ad;
+  --muted-500: #9aa99d;
+  --forest: #19422f;
+  --deep: #07120e;
+  --lime: #caf319;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-background: #f4f7f2;
+  --color-background-secondary: #eaf0e8;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f7faf6;
+  --color-surface-elevated: #ffffff;
+  --color-text-primary: #17251d;
+  --color-text-secondary: #536258;
+  --color-border: #dce5dc;
+  --color-primary: #17633f;
+  --color-primary-foreground: #ffffff;
+  --color-success: #17633f;
+  --color-danger: #a62f29;
+  --color-input-background: #f7faf6;
+  --color-navigation-background: #ffffff;
+  --color-focus: #17633f;
+  --brand-shadow-sm: 0 8px 24px #173a240a;
+  --brand-shadow-md: 0 16px 38px #173a2414;
+  --canvas: var(--color-background);
+  --card: var(--color-surface);
+  --line: var(--color-border);
+  --ink-950: var(--color-text-primary);
+  --ink-700: var(--color-text-secondary);
+  --quiet: #536258;
+  --muted-500: #66736a;
+  --forest: #17633f;
+  --deep: #0d402b;
+  --lime: #b8dc2e;
   --brand-shadow-sm: 0 5px 18px #173a2410;
   --brand-shadow-md: 0 12px 30px #173a2417;
 }
@@ -9663,4 +9673,401 @@ html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button.pri
   .public-landing *,
   .public-landing *::before,
   .public-landing *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+/* Unified Fortalfy visual language across the existing app surfaces. */
+:root {
+  --brand-card-radius: 18px;
+  --brand-feature-radius: 24px;
+  --brand-content-max: 1200px;
+}
+
+:root[data-theme="dark"] {
+  --color-focus: #caf319;
+}
+
+html[data-theme="light"] .mobile-app {
+  background-image:
+    radial-gradient(ellipse at 8% 0%, #7fae8b12, transparent 560px),
+    radial-gradient(ellipse at 96% 24%, #92b69c0d, transparent 500px);
+}
+
+html[data-theme="dark"] .mobile-app {
+  background-image:
+    radial-gradient(ellipse at 8% 0%, #274c351c, transparent 560px),
+    radial-gradient(ellipse at 96% 24%, #1b392616, transparent 500px);
+}
+
+.mobile-app,
+.professional-root,
+.app-screen {
+  color: var(--color-text-primary);
+  font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.mobile-app :is(.mobile-header, .bottom-nav, .navigation-drawer),
+.professional-root :is(.mobile-header, .dash-sidebar) {
+  color: var(--color-text-primary);
+  background-color: var(--color-navigation-background);
+  border-color: var(--color-border);
+  box-shadow: var(--brand-shadow-sm);
+}
+
+.mobile-app .mobile-header {
+  min-height: 64px;
+  backdrop-filter: blur(18px);
+}
+
+.logo-mark .logo-symbol {
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.app-splash-brand .logo-symbol {
+  width: 49px;
+  height: 29px;
+}
+
+.logo-mark .logo-word {
+  letter-spacing: -.045em;
+}
+
+.logo-mark .logo-accent {
+  color: inherit;
+}
+
+.mobile-app :is(.quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
+  .delivery-card, .food-card, .empty-state, .gym-card, .professional-care, .profile-identity-card,
+  .profile-content-section, .gym-access-card, .gym-admin-panel, .gym-access-history, .gym-partner-unit,
+  .profile-post-card, .weekly-plan-card, .weekly-manager, .weekly-exercise, .weekly-meal-card,
+  .weekly-empty, .partner-product-form, .partner-store-product, .social-discovery-card, .social-person-card,
+  .social-messages-panel, .profile-privacy-choice, .social-profile-card, .dash-panel, .measurement-card,
+  .adherence-card, .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card,
+  .accessibility-settings-card, .creator-card, .creator-story, .creator-welcome, .pass-discovery,
+  .pass-search-card, .partner-filter-panel, .nutrition-summary, .training-session-launcher,
+  .shop-product-card, .shop-department-card) {
+  border-radius: var(--brand-card-radius);
+  border-color: var(--color-border);
+  box-shadow: var(--brand-shadow-sm);
+}
+
+.mobile-app :is(.screen-heading h1, .section-title-row h2, .module-catalog-heading h2,
+  .stories-section-heading h2, .social-profile-card h1, .social-profile-card h2, .dash-welcome h1,
+  .dash-panel h2, .performance-chart-heading h3, .performance-metric strong, .weekly-plan-title h2,
+  .weekly-exercise h4, .food-card-heading h3, .food-marketplace-intro h2, .shop-catalog-heading h2,
+  .shop-section-heading h2, .profile-content-heading h2, .creator-story-heading h2) {
+  color: var(--color-text-primary);
+  letter-spacing: -.035em;
+}
+
+.mobile-app :is(.screen-intro, .module-catalog-heading p, .stories-section-heading p, .dash-panel p,
+  .performance-chart-card p, .performance-metric small, .weekly-plan-card p, .weekly-exercise p,
+  .food-card-body p, .food-marketplace-intro p, .shop-catalog-heading p, .creator-story-heading p) {
+  color: var(--color-text-secondary);
+}
+
+.mobile-app :is(.icon-button, .location-chip, .shop-bag-button, .shop-history-button) {
+  color: var(--color-text-primary);
+  background: var(--color-surface-secondary);
+  border-color: var(--color-border);
+}
+
+.mobile-app :is(.search-field, .partner-search, .shop-search, .social-discovery-search,
+  .social-conversation-search, .profile-field input, .profile-field textarea,
+  .profile-compose-form > textarea, .story-caption-field textarea, .food-sort-control select,
+  .weekly-history-select select, .weekly-goal-input input, .weekly-editor-day-body input,
+  .weekly-editor-day-body textarea, .weekly-meal-editor input, .weekly-meal-editor textarea,
+  .partner-product-form input, .partner-product-form textarea, .form-field input,
+  .form-field textarea, .form-field select) {
+  color: var(--color-text-primary);
+  background-color: var(--color-input-background);
+  border-color: var(--color-border);
+  border-radius: 12px;
+}
+
+.mobile-app :is(input, textarea, select)::placeholder {
+  color: var(--color-text-secondary);
+  opacity: .78;
+}
+
+.mobile-app :is(button, a, input, textarea, select):focus-visible,
+.professional-root :is(button, a, input, textarea, select):focus-visible {
+  outline-color: var(--color-focus);
+  outline-offset: 3px;
+}
+
+.mobile-app :is(.button.primary, .button.lime-button) {
+  min-height: 46px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button.primary {
+  color: #17200c;
+  background: linear-gradient(135deg, #d5f63a, #b7dc24);
+  border-color: #c8ec2d;
+  box-shadow: 0 7px 18px #c5ea2520;
+}
+
+html[data-theme="light"]:not([data-high-contrast="true"]) .mobile-app .button.primary {
+  color: #fff;
+  background: linear-gradient(135deg, #24784b, #145a38);
+  border-color: #145a38;
+}
+
+html[data-theme="dark"] .mobile-app .bottom-nav-item.active .bottom-nav-icon {
+  color: #17200c;
+  background: linear-gradient(145deg, #d5f63a, #b7dc24);
+  border-radius: 50%;
+}
+
+html[data-theme="dark"] .mobile-app .bottom-nav-item.active .bottom-nav-icon svg {
+  color: #17200c;
+}
+
+html[data-theme="light"] .mobile-app .bottom-nav-item.active .bottom-nav-icon {
+  color: #fff;
+  background: linear-gradient(145deg, #24784b, #145a38);
+  border-radius: 50%;
+}
+
+html[data-theme="light"] .mobile-app .bottom-nav-item.active .bottom-nav-icon svg {
+  color: #fff;
+}
+
+html[data-theme="dark"] .mobile-app :is(.quick-tile, .action-row a, .action-row button,
+  .stories-experience, .composer-card, .feed-post, .delivery-card, .food-card, .empty-state,
+  .gym-card, .professional-care, .profile-identity-card, .profile-content-section, .gym-access-card,
+  .gym-admin-panel, .gym-access-history, .gym-partner-unit, .profile-post-card, .weekly-plan-card,
+  .weekly-manager, .weekly-exercise, .weekly-meal-card, .weekly-empty, .partner-product-form,
+  .partner-store-product, .social-discovery-card, .social-person-card, .social-messages-panel,
+  .profile-privacy-choice, .social-profile-card, .dash-panel, .measurement-card, .adherence-card,
+  .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card,
+  .accessibility-settings-card, .creator-card, .creator-story, .creator-welcome, .pass-discovery,
+  .pass-search-card, .partner-filter-panel, .nutrition-summary, .training-session-launcher) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="light"] .mobile-app :is(.quick-tile, .action-row a, .action-row button,
+  .stories-experience, .composer-card, .feed-post, .delivery-card, .food-card, .empty-state,
+  .gym-card, .professional-care, .profile-identity-card, .profile-content-section, .gym-access-card,
+  .gym-admin-panel, .gym-access-history, .gym-partner-unit, .profile-post-card, .weekly-plan-card,
+  .weekly-manager, .weekly-exercise, .weekly-meal-card, .weekly-empty, .partner-product-form,
+  .partner-store-product, .social-discovery-card, .social-person-card, .social-messages-panel,
+  .profile-privacy-choice, .social-profile-card, .dash-panel, .measurement-card, .adherence-card,
+  .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card,
+  .accessibility-settings-card, .creator-card, .creator-story, .creator-welcome, .pass-discovery,
+  .pass-search-card, .partner-filter-panel, .nutrition-summary, .training-session-launcher) {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .mobile-app .shop-screen,
+html[data-theme="dark"] .mobile-app .shop-screen .screen-content {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+
+html[data-theme="light"] .mobile-app .shop-screen,
+html[data-theme="light"] .mobile-app .shop-screen .screen-content {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+
+.mobile-app .shop-screen :is(.shop-header, .shop-product-card, .shop-department-card,
+  .shop-search-panel, .shop-search-suggestions, .shop-dialog, .shop-detail-price-block,
+  .shop-cart-item, .shop-cart-summary) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--brand-shadow-sm);
+}
+
+.mobile-app .shop-screen :is(.shop-title-row h1, .shop-section-heading h2, .shop-catalog-heading h2,
+  .shop-product-name, .shop-department-card strong, .shop-detail-information > h2,
+  .shop-cart-heading h2) {
+  color: var(--color-text-primary);
+}
+
+.mobile-app .shop-screen :is(.shop-intro, .shop-product-category, .shop-demo-price,
+  .shop-catalog-heading p, .shop-detail-code, .shop-detail-description p) {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .mobile-app .shop-screen .shop-editorial {
+  border-color: #ffffff24;
+  box-shadow: var(--brand-shadow-md);
+}
+
+html[data-theme="light"] .mobile-app .shop-screen .shop-editorial {
+  border-color: #dce5dc;
+  box-shadow: var(--brand-shadow-md);
+}
+
+html[data-theme="dark"] .mobile-app .shop-screen .shop-categories .shop-category-chip:not(.is-active),
+html[data-theme="dark"] .mobile-app .shop-screen .shop-sort {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .mobile-app .shop-screen .shop-sort select {
+  color: var(--color-text-primary);
+}
+
+.home-screen .home-hero {
+  border-radius: 0 0 28px 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, body, #root, .mobile-app, .app-screen, .mobile-header, .bottom-nav, .theme-choice,
+  .mobile-app :is(.button.primary, .button.lime-button, .button.subtle, .quick-tile, .feed-post,
+    .food-card, .gym-card, .social-discovery-card, .social-person-card, .creator-card) {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen .creator-page {
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-tabs button:not(.selected),
+  .creator-interest-list span, .creator-file-label, .creator-program-item, .creator-address,
+  .creator-identity, .creator-admin-form, .creator-metric-grid article, .creator-application-state,
+  .creator-status, .creator-feedback, .creator-academy-pricing) {
+  color: var(--color-text-primary);
+  background: var(--color-surface-secondary);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen .creator-tabs button.selected {
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-section-heading h2,
+  .creator-pillar-card h3, .creator-step-card h3, .creator-testimonial-copy h2,
+  .creator-unboxing-cta h3, .creator-academy-copy h2, .creator-metric-grid strong,
+  .creator-level h3, .creator-card h2, .creator-card h3) {
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-section-heading > p,
+  .creator-pillar-card p, .creator-step-card p, .creator-testimonial-copy blockquote,
+  .creator-testimonial-copy > p, .creator-card p, .creator-program-item p,
+  .creator-admin-form small, .creator-metric-grid span, .creator-application-state small,
+  .creator-unboxing-heading > p, .creator-unboxing-disclosure, .creator-unboxing-transparency,
+  .creator-unboxing-cta p, .creator-academy-copy > p, .creator-academy-pricing,
+  .creator-status, .creator-privacy, .creator-landing-footer > small,
+  .creator-footer-brand > p, .creator-landing-footer > nav a) {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-section-heading .eyebrow,
+  .creator-demo-label, .creator-inline-link, .creator-level-number) {
+  color: var(--color-primary);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-pillar-card, .creator-step-card,
+  .creator-testimonial, .creator-unboxing, .creator-academy-feature, .creator-program-item,
+  .creator-level, .creator-card) {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-landing-levels .creator-level-start,
+  .creator-landing-levels .creator-level-pro, .creator-landing-levels .creator-level-official) {
+  background: var(--color-surface);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen :is(.creator-admin-form input,
+  .creator-admin-form textarea, .creator-admin-form select, .creator-application input,
+  .creator-application textarea, .creator-application-message textarea) {
+  color: var(--color-text-primary);
+  background: var(--color-input-background);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen .creator-landing-footer {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .mobile-app .creator-screen .creator-academy-visual {
+  border-color: var(--color-surface);
+  background: var(--color-surface-secondary);
+}
+
+html[data-theme="light"] .mobile-app .creator-screen :is(.creator-section-heading h2,
+  .creator-pillar-card h3, .creator-step-card h3, .creator-testimonial-copy h2,
+  .creator-unboxing-cta h3, .creator-academy-copy h2, .creator-metric-grid strong) {
+  color: var(--color-text-primary);
+}
+
+html[data-theme="light"] .mobile-app .creator-screen :is(.creator-section-heading > p,
+  .creator-pillar-card p, .creator-step-card p, .creator-testimonial-copy blockquote,
+  .creator-testimonial-copy > p, .creator-unboxing-heading > p, .creator-unboxing-cta p,
+  .creator-academy-copy > p, .creator-footer-brand > p, .creator-landing-footer > small) {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .professional-root,
+html[data-theme="dark"] .professional-root .professional-app,
+html[data-theme="light"] .professional-root,
+html[data-theme="light"] .professional-root .professional-app {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+}
+
+.professional-root :is(.dash-sidebar, .dash-panel, .dash-metric, .professional-applications-list,
+  .professional-application-editor, .professional-admin-review, .weekly-manager, .weekly-plan-card,
+  .training-client-session-list > article) {
+  border-radius: var(--brand-card-radius);
+  box-shadow: var(--brand-shadow-sm);
+}
+
+html[data-theme="dark"] .professional-root :is(.dash-sidebar, .dash-panel, .dash-metric,
+  .professional-applications-list, .professional-application-editor, .professional-admin-review,
+  .weekly-manager, .weekly-plan-card, .training-client-session-list > article) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="light"] .professional-root :is(.dash-sidebar, .dash-panel, .dash-metric,
+  .professional-applications-list, .professional-application-editor, .professional-admin-review,
+  .weekly-manager, .weekly-plan-card, .training-client-session-list > article) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .professional-root :is(h1, h2, h3, h4, strong, label, legend,
+  .dash-panel-head h2, .dash-metric strong, .professional-applications-list h2,
+  .professional-application-editor h2, .professional-admin-review h2, .weekly-plan-title h2,
+  .weekly-manager-heading h2, .training-client-session-list strong) {
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] .professional-root :is(p, small, .dash-panel-head p, .dash-metric span,
+  .professional-applications-list p, .professional-application-editor header p,
+  .professional-admin-review p, .weekly-plan-title p, .weekly-manager-heading p,
+  .training-client-session-list small, .training-client-session-list span) {
+  color: var(--color-text-secondary);
+}
+
+.professional-root :is(input, textarea, select) {
+  color: var(--color-text-primary);
+  background: var(--color-input-background);
+  border-color: var(--color-border);
+  border-radius: 12px;
 }
