@@ -182,7 +182,7 @@ export default function PartnerStorefront({ client, profile, userId, isOwn, noti
           <Link className="partner-store-brand-secondary-action" to="/home">Explorar o app <ArrowUpRight size={14} /></Link>
         </div>
       </div>
-      <span className="partner-store-brand-mark"><img src="/assets/fortalfy-official-logo.png" alt="Símbolo Fortalfy" /></span>
+      <span className="partner-store-brand-mark"><img src="/assets/fortalfy-official-logo.webp" alt="Símbolo Fortalfy" /></span>
     </section>}
     <header className="partner-storefront-heading"><div><span className="eyebrow">{isGym ? "ECOSSISTEMA DA ACADEMIA" : "LOJA OFICIAL"}</span><h2>{isGym ? "Conheça nossa academia" : "Conheça nossa marca"}</h2><p>Informações e produtos cadastrados por este parceiro.</p></div>{profile.partnerApproved && <span className="partner-store-approved"><BadgeCheck size={15} /> Parceiro aprovado</span>}</header>
     <div className="partner-store-about">

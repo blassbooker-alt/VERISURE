@@ -2311,6 +2311,8 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
   const [composerOpen, setComposerOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+  const authDialogRef = useRef(null);
+  const authReturnFocusRef = useRef(null);
   const [searchParams] = useSearchParams();
   const reelListRef = useRef(null);
   const loadingMoreRef = useRef(false);
@@ -2319,6 +2321,8 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
     && ["personal", "nutricionista", "academia", "marca"].includes(profile.kind));
   const filters = [["latest", "Mais recentes"], ["following", "Seguindo"]];
   const openAuth = mode => {
+    const activeElement = document.activeElement;
+    authReturnFocusRef.current = activeElement instanceof HTMLElement && activeElement !== document.body ? activeElement : null;
     setAuthMode(mode);
     setAuthOpen(true);
   };
@@ -2334,9 +2338,38 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
 
   useEffect(() => {
     if (!authOpen) return undefined;
-    const closeOnEscape = event => event.key === "Escape" && setAuthOpen(false);
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    const dialog = authDialogRef.current;
+    const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusableElements = () => [...(dialog?.querySelectorAll(focusableSelector) || [])]
+      .filter(element => element.getClientRects().length > 0 && element.getAttribute("aria-hidden") !== "true");
+    const handleDialogKeyDown = event => {
+      if (event.key === "Escape") {
+        setAuthOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusableElements();
+      if (!elements.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    dialog?.querySelector(".social-auth-feed-close")?.focus({ preventScroll: true });
+    window.addEventListener("keydown", handleDialogKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleDialogKeyDown);
+      const returnFocus = authReturnFocusRef.current;
+      if (returnFocus?.isConnected) window.requestAnimationFrame(() => returnFocus.focus({ preventScroll: true }));
+    };
   }, [authOpen]);
 
   const refresh = async () => {
@@ -2448,7 +2481,7 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
     <header className="social-guest-feed-header"><span className="eyebrow">FORTALFY · COMUNIDADE & BEM-ESTAR</span><h1>Feed da comunidade</h1><p>Inspiração, rotina e bem-estar no seu ritmo.</p><div className="social-guest-feed-actions"><button type="button" className="button social-feed-primary" onClick={() => openAuth("signup")}>Criar conta</button><button type="button" className="button social-feed-secondary" onClick={() => openAuth("login")}>Entrar</button></div></header>
     <section className="social-guest-empty"><span className="social-guest-empty-icon"><Users size={25} /></span><span className="eyebrow">UM ESPAÇO PARA A COMUNIDADE</span><h2>Seu Feed começa com uma conexão.</h2><p>Siga pessoas, profissionais e parceiros para encontrar conteúdos que combinam com seu ritmo.</p><div className="social-guest-empty-actions"><button type="button" className="button social-feed-primary" onClick={() => openAuth("signup")}>Encontrar pessoas</button><Link to="/pass" className="button social-feed-secondary">Explorar FortalPass</Link><button type="button" className="social-feed-text-action" onClick={() => openAuth("signup")}>Criar primeira publicação <ArrowRight size={15} /></button></div></section>
     <p className="social-guest-honesty-note">As publicações da comunidade aparecem aqui quando você entra. Nenhum conteúdo de demonstração é apresentado como atividade real.</p>
-    {authOpen && <div className="social-auth-feed-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setAuthOpen(false)}><section className="social-auth-feed-dialog" role="dialog" aria-modal="true" aria-label={authMode === "signup" ? "Criar conta Fortalfy" : "Entrar na Fortalfy"}><button className="social-auth-feed-close" type="button" aria-label="Fechar janela de acesso" onClick={() => setAuthOpen(false)}><X size={20} /></button><SocialAuth client={client} configured={configured} notify={notify} variant="social-auth-feed-modal" initialMode={authMode} /></section></div>}
+    {authOpen && <div className="social-auth-feed-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setAuthOpen(false)}><section ref={authDialogRef} className="social-auth-feed-dialog" role="dialog" aria-modal="true" aria-label={authMode === "signup" ? "Criar conta Fortalfy" : "Entrar na Fortalfy"}><button className="social-auth-feed-close" type="button" aria-label="Fechar janela de acesso" onClick={() => setAuthOpen(false)}><X size={20} /></button><SocialAuth client={client} configured={configured} notify={notify} variant="social-auth-feed-modal" initialMode={authMode} /></section></div>}
   </div>;
   if (!session) return <>{!reelMode && <CommunityNavigation active="feed" />}<SocialAuth client={client} configured={configured} notify={notify} /></>;
   if (profileError) return <div className="social-feed-error" role="alert">{reelMode && <Link to="/feed" className="social-reels-back" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link>}<CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;

@@ -920,7 +920,7 @@ function WorkoutScreen({ notify, onActivity, activity, client, session, activity
     setError("");
     notify("Treino registrado.");
   };
-  return <Screen title="Personal" subtitle="TREINO DA SEMANA E SEUS REGISTROS" className="workout-screen">
+  return <Screen title="Treinos" subtitle="PLANOS E REGISTROS DE TREINO" className="workout-screen">
     <Link to="/home" className="back-link"><ArrowLeft size={17} /> Voltar</Link>
     <PartnerDiscoverySection client={client} session={session} kind="personal" notify={notify} />
     <WeeklyClientPlan client={client} session={session} kind="personal" notify={notify} />
@@ -952,7 +952,7 @@ function NutritionScreen({ notify, onActivity, activity, client, session, activi
     setAddingMeal(false);
     notify("Refeição adicionada ao diário.");
   };
-  return <Screen title="Nutricionista" subtitle={`${today.toLocaleUpperCase()} · PLANO SEMANAL E SEU DIARIO`} className="nutrition-screen">
+  return <Screen title="Diário alimentar" subtitle={`${today.toLocaleUpperCase()} · ROTINA E REGISTROS`} className="nutrition-screen">
     <PartnerDiscoverySection client={client} session={session} kind="nutricionista" notify={notify} />
     <WeeklyClientPlan client={client} session={session} kind="nutrition" notify={notify} />
     <div className="nutrition-summary"><div className="nutrition-donut"><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>kcal informadas</span><small>hoje</small></div></div><div className="macro-details"><span className="eyebrow">METAS NUTRICIONAIS</span><p className="nutrition-unset">Nenhuma meta ou macro foi configurado. Dados nutricionais só aparecerão quando forem informados por você ou por um profissional.</p><Link to="/progress" className="text-link">Ver registros de evolução <ArrowRight size={15} /></Link></div></div>
