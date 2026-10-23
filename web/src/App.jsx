@@ -349,6 +349,29 @@ const HOME_MODULES = [
   { to: "/shop", skin: "shop", tag: "SEU RITUAL DE BEM-ESTAR", name: "FORTALSHOP", title: "Encontre o que move você.", description: "Explore o catálogo Fortalfy.", image: visualPackAsset("fortalfy-pack-wellness-product.jpg") },
 ];
 
+const HOME_BRAND_CAMPAIGNS = [
+  ["fortalfy_gym_01_treino.jpg", "Treino de for\u00e7a"],
+  ["fortalfy_gym_02_whey.jpg", "Whey para sua rotina"],
+  ["fortalfy_gym_03_pre_treino.jpg", "Ligue o modo treino"],
+  ["fortalfy_gym_04_forca.jpg", "For\u00e7a e controle"],
+  ["fortalfy_gym_05_creatina.jpg", "Creatina e consist\u00eancia"],
+  ["fortalfy_gym_06_shaker.jpg", "Shaker Fortalfy"],
+  ["fortalfy_gym_07_legday.jpg", "Dia de perna"],
+  ["fortalfy_gym_08_whey_shake.jpg", "Recupera\u00e7\u00e3o com whey"],
+  ["fortalfy_gym_09_motivacao.jpg", "Const\u00e2ncia todos os dias"],
+  ["fortalfy_gym_10_barras.jpg", "Carga, foco e repeti\u00e7\u00f5es"],
+  ["fortalfy_gym_11_superiores.jpg", "Treino com prop\u00f3sito"],
+  ["fortalfy_gym_12_pos_treino.jpg", "Recupere depois do treino"],
+  ["fortalfy_gym_13_acessorios.jpg", "Acess\u00f3rios para treinar"],
+  ["fortalfy_gym_14_hiit.jpg", "Intensidade no seu ritmo"],
+  ["fortalfy_gym_15_whey_bancada.jpg", "Nutri\u00e7\u00e3o faz parte do treino"],
+  ["fortalfy_gym_16_creatina_rotina.jpg", "Rotina forte, foco forte"],
+  ["fortalfy_gym_17_musculacao.jpg", "Cada repeti\u00e7\u00e3o conta"],
+  ["fortalfy_gym_18_cafeina.jpg", "Pr\u00e9-treino Fortalfy"],
+  ["fortalfy_gym_19_constancia.jpg", "Const\u00e2ncia vence"],
+  ["fortalfy_gym_20_manifesto.jpg", "Manifesto Fortalfy"]
+].map(([filename, title], index) => ({ image: brandCampaignAsset(filename), title, number: String(index + 1).padStart(2, "0") }));
+
 function HomeScreen({ activity, onActivity, session, profile: accountProfile, activityStatus, activityError, notify }) {
   const metadata = session?.user?.user_metadata || {};
   const displayName = accountProfile?.display_name || metadata.display_name || metadata.full_name || metadata.name || "";
@@ -397,10 +420,11 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
           <Link to="/shop"><ShoppingBag size={18} /><span>Quero explorar produtos</span><ArrowUpRight size={16} /></Link>
         </div>
       </section>
-      <section className="home-brand-campaign" aria-label="Campanhas Fortalfy">
-        <article><img src={brandCampaignAsset("fortalfy_gym_01_treino.jpg")} alt="Campanha Fortalfy de treino de força e performance" loading="lazy" decoding="async" /><span>FORÇA QUE SE CONSTRÓI</span></article>
-        <article><img src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="Campanha Fortalfy de nutrição e whey protein" loading="lazy" decoding="async" /><span>NUTRIÇÃO FAZ PARTE DO TREINO</span></article>
-        <article><img src={brandCampaignAsset("fortalfy_gym_14_hiit.jpg")} alt="Campanha Fortalfy de intensidade e movimento" loading="lazy" decoding="async" /><span>INTENSIDADE NO SEU RITMO</span></article>
+      <section className="home-brand-gallery" aria-labelledby="home-brand-gallery-title">
+        <div className="home-brand-gallery-heading"><span className="eyebrow">CAMPANHAS FORTALFY</span><h2 id="home-brand-gallery-title">A identidade Fortalfy em movimento</h2><p>O pack completo de fotos da marca, reunido em um s\u00f3 lugar.</p></div>
+        <div className="home-brand-campaign" aria-label="Galeria com as 20 fotos oficiais da Fortalfy">
+          {HOME_BRAND_CAMPAIGNS.map(({ image, title, number }) => <article key={image}><img src={image} alt={`${title}: campanha visual Fortalfy`} loading="lazy" decoding="async" /><span className="home-brand-campaign-brand">FORTALFY <small>{number} / 20</small></span><strong>{title}</strong></article>)}
+        </div>
       </section>
       <section className="home-ecosystem" id="home-ecosystem" aria-labelledby="home-ecosystem-title">
         <div className="module-catalog-heading">

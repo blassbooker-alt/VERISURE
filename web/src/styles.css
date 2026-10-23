@@ -10142,13 +10142,19 @@ html[data-theme="dark"] .professional-root :is(p, small, .dash-panel-head p, .da
 .mobile-app :is(a, button) { -webkit-tap-highlight-color: transparent; }
 .mobile-app :is(a, button, .module-card, .shop-product-card, .feed-post) { transition: color .16s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
 
-.home-brand-campaign { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 20px 0 34px; }
-.home-brand-campaign article { min-width: 0; position: relative; aspect-ratio: 1.45; overflow: hidden; margin: 0; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); box-shadow: var(--brand-shadow-sm); }
-.home-brand-campaign img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transition: transform .3s ease; }
-.home-brand-campaign article::after { position: absolute; inset: 35% 0 0; content: ""; background: linear-gradient(transparent, #050807d9); pointer-events: none; }
-.home-brand-campaign span { position: absolute; z-index: 1; right: 12px; bottom: 12px; left: 12px; color: #f5f7f2; font-size: clamp(.7rem, 1.2vw, .95rem); font-weight: 850; letter-spacing: .04em; text-shadow: 0 2px 8px #000; }
+.home-brand-gallery { margin: 26px 0 42px; }
+.home-brand-gallery-heading { margin-bottom: 16px; }
+.home-brand-gallery-heading .eyebrow { color: var(--color-primary); font-weight: 850; letter-spacing: .12em; }
+.home-brand-gallery-heading h2 { margin: 7px 0 5px; color: var(--color-text-primary); font-size: clamp(1.35rem, 2vw, 1.9rem); }
+.home-brand-gallery-heading p { margin: 0; color: var(--color-text-secondary); }
+.home-brand-campaign { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.home-brand-campaign article { min-width: 0; position: relative; aspect-ratio: 2 / 3; overflow: hidden; margin: 0; border: 1px solid var(--color-border); border-radius: 16px; background: #080b09; box-shadow: var(--brand-shadow-sm); }
+.home-brand-campaign img { width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform .3s ease; }
+.home-brand-campaign article::after { position: absolute; inset: 0; content: ""; background: linear-gradient(180deg, #050807a6 0%, transparent 28%, transparent 55%, #050807e8 100%); pointer-events: none; }
+.home-brand-campaign-brand { position: absolute; z-index: 1; top: 10px; right: 10px; left: 10px; display: flex; align-items: center; justify-content: space-between; color: #a8ff00; font-size: .72rem; font-weight: 950; letter-spacing: .09em; text-shadow: 0 1px 8px #000; }
+.home-brand-campaign-brand small { color: #fff; font-size: .65rem; }
+.home-brand-campaign article > strong { position: absolute; z-index: 1; right: 11px; bottom: 12px; left: 11px; color: #fff; font-size: clamp(.75rem, .95vw, .93rem); font-weight: 850; line-height: 1.18; text-shadow: 0 2px 8px #000; }
 .home-brand-campaign article:hover img { transform: scale(1.035); }
-
 .creator-screen .creator-hero { background: linear-gradient(116deg, #07110f 0%, #0d241b 52%, #183e26 100%); border: 1px solid var(--color-border); box-shadow: var(--brand-shadow-md); }
 .creator-screen .creator-hero::after { background: linear-gradient(90deg, #050807f7 0%, #07110fe8 38%, #07110f8f 68%, #07110f26 100%); }
 .creator-screen .creator-hero-photo { width: 64%; object-position: 78% 48%; }
@@ -10164,8 +10170,9 @@ html[data-theme="dark"] .professional-root :is(p, small, .dash-panel-head p, .da
 .shop-screen .shop-catalog-heading .eyebrow { color: var(--color-primary); }
 
 @media (max-width: 700px) {
-  .home-brand-campaign { display: flex; gap: 11px; overflow-x: auto; margin: 16px -1px 28px; padding: 2px 1px 10px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
-  .home-brand-campaign article { flex: 0 0 min(76vw, 330px); aspect-ratio: 1.25; scroll-snap-align: start; }
+  .home-brand-gallery { margin: 22px 0 32px; }
+  .home-brand-campaign { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .home-brand-campaign article { border-radius: 12px; }
   .creator-screen .creator-hero { min-height: 360px; }
   .creator-screen .creator-hero-photo { width: 100%; opacity: .64; object-position: 76% center; }
   .creator-screen .creator-hero::after { background: linear-gradient(90deg, #050807ed, #07110fa8 72%, #07110f70); }
@@ -10174,7 +10181,8 @@ html[data-theme="dark"] .professional-root :is(p, small, .dash-panel-head p, .da
   .shop-screen .shop-editorial::after { display: block; background: linear-gradient(90deg, #050807f2 0%, #050807cf 52%, #0508072b 100%); }
   .shop-screen .shop-editorial-banner { display: block; left: auto; width: 62%; opacity: .8; object-position: 84% center; }
   .shop-screen .shop-editorial-copy { width: 74%; }
-  .home-brand-campaign span { font-size: .72rem; }
+  .home-brand-campaign-brand { top: 8px; right: 8px; left: 8px; font-size: .64rem; }
+  .home-brand-campaign article > strong { right: 8px; bottom: 9px; left: 8px; font-size: .76rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
