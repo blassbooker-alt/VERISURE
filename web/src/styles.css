@@ -10480,3 +10480,61 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
   .creator-gallery-card { flex-basis: min(74%, 340px); }
   .creator-gallery-card.is-active { flex-basis: min(82%, 360px); }
 }
+
+/* Shared finishing pass: keep common controls, hierarchy and surfaces consistent. */
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --ui-radius-control: 12px;
+  --ui-radius-card: 18px;
+  --ui-control-height: 44px;
+}
+
+.mobile-app :is(.screen-heading, .section-title-row, .module-catalog-heading) {
+  gap: 12px;
+}
+
+.mobile-app :is(.screen-heading h1, .section-title-row h2, .module-catalog-heading h2) {
+  color: var(--color-text-primary);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.mobile-app :is(.screen-intro, .section-description, .module-catalog-heading p) {
+  color: var(--color-text-secondary);
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+.mobile-app :is(input, textarea, select, .search-field, .partner-search, .shop-search,
+  .social-discovery-search, .social-conversation-search) {
+  border-radius: var(--ui-radius-control);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.mobile-app :is(.button, .hero-cta, .location-chip, .shop-bag-button, .shop-history-button) {
+  border-radius: var(--ui-radius-control);
+  font-family: inherit;
+}
+
+.mobile-app :is(.feed-post, .dash-panel, .dash-metric, .performance-card,
+  .creator-card, .creator-pillar-card, .creator-step-card, .shop-product-card,
+  .food-card, .meal-list, .weekly-plan-card, .home-journey-card) {
+  border-radius: var(--ui-radius-card);
+}
+
+.mobile-app :is(button, .button, .hero-cta, input, textarea, select):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-focus) 72%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .mobile-app :is(input, select, .search-field, .partner-search, .shop-search,
+    .social-discovery-search, .social-conversation-search) {
+    min-height: var(--ui-control-height);
+  }
+
+  .mobile-app :is(.screen-intro, .section-description, .module-catalog-heading p) {
+    font-size: .875rem;
+  }
+}
