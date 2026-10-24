@@ -3,70 +3,21 @@ import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, ZoomIn, X } from "lucide-react";
 
 const images = [
-  {
-    file: "10_pack_completo.jpg",
-    alt: "Creator apresenta o kit completo de produtos Fortalfy em uma caixa aberta",
-    title: "O kit completo Fortalfy",
-    description: "Uma visão de todos os itens que compõem a experiência.",
-  },
-  {
-    file: "01_abertura_da_caixa.jpg",
-    alt: "Creator abrindo uma caixa Fortalfy com itens de treino sobre a mesa",
-    title: "Abrindo a caixa",
-    description: "A descoberta dos detalhes, do primeiro ao último item.",
-  },
-  {
-    file: "04_reacao_do_creator.jpg",
-    alt: "Creator observa uma camiseta e produtos em uma caixa Fortalfy aberta",
-    title: "Uma experiência para compartilhar",
-    description: "Momentos espontâneos que ganham forma em conteúdo.",
-  },
-  {
-    file: "08_unboxing_no_treino.jpg",
-    alt: "Creator registra o unboxing de uma caixa Fortalfy em um espaço de treino",
-    title: "Unboxing no treino",
-    description: "Uma experiência registrada em meio à rotina de movimento.",
-  },
-  {
-    file: "02_mostrando_camiseta.jpg",
-    alt: "Creator apresenta uma camiseta Fortalfy diante de uma caixa com acessórios",
-    title: "Mostrando a camiseta",
-    description: "A identidade Fortalfy em uma composição criada pelo creator.",
-  },
-  {
-    file: "05_camisa_no_espelho.jpg",
-    alt: "Creator mostra uma camiseta Fortalfy diante do espelho em um espaço de treino",
-    title: "Estilo dentro e fora da academia",
-    description: "Uma forma pessoal de apresentar a camiseta no dia a dia.",
-  },
-  {
-    file: "03_itens_sobre_a_mesa.jpg",
-    alt: "Caixa de unboxing Fortalfy aberta com camiseta e acessórios organizados",
-    title: "Produtos que fazem parte da rotina",
-    description: "Itens organizados para inspirar novas ideias de conteúdo.",
-  },
-  {
-    file: "07_creator_separando_os_itens.jpg",
-    alt: "Creator organiza produtos Fortalfy ao lado de uma caixa aberta",
-    title: "Criatividade em movimento",
-    description: "Um olhar criativo para cada detalhe da experiência.",
-  },
-  {
-    file: "06_acessorios_de_academia.jpg",
-    alt: "Caixa Fortalfy com camiseta e acessórios de treino apresentados em detalhe",
-    title: "Detalhes que inspiram",
-    description: "Texturas, cores e acessórios em uma composição visual.",
-  },
-  {
-    file: "09_detalhe_dos_produtos.jpg",
-    alt: "Detalhe de camiseta e squeeze Fortalfy em uma caixa de unboxing aberta",
-    title: "Conteúdo autêntico",
-    description: "Histórias contadas com o estilo próprio de cada creator.",
-  },
+  { src: "/assets/credibility-pack/14-community-hero.png", alt: "Comunidade Fortalfy treinando em grupo", title: "Evolua em comunidade", description: "Pessoas que encontram motivacao para seguir em movimento." },
+  { src: "/assets/credibility-pack/15-verified-partners.png", alt: "Equipe de profissionais e parceiros Fortalfy", title: "Parceiros verificados", description: "Profissionais e espacos com cadastro aprovado." },
+  { src: "/assets/credibility-pack/16-gym-partner-cover.png", alt: "Academia parceira Fortalfy equipada para treinos", title: "Academias parceiras", description: "Encontre espacos para treinar perto de voce." },
+  { src: "/assets/credibility-pack/17-personal-trainer-cover.png", alt: "Personal trainer orientando aluna em um exercicio", title: "Acompanhamento profissional", description: "Orientacao para sua rotina de treino." },
+  { src: "/assets/credibility-pack/18-nutritionist-cover.png", alt: "Nutricionista conversando com uma cliente", title: "Nutricao com orientacao", description: "Apoio profissional para escolhas que cabem na sua rotina." },
+  { src: "/assets/credibility-pack/19-food-partner-cover.png", alt: "Refeicao equilibrada preparada por parceiro Fortalfy", title: "Opcoes para sua rotina", description: "Conheca parceiros de alimentacao e bem-estar." },
+  { src: "/assets/credibility-pack/20-creator-profile-cover.png", alt: "Creator Fortalfy produzindo conteudo em uma academia", title: "Crie com autenticidade", description: "Compartilhe sua jornada e desenvolva sua presenca digital." },
+  { src: "/assets/credibility-pack/21-empty-feed-illustration.png", alt: "Ilustracao Fortalfy de uma jornada de evolucao", title: "Compartilhe sua jornada", description: "Inspire outras pessoas com cada passo da sua evolucao." },
+  { src: "/assets/credibility-pack/22-empty-shop-illustration.png", alt: "Kit de acessorios esportivos Fortalfy", title: "Acessorios para treinar", description: "Itens selecionados para acompanhar seu movimento." },
+  { src: "/assets/credibility-pack/23-empty-live-illustration.png", alt: "Espaco preparado para uma transmissao de treino Fortalfy", title: "Treine ao vivo", description: "Acompanhe conteudos e atividades da comunidade." },
+  { src: "/assets/credibility-pack/24-progress-achievement.png", alt: "Pessoa registrando seu progresso de treino", title: "Acompanhe seu progresso", description: "Registre sua rotina e reconheca cada conquista." },
+  { src: "/assets/credibility-pack/25-privacy-security.png", alt: "Ilustracao de seguranca e privacidade dos dados Fortalfy", title: "Privacidade protegida", description: "Seus dados e suas preferencias merecem cuidado." },
+  { src: "/assets/credibility-pack/26-onboarding-welcome.png", alt: "Atleta se preparando para correr ao nascer do sol", title: "Comece no seu ritmo", description: "Um novo passo para uma rotina mais ativa." },
+  { src: "/assets/credibility-pack/27-academy-creator.png", alt: "Creator editando um video de treino em seu estudio", title: "Aprenda a criar melhor", description: "Conteudo, edicao e marca pessoal para creators." },
 ];
-
-const imagePath = image => `/assets/creator/unboxing/${image.file}`;
-
 export default function CreatorGallery({ onApply, onLearn, images: suppliedImages, title = "Conteúdo que aproxima marcas e creators", eyebrow = "CONTEÚDO, COMUNIDADE E POSSIBILIDADES", description = "Creators podem mostrar sua rotina, seus conteúdos e suas experiências de forma autêntica, conectando comunidade, criatividade e novas possibilidades.", context = "FORTALCREATOR", disclosure = "Imagens ilustrativas de uma campanha de unboxing. O recebimento de produtos e as oportunidades de colaboração dependem de critérios, disponibilidade e seleção da Fortalfy.", galleryId = "creator-unboxing-title", className = "" }) {
   const galleryImages = suppliedImages || images;
   const [activeIndex, setActiveIndex] = useState(0);

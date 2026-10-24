@@ -10383,6 +10383,11 @@ html[data-theme="light"] .home-journey-card { background: linear-gradient(140deg
 .home-image-gallery .creator-unboxing-heading h2 { color: #f5f7f2; }
 .home-image-gallery .creator-unboxing-heading > p,
 .home-image-gallery .creator-unboxing-disclosure { color: #a7b3ad; }
+html[data-theme="dark"] .creator-unboxing { border-color: #263b34; background: linear-gradient(145deg, #0b1511, #101e18 65%, #14221a); }
+html[data-theme="dark"] .creator-unboxing-heading .eyebrow { color: #b7ff00; }
+html[data-theme="dark"] .creator-unboxing-heading h2 { color: #f5f7f2; }
+html[data-theme="dark"] .creator-unboxing-heading > p,
+html[data-theme="dark"] .creator-unboxing-disclosure { color: #a7b3ad; }
 html[data-theme="light"] .creator-gallery-arrow { border-color: #d7e2d9; color: #123c2b; background: #fff; }
 html[data-theme="light"] .creator-gallery-count { color: #14201b; }
 html[data-theme="light"] .creator-gallery-count span { color: #627168; }
