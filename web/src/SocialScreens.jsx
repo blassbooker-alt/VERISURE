@@ -197,6 +197,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
   const [otpToken, setOtpToken] = useState("");
   const [resendSeconds, setResendSeconds] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [signupStep, setSignupStep] = useState(1);
   const [googleHelpOpen, setGoogleHelpOpen] = useState(false);
   const [fields, setFields] = useState({
     name: "", username: "", email: "", password: "", confirmPassword: "", birthDate: "", city: "", kind: professionalKind || "cliente",
@@ -394,7 +395,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
         if (error) {
           const errText = (error.message || "").toLowerCase();
           if (errText.includes("invalid login credentials") || error.code === "invalid_credentials") {
-            setMessage("O Supabase não aceitou este e-mail e senha. Se a conta acabou de ser criada, confirme o e-mail primeiro; se já confirmou, confira o endereço ou use “Esqueceu a senha?”.");
+            setMessage("Não foi possível entrar. Verifique seu e-mail e sua senha.");
           } else if (errText.includes("email not confirmed")) {
             setMessage("Seu e-mail ainda precisa de confirmação. Informe o código recebido ou solicite outro.");
             setMode("confirm");
@@ -468,6 +469,18 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
       : [...current[field], value],
   }));
 
+  const advanceSignupStep = () => {
+    const errors = [
+      !fields.name.trim() ? "Informe seu nome para continuar." : !/^[a-z0-9._]{3,30}$/.test(signupUsername) ? "Escolha um nome de usuário válido (3 a 30 caracteres)." : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim()) ? "Informe um e-mail válido." : fields.password.length < 8 ? "Use uma senha com pelo menos 8 caracteres." : usernameCheck.available === false ? "Esse nome de usuário já está em uso. Escolha outro." : usernameCheck.checking ? "Aguarde a verificação do nome de usuário." : "",
+      !fields.birthDate ? "Informe sua data de nascimento para continuar." : "",
+      !fields.goals.length || !fields.interests.length ? "Escolha ao menos um objetivo e um interesse." : "",
+    ];
+    const error = errors[signupStep - 1];
+    if (error) { setMessage(error); setMessageType("error"); return; }
+    setMessage("");
+    setSignupStep(step => Math.min(4, step + 1));
+  };
+
   const startGoogleLogin = async () => {
     if (!configured || !client) {
       setMessage("A conexão com o Supabase ainda não foi configurada nesta publicação.");
@@ -505,56 +518,23 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
     <div className={`social-auth-hero-container${variant ? ` ${variant}` : ""}`}>
       <div className="social-auth-split">
         {/* Left Column: Brand Showcase */}
-        <aside className="social-auth-showcase">
-          <div className="showcase-glow-circle" />
+        <aside className={`social-auth-showcase has-auth-art${mode === "signup" && fields.kind !== "cliente" ? " professional-auth-art" : ""}`}>
+          <img
+            className="auth-welcome-art"
+            src={mode === "signup" && fields.kind !== "cliente"
+              ? "/assets/53-welcome-professional-corporate.png"
+              : "/assets/52-welcome-community-corporate.png"}
+            alt={mode === "signup" && fields.kind !== "cliente"
+              ? "Profissionais Fortalfy reunidos em uma academia"
+              : "Comunidade Fortalfy reunida após o treino"}
+          />
           <div className="showcase-brand-header">
             <Brand light />
-            <span className="showcase-pill">COMUNIDADE & BEM-ESTAR</span>
+            <span className="showcase-pill">COMUNIDADE &amp; BEM-ESTAR</span>
           </div>
-
           <div className="showcase-content">
-            <h2>Bem-estar no seu ritmo.</h2>
-            <p>
-              Encontre parceiros e profissionais aprovados, consulte conteúdos publicados e acompanhe os registros da sua rotina.
-            </p>
-
-            <div className="showcase-perks">
-              <div className="showcase-perk-item">
-                <span className="perk-icon perk-mint"><Dumbbell size={18} /></span>
-                <div>
-                  <strong>Fortalfy Pass</strong>
-                  <small>Academias e profissionais aprovados, quando disponíveis</small>
-                </div>
-              </div>
-              <div className="showcase-perk-item">
-                <span className="perk-icon perk-orange"><Sparkles size={18} /></span>
-                <div>
-                  <strong>Nutrição & Food</strong>
-                  <small>Cardápios publicados por restaurantes parceiros</small>
-                </div>
-              </div>
-              <div className="showcase-perk-item">
-                <span className="perk-icon perk-lime"><Users size={18} /></span>
-                <div>
-                  <strong>Feed & Conexão</strong>
-                  <small>Publicações e conversas da comunidade Fortalfy</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <img
-            className="showcase-banner"
-            src={visualPackAsset("fortalfy-pack-onboarding-lifestyle.jpg")}
-            alt=""
-            aria-hidden="true"
-          />
-
-          <div className="showcase-footer">
-            <div className="showcase-proof">
-              <strong>Seu espaço para evoluir</strong>
-              <small>Treino, comunidade e bem-estar em um só lugar.</small>
-            </div>
+            <h2>Bem-vindo à Fortalfy</h2>
+            <p>Seu movimento. Sua comunidade. Seu próximo passo.</p>
           </div>
         </aside>
 
@@ -567,7 +547,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               role="tab"
               aria-selected={mode === "login"}
               className={`auth-tab-btn ${mode === "login" ? "active" : ""}`}
-              onClick={() => { setMode("login"); setMessage(""); setGoogleHelpOpen(false); }}
+              onClick={() => { setMode("login"); setSignupStep(1); setMessage(""); setGoogleHelpOpen(false); }}
             >
               Entrar
             </button>
@@ -576,7 +556,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               role="tab"
               aria-selected={mode === "signup"}
               className={`auth-tab-btn ${mode === "signup" ? "active" : ""}`}
-              onClick={() => { setMode("signup"); setMessage(""); setGoogleHelpOpen(false); }}
+              onClick={() => { setMode("signup"); setSignupStep(1); setMessage(""); setGoogleHelpOpen(false); }}
             >
               Criar Conta
             </button>
@@ -690,8 +670,14 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
           )}
 
           {/* Form */}
-          <form className="social-auth-form" onSubmit={submit}>
-            {mode === "signup" && (
+          <form className="social-auth-form" onSubmit={event => {
+            if (mode === "signup" && signupStep < 4) { event.preventDefault(); advanceSignupStep(); return; }
+            submit(event);
+          }}>
+            {mode === "signup" && <ol className="auth-signup-progress" aria-label="Etapas do cadastro">
+              {["Dados", "Perfil", "Preferências", "Finalizar"].map((label, index) => <li key={label} className={signupStep === index + 1 ? "active" : signupStep > index + 1 ? "complete" : ""} aria-current={signupStep === index + 1 ? "step" : undefined}><span>{index + 1}</span>{label}</li>)}
+            </ol>}
+            {mode === "signup" && signupStep === 1 && (
               <div className="auth-field">
                 <label htmlFor="auth-field-name">Nome completo ou de exibição</label>
                 <div className="auth-input-box">
@@ -710,7 +696,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               </div>
             )}
 
-            {mode === "signup" && (
+            {mode === "signup" && signupStep === 2 && (
               <div className="auth-field">
                 <label htmlFor="auth-field-kind">Tipo de conta</label>
                 <select
@@ -734,7 +720,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               </div>
             )}
 
-            {mode === "signup" && (
+            {mode === "signup" && signupStep === 1 && (
               <div className="auth-field">
                 <label htmlFor="auth-field-username">Nome de usuário (@)</label>
                 <div className="auth-input-box">
@@ -766,7 +752,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               </div>
             )}
 
-            {['signup', 'login', 'reset'].includes(mode) && (
+            {(['login', 'reset'].includes(mode) || (mode === 'signup' && signupStep === 1)) && (
               <div className="auth-field">
                 <label htmlFor="auth-field-email">E-mail</label>
                 <div className="auth-input-box">
@@ -784,7 +770,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               </div>
             )}
 
-            {['signup', 'login', 'update'].includes(mode) && (
+            {(['login', 'update'].includes(mode) || (mode === 'signup' && signupStep === 1)) && (
               <div className="auth-field">
                 <div className="auth-label-row">
                   <label htmlFor="auth-field-password">Senha</label>
@@ -867,7 +853,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               </div>
             )}
 
-            {mode === "signup" && (
+            {mode === "signup" && signupStep === 2 && (
               <>
                 <div className="auth-two-col">
                   <div className="auth-field">
@@ -902,7 +888,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                   </div>
                 </div>
 
-                <fieldset className="social-auth-choice-group">
+                {signupStep === 3 && <fieldset className="social-auth-choice-group">
                   <legend>Quais são seus objetivos principais?</legend>
                   <div className="auth-choice-chips">
                     {signupGoals.map(([value, label]) => (
@@ -916,9 +902,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                       </label>
                     ))}
                   </div>
-                </fieldset>
+                </fieldset>}
 
-                <fieldset className="social-auth-choice-group">
+                {signupStep === 3 && <fieldset className="social-auth-choice-group">
                   <legend>O que mais deseja explorar no app?</legend>
                   <div className="auth-choice-chips">
                     {signupInterests.map(([value, label]) => (
@@ -932,9 +918,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                       </label>
                     ))}
                   </div>
-                </fieldset>
+                </fieldset>}
 
-                <label className="social-auth-consent">
+                {signupStep === 4 && <label className="social-auth-consent">
                   <input
                     type="checkbox"
                     checked={fields.acceptedTerms}
@@ -942,38 +928,39 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                     required
                   />
                   <span>Li e aceito os Termos de Uso, a Política de Privacidade e as Diretrizes da Comunidade Fortalfy.</span>
-                </label>
-                <label className="social-auth-consent">
+                </label>}
+                {signupStep === 4 && <label className="social-auth-consent">
                   <input
                     type="checkbox"
                     checked={fields.acceptedBenefitsTerms}
                     onChange={event => setFields(current => ({ ...current, acceptedBenefitsTerms: event.target.checked }))}
                   />
                   <span>Li e concordo com as regras dos benefícios e descontos Fortalfy, quando aplicáveis. <Link to="/benefits-terms">Consultar declaração e termos</Link>. Este aceite é opcional e separado dos termos gerais.</span>
-                </label>
+                </label>}
               </>
             )}
 
             {message && (
-              <div className={`auth-alert-message ${messageType}`} role="status">
+              <div className={`auth-alert-message ${messageType}`} role={messageType === "error" ? "alert" : "status"}>
                 <CircleAlert size={16} />
                 <span>{message}</span>
               </div>
             )}
 
-            <button className="auth-submit-btn" type="submit" disabled={busy}>
+            {mode === "signup" && signupStep > 1 && <button className="auth-link-btn auth-signup-back" type="button" onClick={() => { setMessage(""); setSignupStep(step => Math.max(1, step - 1)); }}>Voltar</button>}
+            <button className="auth-submit-btn" type={mode === "signup" && signupStep < 4 ? "button" : "submit"} onClick={mode === "signup" && signupStep < 4 ? advanceSignupStep : undefined} disabled={busy}>
               {busy ? (
                 <LoaderCircle className="spin" size={17} />
               ) : (
                 <>
                   <span>
                     {mode === "confirm" ? "Confirmar meu e-mail" : mode === "signup"
-                      ? "Criar Conta & Começar"
+                      ? signupStep < 4 ? "Continuar" : "Criar conta"
                       : mode === "reset"
                       ? "Enviar Link de Recuperação"
                       : mode === "update"
                       ? "Atualizar Senha"
-                      : "Entrar na Minha Conta"}
+                      : busy ? "Entrando..." : "Entrar na Minha Conta"}
                   </span>
                   <ArrowRight size={17} />
                 </>
@@ -997,7 +984,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               <button
                 type="button"
                 className="auth-link-btn"
-                onClick={() => { setMode("login"); setMessage(""); setGoogleHelpOpen(false); }}
+                onClick={() => { setMode("login"); setSignupStep(1); setMessage(""); setGoogleHelpOpen(false); }}
               >
                 Já tem uma conta? <strong>Entrar</strong>
               </button>
@@ -1006,7 +993,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
               <button
                 type="button"
                 className="auth-link-btn"
-                onClick={() => { setMode("signup"); setMessage(""); setGoogleHelpOpen(false); }}
+                onClick={() => { setMode("signup"); setSignupStep(1); setMessage(""); setGoogleHelpOpen(false); }}
               >
                 Ainda não tem conta? <strong>Cadastre-se gratuitamente</strong>
               </button>
@@ -2502,7 +2489,7 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
     <header className="social-guest-feed-header"><span className="eyebrow">FORTALFY · COMUNIDADE & BEM-ESTAR</span><h1>Feed da comunidade</h1><p>Inspiração, rotina e bem-estar no seu ritmo.</p><div className="social-guest-feed-actions"><button type="button" className="button social-feed-primary" onClick={() => openAuth("signup")}>Criar conta</button><button type="button" className="button social-feed-secondary" onClick={() => openAuth("login")}>Entrar</button></div></header>
     <section className="social-guest-empty"><span className="social-guest-empty-icon"><Users size={25} /></span><span className="eyebrow">UM ESPAÇO PARA A COMUNIDADE</span><h2>Seu Feed começa com uma conexão.</h2><p>Siga pessoas, profissionais e parceiros para encontrar conteúdos que combinam com seu ritmo.</p><div className="social-guest-empty-actions"><Link to="/people" className="button social-feed-primary">Encontrar pessoas</Link><button type="button" className="social-feed-text-action" onClick={() => openAuth("signup")}>Criar primeira publicação <ArrowRight size={15} /></button></div></section>
     <p className="social-guest-honesty-note">As publicações da comunidade aparecem aqui quando você entra. Nenhum conteúdo de demonstração é apresentado como atividade real.</p>
-    {authOpen && <div className="social-auth-feed-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setAuthOpen(false)}><section ref={authDialogRef} className="social-auth-feed-dialog" role="dialog" aria-modal="true" aria-label={authMode === "signup" ? "Criar conta Fortalfy" : "Entrar na Fortalfy"}><button className="social-auth-feed-close" type="button" aria-label="Fechar janela de acesso" onClick={() => setAuthOpen(false)}><X size={20} /></button><SocialAuth client={client} configured={configured} notify={notify} variant="social-auth-feed-modal" initialMode={authMode} /></section></div>}
+    {authOpen && <div className="social-auth-feed-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setAuthOpen(false)}><section ref={authDialogRef} className="social-auth-feed-dialog" role="dialog" aria-modal="true" aria-label={authMode === "signup" ? signupStep < 4 ? "Continuar" : "Criar conta" : "Entrar na Fortalfy"}><button className="social-auth-feed-close" type="button" aria-label="Fechar janela de acesso" onClick={() => setAuthOpen(false)}><X size={20} /></button><SocialAuth client={client} configured={configured} notify={notify} variant="social-auth-feed-modal" initialMode={authMode} /></section></div>}
   </div>;
   if (!session) return <>{!reelMode && <CommunityNavigation active="feed" />}<SocialAuth client={client} configured={configured} notify={notify} /></>;
   if (profileError) return <div className="social-feed-error" role="alert">{reelMode && <Link to="/feed" className="social-reels-back" aria-label="Voltar ao Feed"><ArrowLeft size={20} /></Link>}<CircleAlert size={17} /><span>{profileError}</span><button onClick={onRetryProfile}>Tentar novamente</button></div>;
