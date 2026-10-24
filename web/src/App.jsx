@@ -268,7 +268,7 @@ function PublicLanding() {
       </div>
     </header>
     <section className="public-hero" aria-labelledby="public-hero-title">
-      <img className="public-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher se exercita em um estúdio claro, com espaço aberto e luz natural" fetchPriority="high" decoding="async" />
+      <img className="public-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="Mulher se exercita em um estúdio claro, com espaço aberto e luz natural" fetchpriority="high" decoding="async" />
       <div className="public-hero-copy">
         <span className="public-hero-kicker"><Activity size={15} /> BEM-ESTAR, NO SEU RITMO</span>
         <h1 id="public-hero-title">Seu bem-estar começa <span>no próximo passo.</span></h1>
@@ -395,7 +395,7 @@ function HomeScreen({ activity, session, profile: accountProfile, activityError 
     { campaign: HOME_BRAND_CAMPAIGNS[19], category: "CRIADORES", title: "Conhecer o FortalCreator", to: "/creator" },
   ];
   return <Screen className="home-screen">
-    <Link to="/pass" className="home-hero-art" aria-label="Seu próximo nível começa hoje. Explorar a Fortalfy e conhecer parceiros."><img src={adPackAsset("01-home-hero.png")} alt="Seu próximo nível começa hoje. Campanha institucional Fortalfy com atleta treinando em uma academia." fetchPriority="high" decoding="async" /></Link>{/* Hero art includes its own logo, message and CTA. */}
+    <Link to="/pass" className="home-hero-art" aria-label="Seu próximo nível começa hoje. Explorar a Fortalfy e conhecer parceiros."><img src={adPackAsset("01-home-hero.png")} alt="Seu próximo nível começa hoje. Campanha institucional Fortalfy com atleta treinando em uma academia." fetchpriority="high" decoding="async" /></Link>{/* Hero art includes its own logo, message and CTA. */}
     <div className="screen-inner home-inner">
       <section className="home-next-step" id="home-next-step" aria-labelledby="home-next-step-title"><div className="home-next-step-icon"><nextStep.icon size={23} aria-hidden="true" /></div><div className="home-next-step-copy"><span className="eyebrow">SEU PRÓXIMO PASSO</span><h2 id="home-next-step-title">{nextStep.title}</h2><p>{nextStep.description}</p></div><Link to={nextStep.to} className="button primary home-next-step-action">{nextStep.label} <ArrowRight size={16} /></Link></section>
       <section className="home-performance" aria-labelledby="home-performance-title"><div className="home-section-heading"><span className="eyebrow">SEU DESEMPENHO</span><h2 id="home-performance-title">Sua evolução em números</h2><p>{activity.workoutsLogged || activity.mealsLogged ? "Resumo dos registros da sua conta." : "Comece seu primeiro treino para acompanhar sua evolução."}</p></div><div className="home-performance-metrics"><div><strong>{workoutsThisWeek}</strong><span>treinos nesta semana</span></div><div><strong>{activity.workoutsLogged}</strong><span>treinos registrados</span></div><div><strong>{activity.mealsLogged}</strong><span>refeições registradas</span></div></div>{activityError && <p className="home-data-status" role="status">{activityError}</p>}</section>
