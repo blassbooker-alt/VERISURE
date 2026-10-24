@@ -10311,6 +10311,91 @@ html[data-theme="dark"] .professional-root :is(p, small, .dash-panel-head p, .da
 html[data-theme="dark"] .home-journey-card { background: linear-gradient(140deg, #141d17, #18221a); border-color: #2c3b30; }
 html[data-theme="dark"] .home-discovery-empty { background: #141d17; border-color: #2c3b30; }
 html[data-theme="light"] .home-journey-card { background: linear-gradient(140deg, #fff, #f3f8ef); border-color: #dce6dc; }
+
+/* Shared Fortalfy image gallery: horizontal editorial rail with an active card. */
+.creator-gallery-track {
+  height: clamp(330px, 35vw, 440px);
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 5px 12px;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 18px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+}
+.creator-gallery-track::-webkit-scrollbar { display: none; }
+.creator-gallery-track.is-dragging { cursor: grabbing; scroll-behavior: auto; user-select: none; }
+.creator-gallery-card,
+.creator-gallery-card.is-active {
+  flex: 0 0 clamp(210px, 23vw, 285px);
+  scroll-snap-align: center;
+  border-color: #263b34;
+  background: #12211e;
+  transition: flex-basis .32s cubic-bezier(.22,1,.36,1), border-color .32s ease, box-shadow .32s ease, filter .32s ease;
+}
+.creator-gallery-card:not(.is-active) { filter: brightness(.78) saturate(.88); }
+.creator-gallery-card.is-active {
+  flex-basis: clamp(310px, 38vw, 450px);
+  border-color: #b7ff00;
+  box-shadow: 0 15px 36px #00140b50, 0 0 0 1px #b7ff0045;
+  filter: none;
+}
+.creator-gallery-card:focus-visible { outline: 3px solid #b7ff00; outline-offset: 3px; }
+.creator-gallery-image { object-position: center 38%; }
+.creator-gallery-zoom { color: #f5f7f2; border-color: #b7ff0080; background: #07120ecc; }
+.creator-gallery-hint { display: block; margin: 0; color: #a7b3ad; font-size: .75rem; text-align: center; }
+.creator-gallery-controls { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.creator-gallery-arrow { display: grid; width: 44px; height: 44px; flex: none; place-items: center; border: 1px solid #263b34; border-radius: 50%; color: #f5f7f2; background: #12211e; cursor: pointer; transition: border-color .2s, color .2s, background .2s, transform .2s; }
+.creator-gallery-arrow:hover { transform: translateY(-1px); border-color: #b7ff00; color: #b7ff00; }
+.creator-gallery-count { color: #f5f7f2; font-size: .78rem; font-weight: 850; font-variant-numeric: tabular-nums; }
+.creator-gallery-count span { color: #a7b3ad; font-weight: 650; }
+.creator-unboxing-lightbox { background: #050807f5; }
+.creator-unboxing-dialog figure img { max-height: min(78dvh, calc(100dvh - 150px)); }
+.creator-unboxing-dialog figcaption { max-width: min(70ch, 100%); color: #a7b3ad; }
+.creator-unboxing-close,
+.creator-unboxing-lightbox-arrow { border-color: #263b34; color: #f5f7f2; background: #12211e; }
+.creator-unboxing-close:hover,
+.creator-unboxing-lightbox-arrow:hover { border-color: #b7ff00; color: #b7ff00; }
+.home-image-gallery { margin: 38px 0 28px; border-color: #263b34; background: linear-gradient(145deg, #0b1511, #101e18 65%, #14221a); box-shadow: 0 18px 48px #0003; }
+.home-image-gallery .creator-unboxing-heading .eyebrow { color: #b7ff00; }
+.home-image-gallery .creator-unboxing-heading h2 { color: #f5f7f2; }
+.home-image-gallery .creator-unboxing-heading > p,
+.home-image-gallery .creator-unboxing-disclosure { color: #a7b3ad; }
+html[data-theme="light"] .creator-gallery-arrow { border-color: #d7e2d9; color: #123c2b; background: #fff; }
+html[data-theme="light"] .creator-gallery-count { color: #14201b; }
+html[data-theme="light"] .creator-gallery-count span { color: #627168; }
+html[data-theme="light"] .creator-unboxing-lightbox { background: #f4f7f2f5; }
+html[data-theme="light"] .creator-unboxing-dialog figcaption { color: #42564b; }
+html[data-theme="light"] .creator-unboxing-close,
+html[data-theme="light"] .creator-unboxing-lightbox-arrow { border-color: #d7e2d9; color: #123c2b; background: #fff; }
+html[data-theme="light"] .home-image-gallery { border-color: #d7e2d9; background: linear-gradient(145deg, #f4f7f2, #fff 65%, #eef5e9); }
+html[data-theme="light"] .home-image-gallery .creator-unboxing-heading h2 { color: #14201b; }
+html[data-theme="light"] .home-image-gallery .creator-unboxing-heading > p,
+html[data-theme="light"] .home-image-gallery .creator-unboxing-disclosure { color: #526258; }
+@media (max-width: 650px) {
+  .creator-gallery-track { height: clamp(360px, 112vw, 490px); gap: 10px; padding: 3px 2px 10px; }
+  .creator-gallery-card,
+  .creator-gallery-card.is-active { flex-basis: min(78%, 360px); border-radius: 16px; }
+  .creator-gallery-card:not(.is-active) .creator-gallery-image { filter: brightness(.78); transform: none; }
+  .creator-gallery-card.is-active .creator-gallery-image { filter: brightness(1); transform: scale(1.025); }
+  .creator-gallery-copy { right: 17px; bottom: 20px; left: 17px; gap: 7px; opacity: 1; transform: none; }
+  .creator-gallery-title { max-width: 18ch; font-size: 1.5rem; }
+  .creator-gallery-description { max-width: 38ch; font-size: .8125rem; }
+  .creator-gallery-zoom { width: 42px; height: 42px; opacity: 1 !important; }
+  .home-image-gallery { margin: 24px 0 32px; padding: 18px 14px; border-radius: 19px; }
+  .creator-unboxing-dialog { grid-template-columns: 38px minmax(0,1fr) 38px; gap: 5px; }
+  .creator-unboxing-lightbox { padding: max(12px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); }
+  .creator-unboxing-dialog figure img { max-height: calc(100dvh - 170px); }
+  .creator-unboxing-lightbox-arrow, .creator-unboxing-close { width: 38px; height: 38px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .creator-gallery-card, .creator-gallery-image, .creator-gallery-copy, .creator-gallery-arrow,
+  .creator-unboxing-lightbox, .creator-unboxing-dialog { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
 html[data-theme="light"] .home-screen .home-performance { background: #fff; border-color: #dce6dc; }
 html[data-theme="light"] .home-live-product { background: #fff; border-color: #dce6dc; }
 @media (max-width: 760px) {
@@ -10363,4 +10448,18 @@ html[data-theme="light"] .home-live-product { background: #fff; border-color: #d
 }
 @media (prefers-reduced-motion: reduce) {
   .home-screen :is(.home-featured-card img, .home-live-partner img, .home-progress-track span) { transition-duration: .01ms !important; }
+}
+.shop-dialog-image-trigger { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 16px; background: transparent; cursor: zoom-in; }
+.shop-dialog-image-trigger > span { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid #ffffff66; border-radius: 999px; color: #f5f7f2; background: #07120edb; font-size: .72rem; font-weight: 800; }
+.shop-image-zoom { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; padding: max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom)); background: #050807f5; }
+.shop-image-zoom > section { position: relative; display: grid; justify-items: center; gap: 12px; width: min(100%, 1100px); max-height: 100%; }
+.shop-image-zoom > section > button { position: absolute; z-index: 1; top: 10px; right: 10px; display: grid; width: 46px; height: 46px; place-items: center; border: 1px solid #263b34; border-radius: 50%; color: #f5f7f2; background: #12211e; }
+.shop-image-zoom > section > img { display: block; width: auto; max-width: 100%; height: auto; max-height: calc(100dvh - 110px); border-radius: 14px; object-fit: contain; }
+.shop-image-zoom > section > p { margin: 0; color: #a7b3ad; text-align: center; font-size: .82rem; }
+html[data-theme="light"] .shop-image-zoom { background: #f4f7f2f5; }
+html[data-theme="light"] .shop-image-zoom > section > p { color: #42564b; }
+html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7e2d9; color: #123c2b; background: #fff; }
+@media (max-width: 650px) {
+  .creator-gallery-card { flex-basis: min(74%, 340px); }
+  .creator-gallery-card.is-active { flex-basis: min(82%, 360px); }
 }

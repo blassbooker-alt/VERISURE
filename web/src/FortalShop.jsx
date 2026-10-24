@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronRight, Minus, Plus, Search, ShoppingBag, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronRight, Minus, Plus, Search, ShoppingBag, Sparkles, Trash2, X, ZoomIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
@@ -12,6 +12,13 @@ const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency",
 function ShopDialog({ product, onClose, onAddToCart }) {
   const [selectedOption, setSelectedOption] = useState(product?.variation?.values[0] || "");
   const [quantity, setQuantity] = useState(1);
+  const [imageZoomOpen, setImageZoomOpen] = useState(false);
+  useEffect(() => {
+    if (!imageZoomOpen) return undefined;
+    const closeOnEscape = event => event.key === "Escape" && setImageZoomOpen(false);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [imageZoomOpen]);
   if (!product) return null;
   const addToCart = () => onAddToCart(product, product.variation ? { [product.variation.name]: selectedOption } : {}, quantity);
 
@@ -19,7 +26,7 @@ function ShopDialog({ product, onClose, onAddToCart }) {
     <section className="modal-card shop-dialog shop-product-dialog" role="dialog" aria-modal="true" aria-label={`Produto ${product.name}`}>
       <div className="shop-detail-topbar"><span className="eyebrow">LOJA PARCEIRA · PRODUTO PUBLICADO</span><button className="icon-button" aria-label="Fechar produto" onClick={onClose}><X size={18} /></button></div>
       <div className="shop-product-detail-layout">
-        <div className="shop-detail-gallery"><img className="shop-dialog-image" src={product.image} alt={product.imageAlt} /><span className="shop-image-caption">Imagem do catálogo Fortal</span></div>
+        <div className="shop-detail-gallery"><button type="button" className="shop-dialog-image-trigger" onClick={() => setImageZoomOpen(true)} aria-label={`Ampliar imagem de ${product.name}`}><img className="shop-dialog-image" src={product.image} alt={product.imageAlt} /><span><ZoomIn size={17} /> Ampliar foto</span></button><span className="shop-image-caption">Imagem do catálogo Fortal</span></div>
         <div className="shop-detail-information">
           <span className="shop-detail-category">{getShopDepartment(product)} <span>·</span> Loja parceira</span>
           <h2>{product.name}</h2>
@@ -31,6 +38,7 @@ function ShopDialog({ product, onClose, onAddToCart }) {
           <div className="shop-detail-description"><h3>Sobre este produto</h3><p>{product.detail}</p><ul>{product.specs.map(spec => <li key={spec}>{spec}</li>)}</ul></div>
         </div>
       </div>
+      {imageZoomOpen && <div className="shop-image-zoom" role="presentation" onMouseDown={event => event.target === event.currentTarget && setImageZoomOpen(false)}><section role="dialog" aria-modal="true" aria-label={`Imagem ampliada: ${product.name}`}><button type="button" aria-label="Fechar imagem ampliada" onClick={() => setImageZoomOpen(false)}><X size={21} /></button><img src={product.image} alt={product.imageAlt} /><p>{product.name} · {getShopDepartment(product)}</p></section></div>}
     </section>
   </div>;
 }

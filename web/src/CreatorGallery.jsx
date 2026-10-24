@@ -67,7 +67,8 @@ const images = [
 
 const imagePath = image => `/assets/creator/unboxing/${image.file}`;
 
-export default function CreatorGallery({ onApply, onLearn }) {
+export default function CreatorGallery({ onApply, onLearn, images: suppliedImages, title = "Conteúdo que aproxima marcas e creators", eyebrow = "CONTEÚDO, COMUNIDADE E POSSIBILIDADES", description = "Creators podem mostrar sua rotina, seus conteúdos e suas experiências de forma autêntica, conectando comunidade, criatividade e novas possibilidades.", context = "FORTALCREATOR", disclosure = "Imagens ilustrativas de uma campanha de unboxing. O recebimento de produtos e as oportunidades de colaboração dependem de critérios, disponibilidade e seleção da Fortalfy.", galleryId = "creator-unboxing-title", className = "" }) {
+  const galleryImages = suppliedImages || images;
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const lightboxIndexRef = useRef(lightboxIndex);
@@ -90,9 +91,8 @@ export default function CreatorGallery({ onApply, onLearn }) {
       if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
         event.preventDefault();
         const direction = event.key === "ArrowRight" ? 1 : -1;
-        const nextIndex = (lightboxIndexRef.current + direction + images.length) % images.length;
-        setActiveIndex(nextIndex);
-        setLightboxIndex(nextIndex);
+        const nextIndex = (lightboxIndexRef.current + direction + galleryImages.length) % galleryImages.length;
+        navigateLightbox(nextIndex);
       }
       if (event.key === "Tab") {
         const buttons = lightboxRef.current?.querySelectorAll("button:not([disabled])");
@@ -114,7 +114,31 @@ export default function CreatorGallery({ onApply, onLearn }) {
       window.removeEventListener("keydown", handleKeyDown);
       if (previousFocus instanceof HTMLElement && document.contains(previousFocus)) previousFocus.focus();
     };
-  }, [isLightboxOpen]);
+  }, [isLightboxOpen, galleryImages.length]);
+
+  const dragRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  function handlePointerDown(event) {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    dragRef.current = { x: event.clientX, scrollLeft: trackRef.current?.scrollLeft || 0, moved: false };
+    trackRef.current?.classList.add("is-dragging");
+  }
+  function handlePointerMove(event) {
+    if (!dragRef.current || !trackRef.current) return;
+    const delta = event.clientX - dragRef.current.x;
+    if (Math.abs(delta) > 12) dragRef.current.moved = true;
+    if (dragRef.current.moved) {
+      event.preventDefault();
+      trackRef.current.scrollLeft = dragRef.current.scrollLeft - delta;
+    }
+  }
+  function handlePointerUp() {
+    if (!dragRef.current) return;
+    suppressClickRef.current = dragRef.current.moved;
+    if (suppressClickRef.current) window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+    dragRef.current = null;
+    trackRef.current?.classList.remove("is-dragging");
+  }
 
   function scrollToImage(index) {
     const track = trackRef.current;
@@ -134,15 +158,17 @@ export default function CreatorGallery({ onApply, onLearn }) {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const direction = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
     const index = event.key === "Home" ? 0
-      : event.key === "End" ? images.length - 1
-        : direction ? (activeIndex + direction + images.length) % images.length : null;
+      : event.key === "End" ? galleryImages.length - 1
+        : direction ? (activeIndex + direction + galleryImages.length) % galleryImages.length : null;
     if (index === null) return;
     event.preventDefault();
     setActiveIndex(index);
     cardRefs.current[index]?.focus();
+    scrollToImage(index);
   }
 
   function handleTrackScroll() {
+    if (isLightboxOpen) return;
     const track = trackRef.current;
     if (!track) return;
     const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
@@ -159,43 +185,49 @@ export default function CreatorGallery({ onApply, onLearn }) {
     triggerButtonRef.current = event.currentTarget;
     setActiveIndex(index);
     setLightboxIndex(index);
+    scrollToImage(index);
+  }
+
+  function navigateLightbox(index) {
+    setActiveIndex(index);
+    setLightboxIndex(index);
+    scrollToImage(index);
   }
 
   return <>
-    <section className="creator-unboxing" aria-labelledby="creator-unboxing-title">
+    <section className={`creator-unboxing ${className}`} aria-labelledby={galleryId}>
       <div className="creator-unboxing-heading">
-        <span className="eyebrow">CONTEÚDO, COMUNIDADE E POSSIBILIDADES</span>
-        <h2 id="creator-unboxing-title">Conteúdo que aproxima marcas e creators</h2>
-        <p>Creators podem mostrar sua rotina, seus conteúdos e suas experiências de forma autêntica, conectando comunidade, criatividade e novas possibilidades.</p>
+        <span className="eyebrow">{eyebrow}</span>
+        <h2 id={galleryId}>{title}</h2>
+        <p>{description}</p>
       </div>
       <div className="creator-gallery-wrap">
-        <div className="creator-gallery-track" ref={trackRef} onKeyDown={handleTrackKeyDown} onScroll={handleTrackScroll} role="group" aria-label="Galeria ilustrativa de unboxing. Use as setas do teclado para navegar.">
-          {images.map((image, index) => {
+        <div className="creator-gallery-track" ref={trackRef} onKeyDown={handleTrackKeyDown} onScroll={handleTrackScroll} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} role="group" aria-label={`Galeria de imagens. ${galleryImages.length} imagens. Use as setas do teclado para navegar.`}>
+          {galleryImages.map((image, index) => {
             const active = index === activeIndex;
             return <button
-              key={image.file}
+              key={image.file || image.src}
               ref={node => { cardRefs.current[index] = node; }}
               type="button"
               className={`creator-gallery-card${active ? " is-active" : ""}`}
-              aria-label={`${String(index + 1).padStart(2, "0")} de ${images.length}: ${image.title}. ${image.description} ${active ? "Em destaque." : "Ativar destaque."} Abrir imagem ampliada.`}
+              aria-label={`${String(index + 1).padStart(2, "0")} de ${galleryImages.length}: ${image.title}. ${image.description} ${active ? "Em destaque." : "Ativar destaque."} Abrir imagem ampliada.`}
               aria-pressed={active}
               onFocus={() => setActiveIndex(index)}
-              onMouseEnter={() => setActiveIndex(index)}
-              onClick={event => openImage(event, index)}
+              onClick={event => { if (suppressClickRef.current) { suppressClickRef.current = false; return; } openImage(event, index); }}
             >
               <img
                 className="creator-gallery-image"
-                src={imagePath(image)}
+                src={image.src || imagePath(image)}
                 alt={image.alt}
                 width="1400"
                 height="1750"
                 loading={index === 0 ? "eager" : "lazy"}
-                fetchPriority={index === 0 ? "high" : "auto"}
+                fetchpriority={index === 0 ? "high" : "auto"}
                 decoding="async"
               />
               <span className="creator-gallery-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
               <span className="creator-gallery-copy" aria-hidden="true">
-                <span className="creator-gallery-eyebrow">FORTALCREATOR · {String(index + 1).padStart(2, "0")}</span>
+                <span className="creator-gallery-eyebrow">{context} · {String(index + 1).padStart(2, "0")}</span>
                 <span className="creator-gallery-title">{image.title}</span>
                 <span className="creator-gallery-description">{image.description}</span>
               </span>
@@ -205,37 +237,35 @@ export default function CreatorGallery({ onApply, onLearn }) {
         </div>
         <p className="creator-gallery-hint" aria-hidden="true">Arraste para o lado para ver todas as fotos</p>
         <div className="creator-gallery-controls">
-          <button type="button" className="creator-gallery-arrow" aria-label="Imagem anterior" onClick={() => scrollToImage((activeIndex - 1 + images.length) % images.length)}><ArrowLeft size={18}/></button>
-          <span className="creator-gallery-count" aria-live="polite">{String(activeIndex + 1).padStart(2, "0")} <span>/ {String(images.length).padStart(2, "0")}</span></span>
-          <button type="button" className="creator-gallery-arrow" aria-label="Próxima imagem" onClick={() => scrollToImage((activeIndex + 1) % images.length)}><ArrowRight size={18}/></button>
+          <button type="button" className="creator-gallery-arrow" aria-label="Imagem anterior" onClick={() => scrollToImage((activeIndex - 1 + galleryImages.length) % galleryImages.length)}><ArrowLeft size={18}/></button>
+          <span className="creator-gallery-count" aria-live="polite">{String(activeIndex + 1).padStart(2, "0")} <span>/ {String(galleryImages.length).padStart(2, "0")}</span></span>
+          <button type="button" className="creator-gallery-arrow" aria-label="Próxima imagem" onClick={() => scrollToImage((activeIndex + 1) % galleryImages.length)}><ArrowRight size={18}/></button>
         </div>
       </div>
-      <p className="creator-unboxing-disclosure">Imagens ilustrativas de uma campanha de unboxing. O recebimento de produtos e as oportunidades de colaboração dependem de critérios, disponibilidade e seleção da Fortalfy.</p>
-      <div className="creator-unboxing-cta">
+      {disclosure && <p className="creator-unboxing-disclosure">{disclosure}</p>}
+      {onApply && onLearn && <div className="creator-unboxing-cta">
         <div><h3>Mostre sua criatividade para o mundo</h3><p>Crie conteúdos autênticos, desenvolva sua presença digital e faça parte de uma comunidade que também está evoluindo.</p></div>
         <div className="creator-unboxing-actions">
           <button type="button" className="button creator-unboxing-primary" onClick={onApply}>Quero ser FortalCreator <ArrowRight size={16}/></button>
           <button type="button" className="creator-unboxing-secondary" onClick={onLearn}>Conhecer o programa</button>
         </div>
-      </div>
-      <p className="creator-unboxing-transparency">As imagens são ilustrativas e representam conceitos de campanha. O recebimento de produtos, convites e colaborações não é automático e depende de critérios, disponibilidade e seleção da Fortalfy.</p>
+      </div>}
+      {onApply && onLearn && <p className="creator-unboxing-transparency">As imagens são ilustrativas e representam conceitos de campanha. O recebimento de produtos, convites e colaborações não é automático e depende de critérios, disponibilidade e seleção da Fortalfy.</p>}
     </section>
-    {isLightboxOpen && createPortal(<div className="creator-unboxing-lightbox" role="presentation" onMouseDown={event => event.target === event.currentTarget && setLightboxIndex(null)}>
-      <section className="creator-unboxing-dialog" ref={lightboxRef} role="dialog" aria-modal="true" aria-label="Galeria de imagens ilustrativas FortalCreator">
+    {isLightboxOpen && createPortal(<div className="creator-unboxing-lightbox" role="presentation" onTouchStart={event => { dragRef.current = { touchX: event.touches[0]?.clientX }; }} onTouchEnd={event => { if (dragRef.current?.touchX == null) return; const delta = event.changedTouches[0]?.clientX - dragRef.current.touchX; if (Math.abs(delta) > 50) { const next = (lightboxIndex + (delta < 0 ? 1 : -1) + galleryImages.length) % galleryImages.length; navigateLightbox(next); } dragRef.current = null; }} onMouseDown={event => event.target === event.currentTarget && setLightboxIndex(null)}>
+      <section className="creator-unboxing-dialog" ref={lightboxRef} role="dialog" aria-modal="true" aria-label={`Galeria de imagens ${context}`}>
         <button ref={closeButtonRef} type="button" className="creator-unboxing-close" aria-label="Fechar imagem" onClick={() => setLightboxIndex(null)}><X size={23}/></button>
         <button type="button" className="creator-unboxing-lightbox-arrow creator-unboxing-lightbox-previous" aria-label="Imagem anterior" onClick={() => {
-          const index = (lightboxIndex - 1 + images.length) % images.length;
-          setActiveIndex(index);
-          setLightboxIndex(index);
+          const index = (lightboxIndex - 1 + galleryImages.length) % galleryImages.length;
+          navigateLightbox(index);
         }}><ArrowLeft size={22}/></button>
         <figure>
-          <img src={imagePath(images[lightboxIndex])} alt={images[lightboxIndex].alt} width="1400" height="1750"/>
-          <figcaption aria-live="polite">{String(lightboxIndex + 1).padStart(2, "0")} de {String(images.length).padStart(2, "0")} · {images[lightboxIndex].title} — {images[lightboxIndex].alt}</figcaption>
+          <img src={galleryImages[lightboxIndex].src || imagePath(galleryImages[lightboxIndex])} alt={galleryImages[lightboxIndex].alt} width="1400" height="1750"/>
+          <figcaption aria-live="polite">{String(lightboxIndex + 1).padStart(2, "0")} de {String(galleryImages.length).padStart(2, "0")} · {galleryImages[lightboxIndex].title} — {galleryImages[lightboxIndex].description}</figcaption>
         </figure>
         <button type="button" className="creator-unboxing-lightbox-arrow creator-unboxing-lightbox-next" aria-label="Próxima imagem" onClick={() => {
-          const index = (lightboxIndex + 1) % images.length;
-          setActiveIndex(index);
-          setLightboxIndex(index);
+          const index = (lightboxIndex + 1) % galleryImages.length;
+          navigateLightbox(index);
         }}><ArrowRight size={22}/></button>
       </section>
     </div>, document.body)}
