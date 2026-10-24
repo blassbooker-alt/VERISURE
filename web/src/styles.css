@@ -3794,7 +3794,7 @@ img { display: block; max-width: 100%; }
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .social-auth-showcase {
     padding: 24px 20px;
     border-radius: 20px;
@@ -3805,15 +3805,15 @@ img { display: block; max-width: 100%; }
     height: 34%;
     opacity: .58;
   }
-  
+
   .showcase-content {
     margin: 18px 0 14px;
   }
-  
+
   .showcase-perks {
     grid-template-columns: 1fr;
   }
-  
+
   .social-auth-form-card {
     padding: 22px 18px;
     border-radius: 20px;
@@ -7895,7 +7895,7 @@ html[data-theme="dark"] .social-auth-feed-close { color: #edf4ef; background: #1
   .social-auth-feed-modal .social-auth-hero-container { padding: 20px 14px 14px; }
 }
 
-/* Fortalfy visual system — official greens, shared surfaces and accessible states. */
+/* Fortalfy visual system â€” official greens, shared surfaces and accessible states. */
 :root {
   --brand-forest: #003d30;
   --brand-green: #047031;
@@ -11593,4 +11593,660 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
   .community-feed-screen .social-filter-tabs { gap: 5px; }
   .community-feed-screen .social-filter-tabs button { padding-inline: 9px; font-size: .75rem; }
   .community-feed-screen .social-refresh { padding-inline: 9px; font-size: .75rem; }
+}
+
+/* Desktop community feed: cap the stream itself and size media to its actual
+   content ratio. Earlier desktop rules hid the discovery rail until 1600px and
+   capped media at 480/640px, shrinking tall photos inside very wide cards. */
+@media (min-width: 1024px) {
+  .mobile-app .community-feed-screen.feed-screen.screen-content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .community-feed-screen .social-feed-authenticated {
+    width: min(100%, 820px);
+    max-width: 1120px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    margin: 10px auto 48px;
+  }
+
+  .community-feed-screen .social-feed-main { width: 100%; min-width: 0; }
+  .community-feed-screen .social-feed-main > .community-navigation { display: none; }
+  .community-feed-screen .social-feed-header { padding: 12px 2px 18px; }
+  .community-feed-screen .social-feed-header h1 { font-size: clamp(1.8rem, 2.2vw, 2.15rem); }
+  .community-feed-screen .social-feed-header p { font-size: .9375rem; line-height: 1.5; }
+
+  .community-feed-screen .social-feed-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 16px;
+    padding: 0 0 12px;
+  }
+  .community-feed-screen .social-filter-tabs { flex: 0 1 auto; gap: 8px; overflow: visible; }
+  .community-feed-screen .social-filter-tabs button,
+  .community-feed-screen .social-refresh { min-height: 42px; font-size: .875rem; }
+  .community-feed-screen .social-refresh { flex: 0 0 auto; padding-inline: 15px; }
+
+  .community-feed-screen .social-create-post,
+  .community-feed-screen .social-post-card {
+    width: 100%;
+    min-width: 0;
+    border-radius: 18px;
+  }
+  .community-feed-screen .social-feed-main .social-create-post { padding: 18px 20px 15px; }
+  .community-feed-screen .social-create-post .social-create-text textarea { min-height: 88px; font-size: .9375rem; line-height: 1.55; }
+  .community-feed-screen .social-feed-main .social-post-card { padding: 18px 20px 12px; }
+  .community-feed-screen .social-post-header { min-height: 48px; gap: 12px; }
+  .community-feed-screen .social-post-author > a,
+  .community-feed-screen .social-post-author strong { font-size: .9375rem; }
+  .community-feed-screen .social-post-author > span,
+  .community-feed-screen .social-post-meta,
+  .community-feed-screen .social-post-timestamp { font-size: .75rem; line-height: 1.4; }
+  .community-feed-screen .social-post-copy,
+  .community-feed-screen .social-post-caption { font-size: 1rem; line-height: 1.6; }
+  .community-feed-screen .social-post-text { margin: 10px 0 12px; }
+  .community-feed-screen .social-post-card:not(:has(.social-media-grid)) .social-post-text { margin: 8px 0 4px; }
+  .community-feed-screen .social-post-card:not(:has(.social-media-grid)) .social-post-stats { min-height: 30px; }
+  .community-feed-screen .social-post-stats { min-height: 38px; font-size: .75rem; }
+  .community-feed-screen .social-post-actions { margin-inline: 2px; }
+  .community-feed-screen .social-post-actions button { min-height: 46px; gap: 8px; font-size: .8125rem; }
+
+  .community-feed-screen .social-media-grid {
+    width: 100%;
+    max-height: none;
+    margin: 14px 0 0;
+    gap: 6px;
+    overflow: visible;
+    align-items: start;
+  }
+  .community-feed-screen .social-media-grid.count-1 { display: block; }
+  .community-feed-screen .social-media-grid.count-1 .social-media-item,
+  .community-feed-screen .social-media-item {
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    background: #0b100d;
+  }
+  .community-feed-screen .social-media-item > button {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    display: block;
+  }
+  .community-feed-screen .social-media-item img,
+  .community-feed-screen .social-media-item video {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: min(72vh, 720px);
+    margin-inline: auto;
+    object-fit: contain;
+  }
+  .community-feed-screen .social-media-grid:not(.count-1) .social-media-item img,
+  .community-feed-screen .social-media-grid:not(.count-1) .social-media-item video {
+    max-height: min(58vh, 520px);
+  }
+  .community-feed-screen .social-media-grid.has-landscape-video { grid-template-columns: minmax(0, 1fr); }
+  .community-feed-screen .social-media-item.is-landscape-video { aspect-ratio: 16 / 9; }
+  .community-feed-screen .social-media-item.is-landscape-video video { width: 100%; height: 100%; max-height: none; object-fit: contain; }
+
+  .community-feed-screen .social-feed-side-panel { display: none; }
+}
+
+@media (min-width: 1360px) {
+  .mobile-app .app-screen:not(.immersive-screen) .community-feed-screen .social-feed.social-feed-authenticated:not(.social-reels-page) {
+    width: min(100%, 1120px);
+    max-width: 1120px;
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 280px);
+    gap: 24px;
+  }
+  .community-feed-screen .social-feed-side-panel {
+    display: grid;
+    position: sticky;
+    top: 88px;
+    gap: 14px;
+    min-width: 0;
+  }
+  .community-feed-screen .social-feed-side-panel section { padding: 18px; }
+  .community-feed-screen .social-feed-side-panel h2 { font-size: 1.0625rem; line-height: 1.4; }
+  .community-feed-screen .social-feed-side-panel p { font-size: .8125rem; line-height: 1.55; }
+  .community-feed-screen .social-feed-side-panel a { min-height: 38px; font-size: .8125rem; }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .mobile-app .app-screen:not(.immersive-screen) .community-feed-screen .social-feed.social-feed-authenticated:not(.social-reels-page) {
+    width: min(100%, 760px);
+    max-width: 760px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .mobile-app .app-screen:not(.immersive-screen) .community-feed-screen .social-feed.social-feed-authenticated:not(.social-reels-page) {
+    width: min(100%, 1120px);
+    max-width: 1120px;
+  }
+}
+/* Mobile quality pass for the three reference journeys: Feed, Home and Creator. */
+@media (max-width: 760px) {
+  .mobile-app .app-screen > .screen-content.home-screen {
+    padding: 0 0 calc(106px + env(safe-area-inset-bottom));
+  }
+
+  .home-screen .home-hero-art {
+    width: 100%;
+    margin: 0;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .mobile-app .home-screen .home-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: none;
+    gap: 18px;
+    padding: 16px 14px 34px;
+    box-sizing: border-box;
+  }
+
+  /* Match the reference's mobile rhythm: shortcuts, progress and highlights
+     immediately follow the campaign art; secondary actions remain below. */
+  .home-screen .home-shortcuts,
+  .home-screen .home-performance,
+  .home-screen .home-featured,
+  .home-screen .home-next-step,
+  .home-screen .home-native-creative {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .home-screen .home-shortcuts { order: 1; }
+  .home-screen .home-performance { order: 2; }
+  .home-screen .home-featured { order: 3; }
+  .home-screen .home-next-step { order: 4; }
+  .home-screen .home-native-creative { order: 5; }
+
+  .home-screen .home-next-step {
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px 10px;
+    padding: 13px;
+    border-radius: 17px;
+  }
+
+  .home-screen .home-next-step-icon { width: 36px; height: 36px; }
+  .home-screen .home-next-step-copy h2 { margin: 4px 0; font-size: 1rem; line-height: 1.24; }
+  .home-screen .home-next-step-copy p { font-size: .78rem; line-height: 1.45; }
+  .home-screen .home-next-step-action { grid-column: 2; min-height: 42px; padding-inline: 13px; font-size: .8rem; }
+
+  .home-screen .home-performance { padding: 14px; border-radius: 18px; }
+  .home-screen .home-performance .home-section-heading { margin-bottom: 10px; }
+  .home-screen .home-section-heading h2 { font-size: 1.2rem; line-height: 1.25; }
+  .home-screen .home-section-heading p { font-size: .78rem; line-height: 1.45; }
+  .home-screen .home-performance-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .home-screen .home-performance-metrics > div {
+    min-width: 0;
+    min-height: 76px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: center;
+    gap: 4px;
+    padding: 9px 5px;
+    text-align: center;
+  }
+  .home-screen .home-performance-metrics strong { font-size: 1.4rem; line-height: 1; }
+  .home-screen .home-performance-metrics span { max-width: 12ch; font-size: .68rem; line-height: 1.3; }
+  .home-screen .home-native-creative { width: 100%; margin: 0; }
+
+  .home-screen .home-shortcuts { gap: 11px; }
+  .home-screen .home-shortcuts .home-section-heading h2,
+  .home-screen .home-featured .home-section-heading h2 { font-size: 1.25rem; }
+  .mobile-app .home-screen .home-shortcut-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .home-screen .home-shortcut {
+    min-height: 92px;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 5px;
+    border-radius: 14px;
+    text-align: center;
+  }
+  .home-screen .home-shortcut > svg:first-child { width: 30px; height: 30px; padding: 6px; border-radius: 10px; }
+  .home-screen .home-shortcut > svg:last-child { display: none; }
+  .home-screen .home-shortcut strong { font-size: .72rem; line-height: 1.2; text-wrap: balance; }
+  .home-screen .home-shortcut span { font-size: .6rem; line-height: 1.25; text-wrap: balance; }
+  .home-screen .home-featured-grid > .home-featured-card { flex-basis: min(76vw, 280px); min-height: 184px; }
+
+  /* Stories remain a first-class part of the community feed, shown as a
+     compact horizontal rail like the mobile reference. */
+  .community-feed-screen .stories-experience {
+    margin: 4px 0 12px;
+    padding: 13px 12px 8px;
+    border-radius: 17px;
+    background: var(--color-surface, #111914);
+    border-color: var(--color-border, #2a3a30);
+    box-shadow: none;
+  }
+  .community-feed-screen .stories-section-heading { align-items: center; gap: 8px; }
+  .community-feed-screen .stories-section-heading .eyebrow { color: var(--color-primary, #c6ff00); font-size: .58rem; letter-spacing: .1em; }
+  .community-feed-screen .stories-section-heading h2 { margin-top: 3px; color: var(--color-text-primary, #f4f7f4); font-size: 1rem; }
+  .community-feed-screen .stories-section-heading .button { min-height: 36px; padding-inline: 10px; font-size: .7rem; }
+  .community-feed-screen .stories-row { gap: 12px; margin: 10px -12px 5px; padding: 2px 12px 7px; }
+  .community-feed-screen .story-item,
+  .community-feed-screen .story-item-wrap { width: 61px; flex-basis: 61px; }
+  .community-feed-screen .story-ring { width: 56px; height: 56px; padding: 2px; }
+  .community-feed-screen .story-ring .story-avatar { border-width: 2px; }
+  .community-feed-screen .story-item { gap: 4px; font-size: .66rem; }
+  .community-feed-screen .stories-filter-empty { max-width: 150px; color: var(--color-text-secondary, #a1aba3); font-size: .69rem; }
+  .community-feed-screen .stories-filter-disclosure { margin: 4px 0 0; color: var(--color-text-secondary, #a1aba3); font-size: .62rem; }
+  .community-feed-screen .social-feed-header { padding-top: 8px; }
+  .community-feed-screen .social-feed-toolbar { margin-top: 0; }
+
+  .mobile-app .creator-screen .creator-page { gap: 16px; }
+  .creator-screen .creator-hero {
+    min-height: 258px;
+    padding: 18px 16px;
+    border-radius: 19px;
+  }
+  .creator-screen .creator-hero-photo {
+    width: 100%;
+    opacity: .72;
+    object-position: 66% 35%;
+  }
+  .creator-screen .creator-hero::after {
+    background: linear-gradient(90deg, #080f0cf5 0%, #080f0ce8 52%, #080f0c70 100%);
+  }
+  .creator-screen .creator-hero-content { width: min(72%, 310px); }
+  .creator-screen .creator-hero-kicker { font-size: .58rem; letter-spacing: .09em; }
+  .creator-screen .creator-hero h2 { max-width: none; margin: 8px 0; font-size: clamp(1.24rem, 5.4vw, 1.42rem); letter-spacing: -.55px; line-height: 1.08; }
+  .creator-screen .creator-hero p { max-width: 100%; font-size: .7rem; line-height: 1.35; }
+  .creator-screen .creator-hero-actions { display: grid; width: min(100%, 260px); gap: 6px; margin-top: 10px; }
+  .creator-screen .creator-hero-actions > * { width: 100%; min-height: 38px; }
+  .creator-screen .creator-hero-actions .button.primary { padding-inline: 8px; font-size: .7rem; }
+  .creator-screen .creator-hero-secondary { padding-inline: 8px; font-size: .7rem; }
+  .creator-screen .creator-hero-image-note,
+  .creator-screen .creator-hero-icon { display: none; }
+  .creator-screen .creator-tabs { gap: 7px; padding: 2px 2px 9px; }
+  .creator-screen .creator-tabs button { min-height: 42px; padding: 9px 12px; font-size: .75rem; }
+  .creator-screen .creator-landing { gap: 16px; }
+  .creator-screen .creator-landing-section { gap: 14px; scroll-margin-top: 72px; }
+  .creator-screen .creator-section-heading h2 { margin: 6px 0; font-size: 1.4rem; line-height: 1.2; }
+  .creator-screen .creator-section-heading > p { font-size: .82rem; line-height: 1.5; }
+  .creator-screen .creator-steps-section { gap: 14px; padding: 15px; }
+  .creator-screen .creator-step-grid { gap: 8px; }
+  .creator-screen .creator-step-card { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 12px; border-radius: 14px; }
+  .creator-screen .creator-step-number { width: 34px; height: 34px; }
+  .creator-screen .creator-step-card h3 { font-size: .9rem; }
+  .creator-screen .creator-step-card p { font-size: .75rem; line-height: 1.45; }
+}
+
+/* The supplied mobile references use Fortalfy's dark identity. Keep desktop
+   theme behavior intact while making these three mobile journeys match it. */
+@media (max-width: 760px) {
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content:is(.home-screen, .community-feed-screen, .creator-screen)) {
+    --color-background: #0b100d;
+    --color-surface: #101814;
+    --color-card: #15221a;
+    --color-border: #2a3a30;
+    --color-primary: #c8f52e;
+    --color-text-primary: #f4f7f4;
+    --color-text-secondary: #a1aba3;
+    --color-primary-foreground: #0b100d;
+    color: var(--color-text-primary);
+    background: var(--color-background);
+  }
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content:is(.home-screen, .community-feed-screen, .creator-screen)) > .screen-content {
+    color: var(--color-text-primary);
+    background: var(--color-background);
+  }
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content:is(.home-screen, .community-feed-screen, .creator-screen)) > .mobile-header,
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content:is(.home-screen, .community-feed-screen, .creator-screen)) > .bottom-nav {
+    color: var(--color-text-primary);
+    background: #0b100d;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content:is(.home-screen, .community-feed-screen, .creator-screen)) .bottom-nav-item {
+    color: #a1aba3;
+  }
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content:is(.home-screen, .community-feed-screen, .creator-screen)) .bottom-nav-item.active {
+    color: #c8f52e;
+  }
+  html[data-theme="light"] .mobile-app .home-screen :is(.home-next-step, .home-performance, .home-shortcut) {
+    color: #f4f7f4;
+    background: #101814;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .home-screen .home-performance-metrics > div { border-color: #2a3a30; }
+  html[data-theme="light"] .mobile-app .home-screen .home-featured-card { border-color: #2a3a30; }
+  html[data-theme="light"] .mobile-app .home-screen :is(.home-next-step-copy p, .home-section-heading p, .home-shortcut span) { color: #a1aba3; }
+  html[data-theme="light"] .mobile-app .community-feed-screen .stories-experience,
+  html[data-theme="light"] .mobile-app .community-feed-screen :is(.social-create-post, .social-post-card, .social-empty-feed) {
+    color: #f4f7f4;
+    background: #101814;
+    border-color: #2a3a30;
+    box-shadow: none;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen :is(.stories-section-heading h2, .social-feed-header h1, .social-post-author strong, .social-post-copy, .social-post-caption) { color: #f4f7f4; }
+  html[data-theme="light"] .mobile-app .community-feed-screen :is(.stories-filter-empty, .stories-filter-disclosure, .social-feed-header p, .social-post-meta, .social-post-timestamp) { color: #a1aba3; }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-filter-tabs { background: #101814; border-color: #2a3a30; }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-filter-tabs button { color: #c3ccc5; }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-filter-tabs button.active { color: #0b100d; background: #c8f52e; }
+  html[data-theme="light"] .mobile-app .creator-screen .creator-tabs button:not(.selected) {
+    color: #c3ccc5;
+    background: #101814;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .creator-screen .creator-tabs button.selected { color: #0b100d; background: #c8f52e; border-color: #c8f52e; }
+  html[data-theme="light"] .mobile-app .creator-screen .creator-page :is(.creator-card, .creator-story, .creator-pillar-card, .creator-step-card, .creator-audience-card, .creator-steps-section) {
+    color: #f4f7f4;
+    background: #101814;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .creator-screen .creator-page :is(p, small) { color: #a1aba3; }
+}
+
+/* Feed mobile polish: correct the light-theme controls and compress the
+   composer so stories, filters, and real posts read as one social flow. */
+@media (max-width: 760px) {
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header .icon-button {
+    color: #f4f7f4;
+    background: #15221a;
+    border-color: #2a3a30;
+    box-shadow: none;
+  }
+  .community-feed-screen .stories-experience {
+    margin: 4px 0 10px;
+    padding: 12px 12px 9px;
+  }
+  .community-feed-screen .stories-section-heading .button {
+    color: #e8f0e9;
+    background: #17211c;
+    border: 1px solid #2a3a30;
+  }
+  .community-feed-screen .stories-row {
+    align-items: center;
+    gap: 9px;
+    margin-top: 8px;
+    margin-bottom: 3px;
+  }
+  .community-feed-screen .stories-filter-empty {
+    align-self: center;
+    max-width: 160px;
+    margin: 0;
+    font-size: .68rem;
+    line-height: 1.35;
+  }
+  .community-feed-screen .stories-filter-disclosure {
+    margin: 3px 0 0;
+    overflow: hidden;
+    font-size: .58rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .community-feed-screen .social-community-tabs {
+    gap: 4px;
+    padding: 4px;
+    background: #101814;
+    border-color: #2a3a30;
+    border-radius: 15px;
+  }
+  .community-feed-screen .social-community-tabs a {
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 5px;
+    color: #a1aba3;
+    background: transparent;
+    border-radius: 11px;
+    font-size: .72rem;
+    font-weight: 700;
+  }
+  .community-feed-screen .social-community-tabs a.active {
+    color: #0b100d;
+    background: #c8f52e;
+  }
+  .community-feed-screen .social-community-tabs a:hover:not(.active) {
+    color: #f4f7f4;
+    background: #17211c;
+  }
+  .community-feed-screen .social-feed-header { padding: 8px 2px 6px; }
+  .community-feed-screen .social-feed-header .eyebrow { color: #c8f52e; }
+  .community-feed-screen .social-feed-toolbar {
+    min-height: 42px;
+    gap: 8px;
+    margin: 0 0 9px;
+    padding: 0 0 8px;
+    background: transparent;
+    border-color: #2a3a30;
+    backdrop-filter: none;
+  }
+  .community-feed-screen .social-filter-tabs {
+    flex: 0 1 auto;
+    gap: 6px;
+    overflow: visible;
+  }
+  .community-feed-screen .social-filter-tabs button,
+  .community-feed-screen .social-refresh {
+    min-height: 38px;
+    padding-inline: 11px;
+    color: #c3ccc5;
+    background: #101814;
+    border-color: #2a3a30;
+    font-size: .72rem;
+  }
+  .community-feed-screen .social-filter-tabs button.active {
+    color: #0b100d;
+    background: #c8f52e;
+    border-color: #c8f52e;
+  }
+  .community-feed-screen .social-refresh { color: #c3ccc5; }
+  .community-feed-screen .social-create-post {
+    padding: 12px;
+    border-radius: 17px;
+  }
+  .community-feed-screen .social-create-post .social-create-text textarea {
+    height: 82px;
+    min-height: 74px;
+    padding: 11px 12px 22px;
+    color: #f4f7f4;
+    background: #0b100d;
+    border: 1px solid #2a3a30;
+    border-radius: 13px;
+    font-size: .86rem;
+    line-height: 1.45;
+  }
+  .community-feed-screen .social-create-text textarea::placeholder { color: #a1aba3; opacity: 1; }
+  .community-feed-screen .social-create-text small { color: #8e9b92; }
+  .community-feed-screen .social-create-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+    padding-top: 9px;
+    border-color: #2a3a30;
+  }
+  .community-feed-screen .social-create-footer > .social-file-picker {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    min-height: 38px;
+    max-width: 100%;
+    margin: 0;
+    padding-inline: 10px;
+    color: #e1e9e2;
+    background: #17211c;
+    border: 1px solid #2a3a30;
+    font-size: .7rem;
+  }
+  .community-feed-screen .social-create-footer > .social-visibility:has(input[type="checkbox"]) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    min-width: 0;
+    gap: 5px;
+    color: #a1aba3;
+    font-size: .65rem;
+    white-space: nowrap;
+  }
+  .community-feed-screen .social-create-footer input[type="checkbox"] { accent-color: #c8f52e; }
+  .community-feed-screen .social-create-footer > .social-visibility:has(select) {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    min-height: 38px;
+    gap: 5px;
+    color: #a1aba3;
+  }
+  .community-feed-screen .social-create-footer > .social-visibility select {
+    min-height: 36px;
+    padding: 0 9px;
+    color: #f4f7f4;
+    background: #17211c;
+    border: 1px solid #2a3a30;
+    border-radius: 10px;
+    font-size: .72rem;
+  }
+  .community-feed-screen .social-create-footer > button[type="submit"] {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    min-height: 40px;
+    margin: 0;
+    padding-inline: 14px;
+    color: #0b100d;
+    background: #c8f52e;
+    border: 1px solid #c8f52e;
+    border-radius: 12px;
+    box-shadow: none;
+    font-size: .76rem;
+  }
+  .community-feed-screen .bottom-nav-item {
+    color: #a1aba3;
+    background: transparent;
+    border-color: transparent;
+  }
+  .community-feed-screen .bottom-nav-item.active {
+    color: #c8f52e;
+    background: #15221a;
+  }
+}
+
+@media (max-width: 760px) {
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content.community-feed-screen) .mobile-header .icon-button {
+    color: #f4f7f4;
+    background: #15221a;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .stories-section-heading .button {
+    color: #e8f0e9;
+    background: #17211c;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-community-tabs {
+    background: #101814;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-community-tabs a {
+    color: #a1aba3;
+    background: transparent;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-community-tabs a.active {
+    color: #0b100d;
+    background: #c8f52e;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-post .social-create-text textarea {
+    color: #f4f7f4;
+    background: #0b100d;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-footer > .social-file-picker {
+    color: #e1e9e2;
+    background: #17211c;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-footer > .social-visibility:has(select) select {
+    color: #f4f7f4;
+    background: #17211c;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-footer > button[type="submit"] {
+    color: #0b100d;
+    background: #c8f52e;
+    border-color: #c8f52e;
+  }
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content.community-feed-screen) .bottom-nav-item {
+    color: #a1aba3;
+    background: transparent;
+    border-color: transparent;
+  }
+  html[data-theme="light"] .mobile-app .app-screen:has(> .screen-content.community-feed-screen) .bottom-nav-item.active {
+    color: #c8f52e;
+    background: #15221a;
+  }
+}
+
+@media (max-width: 380px) {
+  .community-feed-screen .stories-section-heading { gap: 5px; }
+  .community-feed-screen .stories-section-heading > span { min-width: 0; }
+  .community-feed-screen .stories-section-heading .eyebrow {
+    font-size: .5rem;
+    letter-spacing: .06em;
+    white-space: nowrap;
+  }
+  .community-feed-screen .stories-section-heading h2 {
+    font-size: .92rem;
+    white-space: nowrap;
+  }
+  .community-feed-screen .stories-section-heading .button {
+    min-height: 32px;
+    gap: 4px;
+    padding-inline: 7px;
+    font-size: .62rem;
+  }
+}
+
+/* Final mobile Feed contrast overrides: keep legacy light-theme rules from
+   making small labels disappear against the dark Fortalfy surfaces. */
+@media (max-width: 760px) {
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-filter-tabs button:not(.active),
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-refresh {
+    color: #d5ddd6;
+    background: #17211c;
+    border-color: #2a3a30;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-post-author,
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-post-author > a,
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-post-author > a strong {
+    color: #f4f7f4;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen :is(.social-post-meta, .social-post-timestamp, .social-post-actions button, .social-post-stats, .social-text-toggle, .social-author-role) {
+    color: #c0cbc2;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-post-meta time { color: #c0cbc2; }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-post-actions button { font-size: .8rem; }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-footer .social-visibility,
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-footer .social-visibility span {
+    color: #c0cbc2;
+    font-size: .72rem;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .social-create-text small { color: #c0cbc2; font-size: .68rem; }
+  html[data-theme="light"] .mobile-app .community-feed-screen :is(.stories-filter-empty, .stories-filter-disclosure) {
+    color: #c0cbc2;
+    font-size: .72rem;
+    line-height: 1.4;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen .stories-filter-disclosure {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+  html[data-theme="light"] .mobile-app .community-feed-screen :is(.stories-section-heading .eyebrow, .social-feed-header .eyebrow) {
+    color: #c8f52e;
+    font-size: .62rem;
+  }
 }
