@@ -854,8 +854,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
             )}
 
             {mode === "signup" && signupStep === 2 && (
-              <>
-                <div className="auth-two-col">
+              <div className="auth-two-col">
                   <div className="auth-field">
                     <label htmlFor="auth-field-bday">Data de nascimento</label>
                     <div className="auth-input-box">
@@ -886,9 +885,11 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                       />
                     </div>
                   </div>
-                </div>
+              </div>
+            )}
 
-                {signupStep === 3 && <fieldset className="social-auth-choice-group">
+            {mode === "signup" && signupStep === 3 && <>
+                <fieldset className="social-auth-choice-group">
                   <legend>Quais são seus objetivos principais?</legend>
                   <div className="auth-choice-chips">
                     {signupGoals.map(([value, label]) => (
@@ -902,9 +903,9 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                       </label>
                     ))}
                   </div>
-                </fieldset>}
+                </fieldset>
 
-                {signupStep === 3 && <fieldset className="social-auth-choice-group">
+                <fieldset className="social-auth-choice-group">
                   <legend>O que mais deseja explorar no app?</legend>
                   <div className="auth-choice-chips">
                     {signupInterests.map(([value, label]) => (
@@ -918,9 +919,11 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                       </label>
                     ))}
                   </div>
-                </fieldset>}
+                </fieldset>
+            </>}
 
-                {signupStep === 4 && <label className="social-auth-consent">
+            {mode === "signup" && signupStep === 4 && <>
+                <label className="social-auth-consent">
                   <input
                     type="checkbox"
                     checked={fields.acceptedTerms}
@@ -928,17 +931,16 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
                     required
                   />
                   <span>Li e aceito os Termos de Uso, a Política de Privacidade e as Diretrizes da Comunidade Fortalfy.</span>
-                </label>}
-                {signupStep === 4 && <label className="social-auth-consent">
+                </label>
+                <label className="social-auth-consent">
                   <input
                     type="checkbox"
                     checked={fields.acceptedBenefitsTerms}
                     onChange={event => setFields(current => ({ ...current, acceptedBenefitsTerms: event.target.checked }))}
                   />
                   <span>Li e concordo com as regras dos benefícios e descontos Fortalfy, quando aplicáveis. <Link to="/benefits-terms">Consultar declaração e termos</Link>. Este aceite é opcional e separado dos termos gerais.</span>
-                </label>}
-              </>
-            )}
+                </label>
+            </>}
 
             {message && (
               <div className={`auth-alert-message ${messageType}`} role={messageType === "error" ? "alert" : "status"}>
