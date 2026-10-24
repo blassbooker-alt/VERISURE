@@ -1825,7 +1825,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false,
         setFollowingAuthor(isFollowing);
         setAuthorFollowRequest(requestStatus);
         publishFollowState(userId, post.author_id, isFollowing, requestStatus);
-        notify(requestStatus ? "Solicitação de seguimento enviada." : isFollowing ? "Perfil seguido." : "Você deixou de seguir este perfil.");
+        notify(requestStatus ? "Solicitação de seguimento enviada." : isFollowing ? "Você começou a seguir este perfil." : "Você deixou de seguir este perfil.");
       }
       await onRefresh();
     }
@@ -1895,7 +1895,7 @@ function SocialPost({ post, userId, client, onRefresh, notify, reelMode = false,
         ? <span className="social-reel-author-meta">{post.author?.username && <><span className="social-reel-handle">@{post.author.username}</span><span aria-hidden="true">·</span></>}{communityRole(post.author?.kind) || "Criador Fortalfy"}<span aria-hidden="true">·</span>{post.visibility === "followers" ? "Seguidores" : "Público"}{post.commercial_content && <><span aria-hidden="true">·</span>Publicidade</>}</span>
         : <span>{post.commercial_content && <><strong className="social-author-role">Publicidade</strong> · </>}{communityRole(post.author?.kind) && <><strong className="social-author-role">{communityRole(post.author.kind)}</strong> · </>}<time dateTime={post.published_at}>{formatDate(post.published_at)}</time> · <Users size={12} /> {post.visibility === "followers" ? "Seguidores" : "Público"}</span>}
     </div>
-    {!reelMode && !own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
+    {!reelMode && !own && <button type="button" className={`social-reel-follow social-post-follow${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-pressed={followingAuthor} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? `Deixar de seguir ${post.author?.name || "perfil"}` : `Seguir ${post.author?.name || "perfil"}`}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? <><UserMinus size={14} /> Seguindo</> : <><UserPlus size={14} /> Seguir</>}</button>}
     {reelMode && !own && <button type="button" className={`social-reel-follow-inline${followingAuthor || authorFollowRequest === "pending" ? " is-following" : ""}`} onClick={toggleFollow} disabled={busy || !followStateLoaded} aria-label={authorFollowRequest === "pending" ? "Cancelar solicitação para seguir" : followingAuthor ? "Deixar de seguir criador" : "Seguir criador"}>{authorFollowRequest === "pending" ? "Solicitado" : followingAuthor ? "Seguindo" : "+ Seguir"}</button>}
     {!reelMode && postMenu}
   </header>;
@@ -2242,7 +2242,7 @@ export function SocialMessages({ client, session, configured, notify, onNotifica
       } else if (access.requestPending || pendingTarget.person.isPrivate) {
         notify("Solicitação enviada. Aguarde a aprovação para conversar.");
       } else {
-        notify("Agora você segue este perfil. Para conversar, a pessoa também precisa seguir você.");
+        notify("Você começou a seguir este perfil. Para conversar, a pessoa também precisa seguir você.");
       }
     } catch (failure) {
       console.error("Falha ao seguir para iniciar uma conversa.", failure);
@@ -2842,7 +2842,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
       } else {
         setFollow(current => ({ ...current, isFollowing: result === "following", requestStatus: "", followers: Math.max(0, normalizeSocialCount(current.followers) + (result === "following" ? 1 : wasFollowing ? -1 : 0)) }));
         publishFollowState(userId, targetId, result === "following");
-        notify(result === "following" ? "Perfil seguido." : "Você deixou de seguir este perfil.");
+        notify(result === "following" ? "Você começou a seguir este perfil." : "Você deixou de seguir este perfil.");
       }
     } catch (failure) {
       console.error("Falha ao seguir perfil.", failure);
@@ -2978,7 +2978,7 @@ export function SocialProfile({ client, session, profile, profileError = "", con
             }}><ExternalLink size={13} /><span>{link.label}</span></a>)}
           </div>}
         </div>
-        {isOwn ? <button className="button subtle small-button" onClick={beginEdit} disabled={linksLoading}>Editar informações</button> : <div className="social-profile-actions"><button className="button primary small-button" disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
+        {isOwn ? <button className="button subtle small-button" onClick={beginEdit} disabled={linksLoading}>Editar informações</button> : <div className="social-profile-actions"><button className="button primary small-button" aria-pressed={follow.isFollowing} disabled={busy} onClick={toggleFollow}>{follow.requestStatus === "pending" ? "Cancelar solicitação" : follow.isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}</button><button className="button subtle small-button" onClick={() => navigate(`/messages?to=${encodeURIComponent(targetId)}`)}><MessageCircle size={15} /> Enviar mensagem</button></div>}
       </div>
       {approvedProfessionalProfiles.map(application => {
         const title = PROFESSIONAL_CATEGORIES.find(item => item.id === application.kind)?.label || "Perfil profissional";

@@ -1110,7 +1110,7 @@ function LivePartnerCard({
       {!!openingHours.length && <p className="partner-live-hours"><Clock3 size={13} /> {openingHours.join(" · ")}</p>}
       <small className="partner-live-disclosure">Valores e horários são informados pelo parceiro quando disponíveis. O selo indica aprovação do cadastro pela equipe Fortalfy.</small>
       <div className="partner-card-actions">
-        {session?.user?.id && !isDemoUser(session.user.id) && !isOwn && onToggleFollow && !followStateError && <button type="button" className={`button small-button ${isFollowing ? "subtle" : "primary"}`} onClick={() => onToggleFollow(partner)} disabled={followBusy || !followStateLoaded}>
+        {session?.user?.id && !isDemoUser(session.user.id) && !isOwn && onToggleFollow && !followStateError && <button type="button" className={`button small-button ${isFollowing ? "subtle" : "primary"}`} aria-pressed={isFollowing} onClick={() => onToggleFollow(partner)} disabled={followBusy || !followStateLoaded}>
           {!followStateLoaded ? "Carregando…" : requestPending ? "Cancelar solicitação" : isFollowing ? <><UserMinus size={15} /> Seguindo</> : <><UserPlus size={15} /> Seguir</>}
         </button>}
         {!session?.user?.id && <Link className="button subtle small-button" to="/profile">Entrar para seguir <ArrowRight size={15} /></Link>}
@@ -1195,7 +1195,7 @@ function PartnerDiscoverySection({ client, session, kind, notify }) {
         },
       }));
       notify?.(result === "requested" ? "Solicitação de seguimento enviada."
-        : result === "following" ? "Perfil seguido." : "Você deixou de seguir este perfil.");
+        : result === "following" ? "Você começou a seguir este perfil." : "Você deixou de seguir este perfil.");
     } catch (failure) {
       console.error("Falha ao seguir parceiro.", failure);
       notify?.(getErrorMessage(failure, "Não foi possível atualizar o seguimento."));
