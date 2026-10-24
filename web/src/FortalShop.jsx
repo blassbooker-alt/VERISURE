@@ -161,14 +161,14 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
         <img className="shop-editorial-banner" src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="" />
         <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Suplementos, acessórios e tecnologia para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
       </section>
-      <section className="shop-departments" aria-label="Explore por departamento">
+      {marketplaceProducts.length > 0 && <section className="shop-departments" aria-label="Explore por departamento">
         <div className="shop-section-heading"><div><span className="eyebrow">ENCONTRE SEU RITMO</span><h2>Explore por categoria</h2></div><span>{categories.length - 1} departamentos</span></div>
         <div className="shop-department-grid">{categories.slice(1).map(department => {
           const product = marketplaceProducts.find(item => getShopDepartment(item) === department);
           const count = marketplaceProducts.filter(item => getShopDepartment(item) === department).length;
           return <button key={department} type="button" className={`shop-department-card${category === department ? " is-active" : ""}`} onClick={() => selectCategory(department)} aria-pressed={category === department}><img src={product.image} alt="" /><span><strong>{department}</strong><small>{count} produtos</small></span><ChevronRight size={17} /></button>;
         })}</div>
-      </section>
+      </section>}
       <section className="shop-catalog" id="shop-products" aria-label="Catálogo FortalShop">
         <div className="shop-catalog-heading"><div><span className="eyebrow">CATÁLOGO FORTALFY</span><h2>Produtos para sua rotina</h2><p>Encontre o que combina com seu treino.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
         <div className="shop-catalog-toolbar">

@@ -1,31 +1,63 @@
-import { Activity, ArrowRight, Bell, BookOpen, Brush, Building2, Clapperboard, Dumbbell, Home, Menu, MessageCircle, Plus, ShoppingBag, ShoppingCart, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2, Compass, Radio } from "lucide-react";
+import { Activity, Bell, BookOpen, Brush, Building2, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, ShoppingCart, Sparkles, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2, Compass, Radio } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const primaryTabs = [
   { to: "/home", label: "Início", icon: Home },
-  { to: "/feed", label: "Feed", icon: Users },
-  { to: "/food", label: "Food", icon: Utensils },
+  { to: "/workout", label: "Treinos", icon: Dumbbell },
+  { to: "/feed", label: "Comunidade", icon: Users },
   { to: "/shop", label: "Loja", icon: ShoppingBag },
   { to: "/profile", label: "Perfil", icon: UserRound },
 ];
 
-const drawerItems = [
-  { to: "/reels", label: "FortalReels", detail: "Vídeos verticais fitness", icon: Clapperboard, image: "/assets/search-bars/fortalreels_barra.png", theme: "reels" },
-  { to: "/pass", label: "FortalPass", detail: "Academias e modalidades", icon: Ticket, image: "/assets/search-bars/fortalpass_barra.png", theme: "pass" },
-  { to: "/shop", label: "FortalShop", detail: "Produtos oficiais", icon: ShoppingBag, image: "/assets/search-bars/fortalshop_barra.png", theme: "shop" },
-  { to: "/nutrition", label: "Nutricionista", detail: "Plano alimentar semanal", icon: Utensils, image: "/assets/search-bars/nutricionista_barra.png", theme: "food" },
-  { to: "/workout", label: "Personal", detail: "Treino semanal", icon: Dumbbell, image: "/assets/search-bars/personal_barra.png", theme: "training" },
-  { to: "/progress", label: "Meu desempenho", detail: "Evolução e histórico de treinos", icon: Activity, image: "/assets/search-bars/personal_barra.png", theme: "training" },
-  { to: "/messages", label: "Chat", detail: "Conversas privadas", icon: MessageCircle, image: "/assets/search-bars/chat_barra.png", theme: "community" },
-  { to: "/earnings", label: "Rendimentos", detail: "Informações financeiras", icon: Wallet, image: "/assets/search-bars/meus_rendimentos_barra.png", theme: "earnings" },
-  { to: "/settings", label: "Configurações", detail: "Aparência do aplicativo", icon: Settings2, image: "/assets/search-bars/personal_barra.png", theme: "settings" },
+const navigationGroups = [
+  { title: "Principal", items: [
+    { to: "/home", label: "Início", detail: "Seu resumo e próximo passo", icon: Home },
+    { to: "/workout", label: "Treinos", detail: "Registre suas atividades", icon: Dumbbell },
+    { to: "/progress", label: "Meu progresso", detail: "Histórico de atividades", icon: Activity },
+  ] },
+  { title: "Comunidade", items: [
+    { to: "/feed", label: "Feed", detail: "Publicações da comunidade", icon: Users },
+    { to: "/reels", label: "FortalReels", detail: "Vídeos da comunidade", icon: Clapperboard },
+    { to: "/people", label: "Pessoas", detail: "Encontre perfis", icon: Compass },
+    { to: "/messages", label: "Mensagens", detail: "Conversas privadas", icon: MessageCircle },
+    { to: "/live", label: "Ao vivo", detail: "Aulas e transmissões", icon: Radio },
+  ] },
+  { title: "Saúde e rotina", items: [
+    { to: "/nutrition", label: "Diário alimentar", detail: "Registre suas refeições", icon: Utensils },
+    { to: "/food", label: "FortalFood", detail: "Cardápios de parceiros", icon: ShoppingBag },
+  ] },
+  { title: "Explorar", items: [
+    { to: "/pass", label: "FortalPass", detail: "Academias e profissionais", icon: Ticket },
+    { to: "/partner/gym", label: "Academias parceiras", detail: "Unidades aprovadas", icon: Building2 },
+    { to: "/partner/personal", label: "Personal trainers", detail: "Profissionais aprovados", icon: Dumbbell },
+    { to: "/partner/nutritionist", label: "Nutricionistas", detail: "Profissionais aprovados", icon: Utensils },
+    { to: "/creator", label: "FortalCreator", detail: "Programa de criadores", icon: Clapperboard },
+    { to: "/campaigns", label: "Campanhas", detail: "Conteúdo visual oficial", icon: Sparkles },
+    { to: "/academy", label: "Academia Fortalfy", detail: "Conteúdos e cursos", icon: BookOpen },
+    { to: "/studio", label: "Fortalfy Studio", detail: "Criação de artes", icon: Brush },
+  ] },
+  { title: "Loja", items: [
+    { to: "/shop", label: "FortalShop", detail: "Produtos de parceiros", icon: ShoppingBag },
+    { to: "/cart", label: "Minha sacola", detail: "Itens selecionados", icon: ShoppingCart },
+  ] },
+  { title: "Conta", items: [
+    { to: "/profile", label: "Meu perfil", detail: "Dados e publicações", icon: UserRound },
+    { to: "/notifications", label: "Notificações", detail: "Atualizações da conta", icon: Bell },
+    { to: "/settings/notifications", label: "Preferências de notificação", detail: "Escolha o que receber", icon: Bell },
+    { to: "/settings", label: "Configurações", detail: "Aparência e acessibilidade", icon: Settings2 },
+  ] },
+  { title: "Profissional", items: [
+    { to: "/earnings", label: "Rendimentos", detail: "Informações financeiras", icon: Wallet },
+    { to: "/trainer", label: "Painel do personal", detail: "Agendamentos profissionais", icon: Dumbbell },
+    { to: "/nutritionist", label: "Painel do nutricionista", detail: "Agendamentos profissionais", icon: Utensils },
+    { to: "/professional", label: "Área profissional", detail: "Serviços profissionais", icon: Building2 },
+    { to: "/partner/manage", label: "Gestão de parceiros", detail: "Cadastros e estabelecimentos", icon: Building2 },
+  ] },
 ];
 
-const creatorItem = { to: "/creator", label: "FortalCreator", detail: "Programa de criadores", icon: Clapperboard, image: "/assets/search-bars/fortalreels_barra.png", theme: "creator" };
-
-export function NavigationDrawer({ onNotificationsOpen, desktopOpen = false, onDesktopOpenChange }) {
+export function NavigationDrawer({ desktopOpen = false, onDesktopOpenChange }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   const location = useLocation();
@@ -58,44 +90,15 @@ export function NavigationDrawer({ onNotificationsOpen, desktopOpen = false, onD
 
   const active = path => location.pathname === path || (path !== "/" && location.pathname.startsWith(`${path}/`));
   const close = () => desktop ? onDesktopOpenChange?.(false) : setMobileOpen(false);
-  const groupedItems = [
-    { title: "Comunidade", items: [drawerItems[0], { to: "/people", label: "Pessoas", detail: "Encontre a comunidade", icon: Compass }, drawerItems[6]] },
-    { title: "Bem-estar", items: [drawerItems[1], drawerItems[3], drawerItems[4], drawerItems[5]] },
-    { title: "Descobrir", items: [creatorItem,
-      { to: "/academy", label: "Academia Fortalfy", detail: "Conteúdos e cursos", icon: BookOpen },
-      { to: "/live", label: "Ao vivo", detail: "Aulas e transmissões", icon: Radio },
-      { to: "/studio", label: "Fortalfy Studio", detail: "Criação de artes", icon: Brush },
-      { to: "/partner/gym", label: "Academias parceiras", detail: "Perfis aprovados", icon: Building2 },
-      { to: "/partner/personal", label: "Personal trainers", detail: "Profissionais aprovados", icon: Dumbbell },
-      { to: "/partner/nutritionist", label: "Nutricionistas", detail: "Profissionais aprovados", icon: Utensils },
-    ] },
-    { title: "Compras", items: [{ to: "/cart", label: "Minha sacola", detail: "Itens selecionados na loja", icon: ShoppingCart }] },
-    { title: "Conta", items: [drawerItems[7], drawerItems[8]] },
-  ];
-
   const drawer = open && !desktop && createPortal(<div className="drawer-backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setMobileOpen(false)}>
     <aside ref={drawerRef} id="fortalfy-navigation-drawer" className="navigation-drawer" role="dialog" aria-modal="true" aria-label="Menu principal">
       <div className="drawer-heading"><div><span className="eyebrow">FORTALFY</span><h2>Seu espaço</h2></div><button className="icon-button" type="button" aria-label="Fechar menu" onClick={close}><X size={19} /></button></div>
-      <Link to={creatorItem.to} className="drawer-link drawer-link-creator" style={{ "--drawer-image": `url("${creatorItem.image}")` }} onClick={close}>
-        <span className="drawer-link-icon"><creatorItem.icon size={19} /></span><span><strong>{creatorItem.label}</strong><small>{creatorItem.detail}</small></span><ArrowRight size={17} />
-      </Link>
-      <nav className="drawer-mobile-links" aria-label="Menu principal">
-        {drawerItems.map(({ to, label, detail, icon: Icon, image, theme }) => <Link key={to} to={to} className={`drawer-link drawer-link-${theme}`} style={{ "--drawer-image": `url("${image}")` }} onClick={close}>
-          <span className="drawer-link-icon"><Icon size={19} /></span><span><strong>{label}</strong><small>{detail}</small></span>
-        </Link>)}
-      </nav>
-      <div className="drawer-desktop-content">
-        <nav className="drawer-primary-links" aria-label="Ações rápidas">
-          <button type="button" onClick={() => { close(); onNotificationsOpen?.(); }}><Bell size={17} />Notificações</button>
-        </nav>
-        {groupedItems.map(group => <section className="drawer-group" key={group.title} aria-label={group.title}>
+      <nav className="drawer-desktop-content" aria-label="Áreas do Fortalfy">
+        {navigationGroups.map(group => <section className="drawer-group" key={group.title} aria-label={group.title}>
           <h3>{group.title}</h3>
-          <nav aria-label={group.title}>{group.items.map(({ to, label, detail, icon: Icon }) => <Link key={to} to={to} className={active(to) ? "active" : ""} aria-current={active(to) ? "page" : undefined} onClick={close}><Icon size={17} /><span><strong>{label}</strong><small>{detail}</small></span></Link>)}</nav>
+          <div>{group.items.map(({ to, label, detail, icon: Icon }) => <Link key={to} to={to} className={active(to) ? "active" : ""} aria-current={active(to) ? "page" : undefined} onClick={close}><Icon size={17} /><span><strong>{label}</strong><small>{detail}</small></span></Link>)}</div>
         </section>)}
-        <Link to="/professional" className={`drawer-management-link${active("/professional") ? " active" : ""}`} aria-current={active("/professional") ? "page" : undefined} onClick={close}><Building2 size={17} /><span><strong>Área profissional</strong><small>Serviços para profissionais</small></span><ArrowRight size={15} /></Link>
-        <Link to="/partner/manage" className={`drawer-management-link${active("/partner/manage") ? " active" : ""}`} aria-current={active("/partner/manage") ? "page" : undefined} onClick={close}><Wallet size={17} /><span><strong>Gestão de parceiros</strong><small>Cadastros e estabelecimentos</small></span><ArrowRight size={15} /></Link>
-      </div>
-      <Link to="/profile" className="drawer-account-link" onClick={close}>Meu perfil <ArrowRight size={15} /></Link>
+      </nav>
     </aside>
   </div>, document.body);
 
@@ -118,46 +121,29 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     return () => media.removeEventListener?.("change", update);
   }, []);
   const expanded = desktop && desktopExpanded;
-  const feedMode = location.pathname === "/feed";
-  const mobileTabs = feedMode ? [
-    { to: "/home", label: "Início", icon: Home },
-    { to: "/feed", label: "Feed", icon: Users },
-    { to: "/feed?compose=1", label: "Criar", icon: Plus },
-    { to: "/messages", label: "Mensagens", icon: MessageCircle },
-    { to: "/profile", label: "Perfil", icon: UserRound },
-  ] : primaryTabs;
-  const active = feedMode ? "/feed" : ["/feed", "/reels", "/people", "/messages"].includes(location.pathname)
-    ? "/feed"
-    : location.pathname.startsWith("/shop") || location.pathname === "/studio"
-    ? "/shop"
-    : ["/pass", "/workout", "/nutrition", "/progress", "/earnings"].includes(location.pathname)
-    ? "/home"
-    : primaryTabs.find(tab => location.pathname === tab.to)?.to;
-  if (location.pathname.startsWith("/trainer") || location.pathname.startsWith("/nutritionist")) return null;
+  const communityRoutes = ["/feed", "/reels", "/people", "/messages", "/live"];
+  const active = location.pathname === "/home" ? "/home"
+    : ["/workout", "/progress", "/trainer"].includes(location.pathname) ? "/workout"
+    : communityRoutes.includes(location.pathname) ? "/feed"
+    : ["/shop", "/cart", "/studio"].includes(location.pathname) ? "/shop"
+    : location.pathname.startsWith("/profile") ? "/profile"
+    : undefined;
   if (location.pathname === "/reels") return null;
-  const desktopItems = [...primaryTabs, ...drawerItems, creatorItem,
-    { to: "/people", label: "Pessoas", icon: Compass },
-    { to: "/academy", label: "Academia Fortalfy", icon: BookOpen },
-    { to: "/live", label: "Ao vivo", icon: Radio },
-    { to: "/studio", label: "Fortalfy Studio", icon: Brush },
-    { to: "/partner/gym", label: "Academias parceiras", icon: Building2 },
-    { to: "/partner/personal", label: "Personal trainers", icon: Dumbbell },
-    { to: "/partner/nutritionist", label: "Nutricionistas", icon: Utensils },
-    { to: "/cart", label: "Minha sacola", icon: ShoppingCart },
-    { to: "/professional", label: "Área profissional", icon: Building2 },
-    { to: "/partner/manage", label: "Gestão de parceiros", icon: Wallet },
-  ].filter((item, index, all) => all.findIndex(other => other.to === item.to) === index);
-  const activeIndex = (expanded ? desktopItems : mobileTabs).findIndex(tab => tab.to === active);
+  const activeIndex = primaryTabs.findIndex(tab => tab.to === active);
   return <nav id="fortalfy-desktop-navigation" className={`bottom-nav${expanded ? " desktop-nav-expanded" : ""}`} aria-label="Navegação principal">
     {activeIndex >= 0 && <span
       className="bottom-nav-indicator"
       aria-hidden="true"
       style={{ "--nav-active-offset": `calc(${10 + activeIndex * 20}% - 22px)` }}
     ><span /></span>}
-    {(expanded ? desktopItems : mobileTabs).map(({ to, label, icon: Icon }) =>
+    {(expanded ? navigationGroups.flatMap(group => [{ groupTitle: group.title }, ...group.items]) : primaryTabs).map(item => {
+      if (item.groupTitle) return <h2 className="desktop-nav-group-title" key={item.groupTitle}>{item.groupTitle}</h2>;
+      const { to, label, icon: Icon } = item;
+      return (
       <Link key={`${to}-${label}`} to={to} className={`bottom-nav-item ${active === to && label !== "Criar" ? "active" : ""}${label === "Criar" ? " bottom-nav-create" : ""}`} aria-current={active === to && label !== "Criar" ? "page" : undefined} aria-label={label === "Criar" ? "Criar publicação" : undefined}>
         <span className="bottom-nav-icon"><Icon size={21} strokeWidth={active === to ? 2.5 : 1.8} /></span><span>{label}</span>
-      </Link>)}
+      </Link>);
+    })}
     {expanded && <button className="bottom-nav-item desktop-nav-notifications" type="button" onClick={onNotificationsOpen}><span className="bottom-nav-icon"><Bell size={20} /></span><span>Notificações</span></button>}
   </nav>;
 }

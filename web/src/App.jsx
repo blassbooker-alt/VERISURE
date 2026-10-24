@@ -1,9 +1,9 @@
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  Activity, Apple, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
+  Activity, Apple, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
   Bell, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleAlert, Download,
-  CircleHelp, Clock3, Dumbbell, Flame, Heart, HeartPulse, Home, Info, Lock, MapPin, MessageCircle,
+  CircleHelp, Clock3, Dumbbell, Flame, Heart, Home, Info, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   Globe2, Phone, ShoppingBag, Sparkles, Star, Target, Ticket, Timer, Trash2, UserMinus, UserPlus, Users, Utensils, Wallet, X,
 } from "lucide-react";
@@ -39,8 +39,7 @@ import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
 } from "./partnerService.js";
-import { loadMarketplaceProducts } from "./partnerStoreService.js";
-import { brandCampaignAsset, fortalfyAsset, publicAsset, visualPackAsset } from "./assetPath.js";
+import { brandCampaignAsset, fortalfyAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
@@ -203,23 +202,28 @@ function CommentThread({ comments = [], userName, userAvatar = "", onAdd, onTogg
 }
 
 function MobileHeader({ location = "", action, onNotificationsOpen, notificationCount = 0, desktopMenuOpen, onDesktopMenuOpenChange, hideNavigation = false }) {
-  return <header className={`mobile-header${hideNavigation ? " compact-mobile-header" : ""}`}>{!hideNavigation && <NavigationDrawer onNotificationsOpen={onNotificationsOpen} desktopOpen={desktopMenuOpen} onDesktopOpenChange={onDesktopMenuOpenChange} />}<Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
+  return <header className={`mobile-header${hideNavigation ? " compact-mobile-header" : ""}`}><NavigationDrawer desktopOpen={desktopMenuOpen} onDesktopOpenChange={onDesktopMenuOpenChange} /><Link to="/home" aria-label="Fortalfy, página inicial"><Brand /></Link>
     {location && <button type="button" className="location-chip" onClick={action} aria-label={location ? `Alterar região: ${location}` : "Definir região"}><MapPin size={15} /><span>{location}</span><ChevronDown size={14} /></button>}
     <button className="icon-button notification-bell" aria-label={notificationCount ? `Notificações, ${notificationCount} não lidas` : "Notificações"} onClick={onNotificationsOpen}><Bell size={20} />{notificationCount > 0 && <span className="notification-bell-count">{notificationCount > 9 ? "9+" : notificationCount}</span>}</button>
   </header>;
 }
 
+function readDesktopNavigationPreference() {
+  try { return window.localStorage.getItem("fortalfy.desktop-nav-expanded") !== "false"; }
+  catch { return true; }
+}
+
 function Screen({ children, title, subtitle, location = false, className = "", action, immersive = false, compactHeader = false }) {
   const notifications = useContext(NotificationContext);
-  const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => !compactHeader && window.matchMedia("(min-width: 1024px)").matches);
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(() => window.matchMedia("(min-width: 1024px)").matches && readDesktopNavigationPreference());
   useEffect(() => {
     const desktopBreakpoint = window.matchMedia("(min-width: 1024px)");
-    const syncNavigationWithViewport = () => setDesktopMenuOpen(desktopBreakpoint.matches && !compactHeader);
+    const syncNavigationWithViewport = () => setDesktopMenuOpen(desktopBreakpoint.matches && readDesktopNavigationPreference());
     desktopBreakpoint.addEventListener?.("change", syncNavigationWithViewport);
     return () => desktopBreakpoint.removeEventListener?.("change", syncNavigationWithViewport);
   }, [compactHeader]);
   return <div className={`app-screen${immersive ? " immersive-screen" : ""}${desktopMenuOpen ? " navigation-expanded" : ""}`}>
-    {!immersive && <MobileHeader location={location === true ? "" : location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={setDesktopMenuOpen} hideNavigation={compactHeader} />}
+    {!immersive && <MobileHeader location={location === true ? "" : location} action={action} onNotificationsOpen={notifications.open} notificationCount={notifications.unreadCount} desktopMenuOpen={desktopMenuOpen} onDesktopMenuOpenChange={value => { setDesktopMenuOpen(value); try { window.localStorage.setItem("fortalfy.desktop-nav-expanded", String(value)); } catch { /* Keep the navigation usable when storage is blocked. */ } }} hideNavigation={compactHeader} />}
     <main className={`screen-content ${className}`}>
       {title && !immersive && <div className="screen-heading"><div>{subtitle && <span className="eyebrow">{subtitle}</span>}<h1>{title}</h1></div></div>}
       {children}
@@ -339,18 +343,6 @@ function PhotoCard({ image, alt, className = "" }) {
   return <img className={`photo-card ${className}`} src={image} alt={alt} loading="lazy" />;
 }
 
-const HOME_MODULES = [
-  { to: "/workout", skin: "movement", tag: "NO SEU RITMO", name: "MOVIMENTO", title: "Seu próximo passo começa com você.", description: "Registre seus treinos e cuide da sua rotina.", image: brandCampaignAsset("fortalfy_gym_01_treino.jpg") },
-  { to: "/pass", skin: "pass", tag: "DESCUBRA PERTO DE VOCÊ", name: "FORTALPASS", title: "Seu próximo treino começa aqui.", description: "Encontre academias e profissionais aprovados.", image: visualPackAsset("fortalfy-pack-gym-interior.jpg") },
-  { to: "/feed", skin: "community", tag: "COMUNIDADE FORTALFY", name: "COMUNIDADE", title: "Inspiração que cresce junto.", description: "Compartilhe sua rotina e descubra a comunidade.", image: brandCampaignAsset("fortalfy_gym_20_manifesto.jpg") },
-  { to: "/reels", skin: "reels", tag: "VÍDEOS DA COMUNIDADE", name: "FORTALREELS", title: "Inspire-se em movimento.", description: "Conteúdo fitness em formato vertical.", image: visualPackAsset("fortalfy-pack-reels-training.jpg") },
-  { to: "/creator", skin: "creator", tag: "PROGRAMA DE CRIADORES", name: "FORTALCREATOR", title: "Sua criatividade pode abrir novos caminhos.", description: "Crie conteúdo, aprenda e conecte-se com a comunidade.", image: publicAsset("creator/06_torne_se_um_fortalcreator.jpg") },
-  { to: "/food", skin: "food", tag: "COMER BEM, COM LEVEZA", name: "FORTALFOOD", title: "Descubra escolhas para sua rotina.", description: "Conheça cardápios publicados por parceiros.", image: visualPackAsset("fortalfy-pack-food-card.jpg") },
-  { to: "/nutrition", skin: "nutrition", tag: "ESCOLHAS DO DIA A DIA", name: "NUTRIÇÃO", title: "Cuide da sua alimentação com leveza.", description: "Registre refeições e acompanhe sua rotina.", image: brandCampaignAsset("fortalfy_gym_08_whey_shake.jpg") },
-  { to: "/progress", skin: "progress", tag: "SEU CAMINHO", name: "PROGRESSO", title: "Perceba cada passo da jornada.", description: "Acompanhe os registros que você escolheu fazer.", image: brandCampaignAsset("fortalfy_gym_19_constancia.jpg") },
-  { to: "/shop", skin: "shop", tag: "SEU RITUAL DE BEM-ESTAR", name: "FORTALSHOP", title: "Encontre o que move você.", description: "Explore o catálogo Fortalfy.", image: visualPackAsset("fortalfy-pack-wellness-product.jpg") },
-];
-
 const HOME_BRAND_CAMPAIGNS = [
   ["fortalfy_gym_01_treino.jpg", "Treino de for\u00e7a"],
   ["fortalfy_gym_02_whey.jpg", "Whey para sua rotina"],
@@ -374,20 +366,7 @@ const HOME_BRAND_CAMPAIGNS = [
   ["fortalfy_gym_20_manifesto.jpg", "Manifesto Fortalfy"]
 ].map(([filename, title], index) => ({ image: brandCampaignAsset(filename), title, number: String(index + 1).padStart(2, "0") }));
 
-function HomeScreen({ activity, onActivity, session, profile: accountProfile, activityError, notify }) {
-  const [homePartners, setHomePartners] = useState([]);
-  const [homeProducts, setHomeProducts] = useState([]);
-  const [discoveryStatus, setDiscoveryStatus] = useState({ partners: "loading", products: "loading" });
-  useEffect(() => {
-    let active = true;
-    Promise.allSettled([loadApprovedPartners(supabase), loadMarketplaceProducts(supabase)]).then(([partnersResult, productsResult]) => {
-      if (!active) return;
-      setHomePartners(partnersResult.status === "fulfilled" ? partnersResult.value.slice(0, 3) : []);
-      setHomeProducts(productsResult.status === "fulfilled" ? productsResult.value.slice(0, 4) : []);
-      setDiscoveryStatus({ partners: partnersResult.status === "fulfilled" ? "ready" : "error", products: productsResult.status === "fulfilled" ? "ready" : "error" });
-    });
-    return () => { active = false; };
-  }, []);
+function HomeScreen({ activity, session, profile: accountProfile, activityError }) {
   const metadata = session?.user?.user_metadata || {};
   const displayName = accountProfile?.display_name || metadata.display_name || metadata.full_name || metadata.name || "";
   const firstName = displayName.trim().split(/\s+/)[0];
@@ -399,53 +378,45 @@ function HomeScreen({ activity, onActivity, session, profile: accountProfile, ac
     return Number.isFinite(date.getTime()) && date >= monday && date <= today;
   }).length;
   const nextStep = !isSignedIn
-    ? { label: "Explorar parceiros", title: "Escolha por onde começar.", description: "Descubra academias e profissionais com cadastro aprovado no FortalPass.", to: "/pass", icon: MapPin }
+    ? { label: "Entrar ou criar conta", title: "Tenha seu espaço na comunidade.", description: "Acesse sua conta para organizar seus registros e preferências.", to: "/profile", icon: UserPlus }
     : activityError
-      ? { label: "Explorar FortalPass", title: "Seus registros continuam no seu ritmo.", description: "Não foi possível carregar o resumo agora. Enquanto isso, explore parceiros com cadastro aprovado.", to: "/pass", icon: MapPin }
+      ? { label: "Abrir treinos", title: "Seu resumo está temporariamente indisponível.", description: "Você ainda pode consultar seus registros enquanto os dados são atualizados.", to: "/workout", icon: Dumbbell }
       : !activity.workoutsLogged
-        ? { label: "Registrar um treino", title: "Seu primeiro passo pode ser simples.", description: "Registre uma atividade que você já realizou. A Fortalfy não prescreve treinos.", to: "/workout", icon: Dumbbell }
+        ? { label: "Registrar treino", title: "Comece pelo que já faz parte da sua rotina.", description: "Registre uma atividade que você realizou. A Fortalfy não prescreve treinos.", to: "/workout", icon: Dumbbell }
         : !activity.mealsLogged
-          ? { label: "Abrir diário alimentar", title: "Cuide da sua rotina do seu jeito.", description: "Registre uma refeição quando fizer sentido para você, sem metas ou cobranças.", to: "/nutrition", icon: Utensils }
-          : { label: "Acompanhar meu progresso", title: "Cada registro faz parte do seu caminho.", description: "Revisite suas atividades e continue no ritmo que funciona para você.", to: "/progress", icon: Activity };
-  const scrollToEcosystem = () => document.getElementById("home-ecosystem")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+          ? { label: "Registrar refeição", title: "Acompanhe sua alimentação no seu ritmo.", description: "Adicione uma refeição ao diário quando fizer sentido para você.", to: "/nutrition", icon: Utensils }
+          : { label: "Encontrar profissionais", title: "Encontre apoio para sua rotina.", description: "Conheça academias e profissionais com cadastro aprovado no FortalPass.", to: "/pass", icon: MapPin };
   const featured = [
-    { campaign: HOME_BRAND_CAMPAIGNS[0], to: "/workout" },
-    { campaign: HOME_BRAND_CAMPAIGNS[7], to: "/nutrition" },
-    { campaign: HOME_BRAND_CAMPAIGNS[12], to: "/feed" },
-    { campaign: HOME_BRAND_CAMPAIGNS[19], to: "/creator" },
+    { campaign: HOME_BRAND_CAMPAIGNS[0], category: "TREINOS", title: "Registrar atividade", to: "/workout" },
+    { campaign: HOME_BRAND_CAMPAIGNS[12], category: "COMUNIDADE", title: "Abrir o Feed", to: "/feed" },
+    { campaign: HOME_BRAND_CAMPAIGNS[19], category: "CRIADORES", title: "Conhecer o FortalCreator", to: "/creator" },
   ];
-  const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   return <Screen className="home-screen">
     <section className="home-hero">
       <img className="home-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="" aria-hidden="true" loading="eager" decoding="async" />
       <div className="home-hero-top"><span className="location-label">FORTALFY · TREINO, CONTEÚDO E COMUNIDADE</span><Link to="/profile" className="home-hero-profile" aria-label="Abrir meu perfil">{accountProfile?.avatar ? <img src={accountProfile.avatar} alt="" /> : <span>{firstName?.slice(0, 1).toUpperCase() || <Users size={16} />}</span>}Meu perfil <ArrowUpRight size={14} /></Link></div>
-      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu próximo nível<br />começa hoje.</h1><span className="hero-copy">Treine, acompanhe sua evolução e encontre tudo o que precisa para manter sua rotina em movimento.</span><div className="home-hero-actions"><Link to={isSignedIn ? "/workout" : "/pass"} className="hero-cta">{isSignedIn ? "Começar treino" : "Explorar parceiros"} <ArrowRight size={16} /></Link><button type="button" className="hero-secondary-cta" onClick={scrollToEcosystem}>Explorar Fortalfy <ArrowDownRight size={16} /></button></div></div>
-      <div className="hero-activity"><div className="activity-icon"><Dumbbell size={20} /></div><div className="activity-text"><span>JORNADA DESTA SEMANA</span><strong>{workoutsThisWeek} {workoutsThisWeek === 1 ? "treino registrado" : "treinos registrados"}</strong><small>{activityError || (workoutsThisWeek ? "Registros desde segunda-feira." : "Seu primeiro registro começa sua evolução.")}</small></div><Link to="/workout" className="circle-arrow" aria-label="Abrir registros de treino"><ArrowRight size={19} /></Link></div>
+      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu próximo nível<br />começa hoje.</h1><span className="hero-copy">Treine, registre sua evolução e encontre o suporte certo para a sua rotina.</span><div className="home-hero-actions"><Link to={isSignedIn ? "/progress" : "/pass"} className="hero-cta">{isSignedIn ? "Ver meu progresso" : "Explorar parceiros"} <ArrowRight size={16} /></Link></div></div>
     </section>
     <div className="screen-inner home-inner">
-      <section className="home-journey" aria-labelledby="home-journey-title"><div className="home-section-heading"><span className="eyebrow">SUA JORNADA</span><h2 id="home-journey-title">O que você já colocou em movimento</h2><p>Um resumo dos registros reais da sua conta.</p></div>
-        <div className="home-journey-grid"><Link to="/workout" className="home-journey-card"><span className="home-journey-icon"><Dumbbell size={19} /></span><strong>{activity.workoutsLogged}</strong><span>treinos registrados</span><small>{workoutsThisWeek} nesta semana</small></Link><Link to="/nutrition" className="home-journey-card"><span className="home-journey-icon"><Utensils size={19} /></span><strong>{activity.mealsLogged}</strong><span>refeições registradas</span><small>No seu diário alimentar</small></Link><button type="button" className="home-journey-card" onClick={async () => { if (await onActivity("water")) notify("250 ml de água registrados."); }} disabled={Boolean(activityError)}><span className="home-journey-icon"><HeartPulse size={19} /></span><strong>{(activity.waterMl / 1000).toFixed(1).replace(".", ",")} L</strong><span>água registrada</span><small>Adicionar 250 ml <Plus size={13} /></small></button></div>
-        {!activity.workoutsLogged && !activity.mealsLogged && <p className="home-journey-empty">Comece seu primeiro registro para acompanhar sua evolução. Não criamos metas ou atividades por você.</p>}
-      </section>
       <section className="home-next-step" id="home-next-step" aria-labelledby="home-next-step-title"><div className="home-next-step-icon"><nextStep.icon size={23} aria-hidden="true" /></div><div className="home-next-step-copy"><span className="eyebrow">SEU PRÓXIMO PASSO</span><h2 id="home-next-step-title">{nextStep.title}</h2><p>{nextStep.description}</p></div><Link to={nextStep.to} className="button primary home-next-step-action">{nextStep.label} <ArrowRight size={16} /></Link></section>
-      <section className="home-ecosystem" id="home-ecosystem" aria-labelledby="home-ecosystem-title"><div className="module-catalog-heading"><span className="eyebrow">EXPLORE O ECOSSISTEMA</span><h2 id="home-ecosystem-title">Escolha seu próximo desafio</h2><p>Treino, profissionais, conteúdo e nutrição em um só lugar.</p></div><div className="module-catalog-grid" aria-label="Catálogo de experiências Fortalfy">{HOME_MODULES.map(({ to, skin, tag, name, title, description, image, icon: Icon }) => <Link to={to} className={`module-card module-card-${skin}`} key={skin}>{image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="module-card-mark" aria-hidden="true"><Icon size={82} /></span>}<span className="module-card-shade" aria-hidden="true" /><span className="module-card-top"><span>{tag}</span><span className="module-card-arrow"><ArrowUpRight size={18} /></span></span><span className="module-card-copy"><small>{name}</small><strong>{title}</strong><span>{description}</span></span></Link>)}</div></section>
-      <section className="home-featured" aria-labelledby="home-featured-title"><div className="home-section-heading"><span className="eyebrow">INSPIRAÇÃO FORTALFY</span><h2 id="home-featured-title">Conteúdo para colocar você em movimento</h2><p>Campanhas oficiais para inspirar sua rotina. Veja também publicações da comunidade.</p></div><div className="home-featured-grid">{featured.map(({ campaign: { image, title, number }, to }) => <Link key={number} to={to} className="home-featured-card"><img src={image} alt={`Campanha Fortalfy: ${title}`} loading="lazy" decoding="async" /><span className="home-featured-label">CAMPANHA FORTALFY · {number}</span><strong>{title}</strong><span className="home-featured-arrow"><ArrowUpRight size={18} /></span></Link>)}</div><Link to="/feed" className="home-inline-link">Ver publicações da comunidade <ArrowRight size={15} /></Link></section>
-      <section className="performance-card home-performance"><div className="home-performance-heading"><div><span className="eyebrow">PROGRESSO E DESEMPENHO</span><h2>Consistência se constrói com registros</h2><p>Seus números atuais, sem metas inventadas.</p></div><img src={brandCampaignAsset("fortalfy_gym_19_constancia.jpg")} alt="" aria-hidden="true" loading="lazy" /></div><div className="home-performance-metrics"><div><strong>{workoutsThisWeek}</strong><span>treinos esta semana</span><small>Registros desde segunda-feira</small></div><div><strong>{activity.workoutsLogged}</strong><span>treinos no total</span><Link to="/progress">Ver histórico <ArrowRight size={14} /></Link></div><div><strong>{activity.mealsLogged}</strong><span>refeições no diário</span><Link to="/nutrition">Abrir diário <ArrowRight size={14} /></Link></div></div>{!activity.workoutsLogged && !activity.mealsLogged && <p className="home-empty-progress">Registre um treino ou uma refeição para começar a acompanhar sua evolução.</p>}</section>
-      <section className="home-discovery-section" aria-labelledby="home-partners-title"><div className="home-section-heading"><span className="eyebrow">FORTALPASS</span><h2 id="home-partners-title">Profissionais e parceiros</h2><p>Perfis aprovados e listagens publicadas na plataforma.</p></div>{homePartners.length ? <div className="home-live-cards">{homePartners.map(partner => <Link to={`/profile/${partner.profileId}`} className="home-live-partner" key={partner.id}><img src={partner.avatar || visualPackAsset("fortalfy-pack-professional-team.jpg")} alt={partner.avatar ? `Foto de ${partner.name}` : "Imagem de apresentação do FortalPass"} loading="lazy" /><span className="home-live-card-shade" /><span className="home-live-card-tag"><BadgeCheck size={14} /> PERFIL APROVADO</span><strong>{partner.name}</strong><small>{partner.kind === "academia" ? "Academia" : partner.kind === "personal" ? "Personal trainer" : "Nutricionista"}{partner.city ? ` · ${partner.city}` : ""}</small><span className="home-live-card-action">Ver perfil <ArrowRight size={14} /></span></Link>)}</div> : <div className="home-discovery-empty"><img src={visualPackAsset("fortalfy-pack-professional-team.jpg")} alt="Equipe profissional em ambiente de bem-estar" loading="lazy" /><div><strong>{discoveryStatus.partners === "loading" ? "Buscando parceiros" : discoveryStatus.partners === "error" ? "Parceiros temporariamente indisponíveis" : "Novos parceiros em breve"}</strong><p>{discoveryStatus.partners === "loading" ? "Carregando perfis aprovados." : discoveryStatus.partners === "error" ? "Não foi possível carregar os perfis agora." : "Ainda não há perfis aprovados para exibir nesta área."}</p><Link to="/pass">Explorar FortalPass <ArrowRight size={15} /></Link></div></div>}<Link to="/pass" className="home-inline-link">Ver academias e profissionais <ArrowRight size={15} /></Link></section>
-      <section className="home-discovery-section" aria-labelledby="home-products-title"><div className="home-section-heading"><span className="eyebrow">FORTALSHOP</span><h2 id="home-products-title">Produtos e suplementos</h2><p>Itens, fotos e preços publicados por lojas parceiras.</p></div>{homeProducts.length ? <div className="home-live-products">{homeProducts.map(product => <Link to="/shop" className="home-live-product" key={product.id}><img src={product.image || brandCampaignAsset("fortalfy_gym_02_whey.jpg")} alt={product.image ? product.imageAlt : "Imagem Fortalfy; foto do produto indisponível"} loading="lazy" /><div><span>{product.category}</span><strong>{product.name}</strong><b>{formatPrice(product.price)}</b><small>Preço publicado pela loja parceira</small></div></Link>)}</div> : <div className="home-discovery-empty home-product-empty"><img src={brandCampaignAsset("fortalfy_gym_13_acessorios.jpg")} alt="Campanha Fortalfy de acessórios para treino" loading="lazy" /><div><strong>{discoveryStatus.products === "loading" ? "Carregando o catálogo" : discoveryStatus.products === "error" ? "Catálogo temporariamente indisponível" : "Nenhum produto publicado"}</strong><p>{discoveryStatus.products === "loading" ? "Buscando produtos de lojas parceiras." : discoveryStatus.products === "error" ? "Não foi possível carregar o catálogo agora." : "Quando uma loja parceira publicar produtos ativos, eles aparecerão aqui com preço e foto reais."}</p><Link to="/shop">Abrir FortalShop <ArrowRight size={15} /></Link></div></div>}<Link to="/shop" className="home-inline-link">Explorar FortalShop <ArrowRight size={15} /></Link></section>
-      <CreatorGallery
-        className="home-image-gallery"
-        galleryId="home-image-gallery-title"
-        eyebrow="CAMPANHAS OFICIAIS"
-        title="Fortalfy em movimento"
-        description="Treino, performance e produtos em imagens das campanhas oficiais da Fortalfy. Arraste para explorar e selecione uma imagem para ampliar."
-        context="CAMPANHA FORTALFY"
-        disclosure="Campanhas visuais oficiais da Fortalfy. Produtos e itens mostrados em imagens não representam necessariamente disponibilidade na FortalShop."
-        images={HOME_BRAND_CAMPAIGNS.map(({ image, title, number }) => ({ src: image, alt: `${title}: campanha visual Fortalfy`, title, description: `Campanha Fortalfy · ${number} de 20` }))}
-      />
-      {activityError && <p className="activity-sync-notice home-sync-status has-error" role="alert">{activityError}</p>}
+      <section className="home-performance" aria-labelledby="home-performance-title"><div className="home-section-heading"><span className="eyebrow">SEU DESEMPENHO</span><h2 id="home-performance-title">Sua evolução em números</h2><p>{activity.workoutsLogged || activity.mealsLogged ? "Resumo dos registros da sua conta." : "Comece seu primeiro treino para acompanhar sua evolução."}</p></div><div className="home-performance-metrics"><div><strong>{workoutsThisWeek}</strong><span>treinos nesta semana</span></div><div><strong>{activity.workoutsLogged}</strong><span>treinos registrados</span></div><div><strong>{activity.mealsLogged}</strong><span>refeições registradas</span></div></div>{activityError && <p className="home-data-status" role="status">{activityError}</p>}</section>
+      <section className="home-shortcuts" aria-labelledby="home-shortcuts-title"><div className="home-section-heading"><span className="eyebrow">ACESSO RÁPIDO</span><h2 id="home-shortcuts-title">Sua rotina</h2></div><div className="home-shortcut-grid"><Link to="/workout" className="home-shortcut"><Dumbbell size={24} /><strong>Treinos</strong><span>Registre sua atividade</span><ArrowUpRight size={17} /></Link><Link to="/progress" className="home-shortcut"><Activity size={24} /><strong>Meu progresso</strong><span>Acompanhe seus registros</span><ArrowUpRight size={17} /></Link><Link to="/feed" className="home-shortcut"><Users size={24} /><strong>Comunidade</strong><span>Converse e compartilhe</span><ArrowUpRight size={17} /></Link><Link to="/nutrition" className="home-shortcut"><Utensils size={24} /><strong>Nutrição</strong><span>Abra seu diário alimentar</span><ArrowUpRight size={17} /></Link></div></section>
+      <section className="home-featured" aria-labelledby="home-featured-title"><div className="home-section-heading"><span className="eyebrow">EXPLORE EM DESTAQUE</span><h2 id="home-featured-title">Acesse outras áreas</h2><p>Treino, comunidade e criação de conteúdo, em seus espaços próprios.</p></div><div className="home-featured-grid">{featured.map(({ campaign: { image }, category, title, to }) => <Link key={category} to={to} className="home-featured-card"><img src={image} alt="" loading="lazy" decoding="async" /><span className="home-featured-label">{category}</span><strong>{title}</strong><span className="home-featured-arrow"><ArrowUpRight size={18} /></span></Link>)}</div><Link to="/campaigns" className="home-inline-link">Ver campanhas oficiais <ArrowRight size={15} /></Link></section>
     </div>
   </Screen>;
+}
+
+function CampaignsScreen() {
+  return <Screen title="Campanhas oficiais" subtitle="FORTALFY EM MOVIMENTO" className="campaigns-screen"><CreatorGallery
+    className="campaigns-gallery"
+    galleryId="campaigns-gallery-title"
+    eyebrow="CAMPANHAS FORTALFY"
+    title="Treino, performance e rotina"
+    description="Explore as campanhas visuais oficiais da Fortalfy. Arraste para navegar e selecione uma imagem para ampliar."
+    context="CAMPANHA FORTALFY"
+    disclosure="As imagens são editoriais e não confirmam disponibilidade de produtos, serviços ou parceiros na plataforma."
+    images={HOME_BRAND_CAMPAIGNS.map(({ image, title, number }) => ({ src: image, alt: `${title}: campanha visual Fortalfy`, title, description: `Campanha Fortalfy · ${number} de 20` }))}
+  /></Screen>;
 }
 
 function FeedScreen({ notify, feedArts, profileDetails, profilePosts, savePosts, saveFeedComments, feedComments, shareToProfile }) {
@@ -2169,7 +2140,8 @@ function AppContent() {
     <NotificationContext.Provider value={{ open: () => setNotificationCenterOpen(true), unreadCount: unreadNotificationCount, push: pushNotification }}>
     <Routes>
       <Route path="/" element={authSession?.user?.id ? <Navigate to="/home" replace /> : <PublicLanding />} />
-      <Route path="/home" element={<HomeScreen activity={activity} onActivity={updateActivity} session={authSession} profile={socialProfile} activityStatus={activityStatus} activityError={activityError} notify={notify} />} />
+      <Route path="/home" element={<HomeScreen activity={activity} session={authSession} profile={socialProfile} activityError={activityError} />} />
+      <Route path="/campaigns" element={<CampaignsScreen />} />
       <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />
       <Route path="/feed" element={<Screen compactHeader className="feed-screen community-feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} authReady={authReady} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />

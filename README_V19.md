@@ -1,6 +1,10 @@
 # Fortalfy v19 — Fortalfy Pass e navegação mobile
 
 ## Mudanças
+- Home reorganizada para priorizar próximo passo, métricas reais, quatro atalhos e até três acessos editoriais; a galeria oficial de 20 imagens fica na rota própria `/campaigns`.
+- Navegação mobile com cinco destinos fixos e menu organizado por áreas; a navegação lateral desktop pode ser recolhida e mantém a preferência entre telas. Os rótulos do menu agora correspondem aos destinos de cada rota.
+- Estado vazio do Feed reduzido a duas ações úteis: encontrar pessoas e criar uma publicação.
+- Departamentos da FortalShop só aparecem quando há produtos publicados, evitando uma seção de categorias sem conteúdo.
 - Tela de entrada refeita para que a primeira impressão seja visivelmente diferente: composição editorial em tela cheia, identidade verde/lima, chamada principal clara, ações de cadastro/login e uma prévia ilustrativa do app em moldura de telefone. No celular, a composição se reorganiza em uma coluna; o aviso informa claramente que conta, recuperação, sincronização e pagamentos ainda têm limitações. A prévia é conceitual e não representa dados reais.
 - Avatares circulares refinados no Perfil e nos Stories: o Perfil mantém o aro verde externo, concêntrico à foto; no Feed, o avatar do Story fica contido em 58 × 58 px mesmo com fotos verticais, o aro verde não se duplica e o rótulo “Seu story” mantém espaço visível abaixo do círculo.
 - “Acessos rápidos” reúne as 20 áreas em categorias recolhíveis (Descobrir, Minha rotina e Conta e parcerias), todas fechadas inicialmente; ao abrir uma categoria, as outras se recolhem. A busca abre a categoria com resultados.
@@ -12,7 +16,7 @@
 - Foto de perfil e capa podem ser alteradas diretamente pelo ícone de câmera sobre cada imagem; a seleção abre prévia e ajuste de enquadramento antes de salvar no Supabase. A edição de informações do perfil fica separada, e a remoção das imagens permanece disponível nessa tela.
 - Tela inicial simplificada: comparação de planos e catálogo de módulos começam recolhidos, continuam acessíveis sem perder funcionalidades e a busca expande os resultados do catálogo quando necessário.
 - Cadastro local deixou de persistir senhas novas em texto legível: usa PBKDF2 com salt aleatório e 310.000 iterações; contas legadas migram ao hash após um login local bem-sucedido.
-- Navegação inferior com cinco destinos: Início, Feed, Food, Pass e Perfil.
+- Navegação inferior com cinco destinos: Início, Treinos, Comunidade, Loja e Perfil.
 - FortalCreator disponível como cartão direto em “Explore a Fortalfy” e como atalho destacado e fixo no topo do menu mobile, inclusive durante a rolagem, tanto no navegador quanto no app instalado.
 - Landing do FortalCreator com galeria editorial de unboxing ilustrativa, imagens otimizadas, carrossel mobile, lightbox com navegação acessível e avisos de transparência; recebimentos e colaborações dependem de critérios, disponibilidade e seleção.
 - Prévia no telefone pela rede local: execute `node serve-phone-preview.js` na pasta do projeto e abra `http://<IP-local-do-computador>:4173/` no telefone conectado à mesma rede Wi-Fi.
