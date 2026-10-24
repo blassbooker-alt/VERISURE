@@ -10759,6 +10759,24 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
 }
 
 @media (max-width: 760px) {
+  /* Keep the home grid's implicit column from expanding to a card's desktop
+     intrinsic width on narrow screens. */
+  .mobile-app .home-inner {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mobile-app .home-inner > * {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mobile-app .home-inner :is(.home-next-step-copy, .home-section-heading, .home-shortcut-grid,
+    .home-featured-grid, .home-performance-metrics, .home-live-cards, .home-live-products) {
+    min-width: 0;
+  }
+
   .home-screen .home-performance {
     padding: 16px;
   }
