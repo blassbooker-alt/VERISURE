@@ -172,6 +172,18 @@ function ProfileImageCropPreview({ imageDraft, setImageDraft }) {
   </div>;
 }
 
+function getAuthEmailFailureMessage(error, fallback) {
+  const message = [error?.message, error?.msg, error?.details].filter(Boolean).join(" ").toLowerCase();
+  const code = String(error?.code || "").toLowerCase();
+  if (code === "email_address_not_authorized" || /email address not authorized|recipient.*not authorized/.test(message)) {
+    return "O Supabase recusou o destinat\u00e1rio. A equipe precisa revisar o SMTP e a autoriza\u00e7\u00e3o do remetente no painel Supabase.";
+  }
+  if (/error sending (confirmation|recovery|reset)|smtp.*(error|fail)|failed to send email/.test(message)) {
+    return "O servi\u00e7o de e-mail n\u00e3o conseguiu enviar a mensagem. A equipe precisa conferir Authentication > SMTP Settings e os logs de Auth no Supabase.";
+  }
+  return fallback;
+}
+
 function SocialAuth({ client, configured, notify, recovery = false, onRecovered, variant = "", initialMode = "login" }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -333,14 +345,14 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
           try {
             await resendSignupOtp(client, fields.email);
             setResendSeconds(60);
-            setMessage("Se esta conta ainda precisar de confirma\u00e7\u00e3o, enviamos um novo c\u00f3digo. Confira a caixa de entrada e o spam.");
+            setMessage("Se o cadastro ainda estiver pendente, enviamos um novo c\u00f3digo. Se voc\u00ea j\u00e1 tem uma conta, use Entrar ou Recuperar senha abaixo. Confira tamb\u00e9m o spam.");
             setMessageType("success");
           } catch (emailError) {
             const errorText = (emailError?.message || "").toLowerCase();
             const rateLimited = emailError?.code === "over_email_send_rate_limit" || /rate limit/i.test(errorText);
             setMessage(rateLimited
               ? "O servi\u00e7o limitou novos envios. Aguarde um minuto e toque em Reenviar c\u00f3digo de confirma\u00e7\u00e3o."
-              : "N\u00e3o foi poss\u00edvel enviar o c\u00f3digo agora. Tente novamente por Reenviar c\u00f3digo ou recuperar sua senha.");
+              : getAuthEmailFailureMessage(emailError, "N\u00e3o foi poss\u00edvel enviar o c\u00f3digo agora. Tente reenviar ou use Recuperar senha abaixo."));
             setMessageType("error");
           }
           return;
@@ -411,6 +423,8 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
         setMessage("O limite de envio foi atingido. Aguarde um minuto antes de pedir outro link de recupera\u00e7\u00e3o.");
       } else if (errText.includes("rate limit")) {
         setMessage("Limite temporário de requisições de e-mail atingido. Se já tem conta, utilize o login.");
+      } else if (mode === "reset") {
+        setMessage(getAuthEmailFailureMessage(error, "N\u00e3o foi poss\u00edvel enviar o link agora. Confira o e-mail e tente novamente mais tarde."));
       } else if (mode === "confirm") {
         setMessage("O código não foi aceito ou expirou. Confira o e-mail e solicite outro código se necessário.");
       } else if (mode === "update") {
@@ -439,7 +453,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
       console.error("Falha ao reenviar confirmação de e-mail.", { code });
       setMessage(code === "over_email_send_rate_limit" || /rate limit/i.test(error?.message || "")
         ? "Aguarde antes de pedir outro código. O limite de envio do serviço foi atingido."
-        : "Não foi possível reenviar agora. Confira o endereço e tente novamente mais tarde.");
+        : getAuthEmailFailureMessage(error, "Não foi possível reenviar agora. Confira o endereço e tente novamente mais tarde."));
       setMessageType("error");
     } finally {
       setBusy(false);
@@ -971,6 +985,11 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
             {mode === "confirm" && (
               <button type="button" className="auth-link-btn" onClick={resendConfirmation} disabled={busy || resendSeconds > 0}>
                 {resendSeconds > 0 ? `Solicite outro código em ${resendSeconds}s` : "Reenviar código de confirmação"}
+              </button>
+            )}
+            {mode === "confirm" && (
+              <button type="button" className="auth-link-btn" onClick={() => { setMode("reset"); setMessage(""); setGoogleHelpOpen(false); }}>
+                Já tem conta? <strong>Recuperar senha</strong>
               </button>
             )}
             {mode !== "login" && mode !== "update" && (
