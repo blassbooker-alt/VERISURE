@@ -11385,3 +11385,48 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
   border-color: var(--color-border);
   box-shadow: var(--brand-shadow-sm);
 }
+
+/* Desktop feed: let the publication stream use the content canvas instead of
+   inheriting the narrow, phone-first max width used by other screens. */
+@media (min-width: 1024px) {
+  .mobile-app .feed-screen .screen-inner {
+    width: 100%;
+    max-width: none;
+    padding-inline: 0;
+  }
+  .mobile-app .community-feed-screen.feed-screen.screen-content {
+    width: 100%;
+    max-width: none;
+  }
+  .social-feed-authenticated {
+    width: 100%;
+    max-width: none;
+    gap: clamp(22px, 2.4vw, 36px);
+    margin-top: 22px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .social-feed-authenticated { grid-template-columns: minmax(0, 1fr); }
+  .social-feed-side-panel { display: none; }
+  .social-feed-main > .community-navigation { display: flex; }
+}
+
+@media (min-width: 1200px) {
+  .social-feed-authenticated {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 310px);
+  }
+  .social-feed-main .social-post-card { padding: 22px 26px 14px; }
+  .social-feed-main .social-post-copy { font-size: 1rem; }
+  .social-feed-main .social-post-author > a { font-size: .95rem; }
+  .social-feed-main .social-create-post { padding: 22px 24px 16px; }
+  .social-feed-main .social-create-post .social-create-text textarea { min-height: 96px; font-size: .95rem; }
+  .social-media-grid { max-height: 720px; }
+  .social-media-item img, .social-media-item video { max-height: 640px; }
+}
+
+@media (min-width: 1600px) {
+  .social-feed-authenticated { gap: 40px; }
+  .social-feed-authenticated .social-feed-side-panel { grid-template-columns: 1fr; }
+  .social-feed-main .social-post-card { padding-inline: 30px; }
+}
