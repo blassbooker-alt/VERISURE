@@ -11389,7 +11389,7 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
 /* Desktop feed: let the publication stream use the content canvas instead of
    inheriting the narrow, phone-first max width used by other screens. */
 @media (min-width: 1024px) {
-  .mobile-app .app-screen:not(.immersive-screen) .social-feed-authenticated {
+  .mobile-app .app-screen:not(.immersive-screen) .social-feed.social-feed-authenticated:not(.social-reels-page) {
     width: 100%;
     max-width: none;
   }
@@ -11433,4 +11433,40 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
   .social-feed-authenticated { gap: 40px; }
   .social-feed-authenticated .social-feed-side-panel { grid-template-columns: 1fr; }
   .social-feed-main .social-post-card { padding-inline: 30px; }
+}
+
+/* Keep the community stream comfortably wide on ordinary desktop screens;
+   bring discovery cards back when the canvas can support two useful columns. */
+@media (min-width: 1024px) and (max-width: 1599px) {
+  .social-feed-authenticated { grid-template-columns: minmax(0, 1fr); }
+  .social-feed-side-panel { display: none; }
+}
+
+@media (min-width: 1600px) {
+  .social-feed-authenticated {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+    gap: clamp(28px, 2.5vw, 42px);
+  }
+  .social-feed-side-panel { gap: 16px; }
+  .social-feed-side-panel section { padding: 20px; }
+  .social-feed-side-panel h2 { font-size: 1.125rem; line-height: 1.35; }
+  .social-feed-side-panel p { font-size: .875rem; }
+  .social-feed-side-panel a { font-size: .8125rem; }
+  .mobile-app .app-screen:not(.immersive-screen) .screen-inner {
+    width: min(100%, 1480px);
+    max-width: 1480px;
+  }
+  .mobile-app .app-screen:not(.immersive-screen) > .screen-content > .screen-heading {
+    width: min(100%, 1480px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-app .app-screen.navigation-expanded:not(.immersive-screen) .desktop-nav-group-toggle {
+    font-size: .7rem;
+  }
+  .desktop-nav-group-items .bottom-nav-item {
+    min-height: 44px;
+    font-size: .8rem;
+  }
 }
