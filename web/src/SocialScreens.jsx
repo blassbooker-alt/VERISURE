@@ -1098,11 +1098,15 @@ export function OnboardingGate({ client, userId, configured, notify, onSignOut }
 
   return <div className="onboarding-scrim">
     <section className="onboarding-dialog" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-      <img className="onboarding-welcome-art" src={credibilityPackAsset("26-onboarding-welcome.png")} alt="Pessoa amarrando o tênis ao nascer do sol no Rio de Janeiro" />
-      <span className="social-auth-icon"><ShieldCheck size={20} /></span>
-      <span className="eyebrow">SEU RITMO, SUAS ESCOLHAS</span>
-      <h2 id="onboarding-title">Vamos personalizar sua jornada</h2>
-      <p>Essas preferências ficam privadas na sua conta e podem ser alteradas depois.</p>
+      <header className="onboarding-heading">
+        <img className="onboarding-welcome-art" src={credibilityPackAsset("26-onboarding-welcome.png")} alt="Pessoa se preparando para treinar ao nascer do sol" />
+        <div className="onboarding-heading-copy">
+          <span className="social-auth-icon"><ShieldCheck size={20} /></span>
+          <span className="eyebrow">SEU RITMO, SUAS ESCOLHAS</span>
+          <h2 id="onboarding-title">Vamos personalizar sua jornada</h2>
+          <p>Essas preferências ficam privadas e podem ser alteradas depois.</p>
+        </div>
+      </header>
       {!configured && <div className="social-config-warning"><CircleAlert size={17} /> Configure o Supabase para salvar o onboarding com segurança.</div>}
       {loading ? <p role="status">Carregando suas preferências...</p> : message && !preferences
         ? <div className="social-auth-message" role="alert">

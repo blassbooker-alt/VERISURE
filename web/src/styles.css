@@ -11088,6 +11088,65 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
 
 .app-screen:has(.social-auth-hero-container) :is(.mobile-header,.bottom-nav,.community-navigation) { display:none !important; }
 .app-screen:has(.social-auth-hero-container) .screen-content { width:100%; max-width:none; margin:0; padding:0; }
+
+/* Authenticated first-run onboarding: compact, readable and touch-friendly. */
+.onboarding-dialog {
+  width: min(640px, 100%);
+  padding: clamp(20px, 3vw, 30px);
+  border-color: #2a3a30;
+  border-radius: 22px;
+  background: #101814;
+  color: #f4f7f4;
+  box-shadow: 0 28px 90px #0009;
+}
+.onboarding-heading { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: center; gap: 20px; margin-bottom: 22px; }
+.onboarding-welcome-art { width: 132px; height: 132px; margin: 0; border-radius: 17px; object-position: center; }
+.onboarding-heading-copy { min-width: 0; }
+.onboarding-heading-copy .social-auth-icon { display: grid; place-items: center; width: 36px; height: 36px; margin: 0 0 10px; border-radius: 12px; color: #c8f52e; background: #1a3e2e; }
+.onboarding-heading-copy .eyebrow { color: #c8f52e; font-size: .66rem; font-weight: 800; letter-spacing: .12em; }
+.onboarding-dialog h2 { margin: 6px 0; color: #f4f7f4; font-size: clamp(1.25rem, 3vw, 1.65rem); line-height: 1.2; letter-spacing: -.035em; }
+.onboarding-dialog > .onboarding-heading p { margin: 7px 0 0; color: #a1aba3; font-size: .875rem; line-height: 1.5; }
+.onboarding-dialog .social-auth-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.onboarding-dialog .social-auth-form > label:first-child,
+.onboarding-dialog .social-auth-form > .social-auth-consent,
+.onboarding-dialog .social-auth-form > .social-auth-message,
+.onboarding-dialog .social-auth-form > .wide-button,
+.onboarding-dialog .social-auth-form > div { grid-column: 1 / -1; }
+.onboarding-dialog .social-auth-form > label:first-child { display: grid; gap: 7px; color: #dce4dd; font-size: .8rem; font-weight: 700; }
+.onboarding-dialog .social-auth-form > label:first-child input { width: 100%; min-height: 48px; padding: 0 13px; border: 1px solid #334238; border-radius: 12px; color: #f4f7f4; background: #17211c; color-scheme: dark; }
+.onboarding-dialog .social-auth-choice-group { align-content: start; gap: 10px; min-width: 0; margin: 0; padding: 14px; border: 1px solid #2a3a30; border-radius: 15px; background: #151e19; }
+.onboarding-dialog .social-auth-choice-group legend { padding: 0 5px; color: #f4f7f4; font-size: .8rem; font-weight: 750; }
+.onboarding-dialog .social-auth-choice-group > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.onboarding-dialog .social-auth-choice-group label { display: inline-flex !important; align-items: center; gap: 8px !important; min-height: 38px; padding: 7px 11px; border: 1px solid #35463b; border-radius: 999px; color: #dce4dd; background: #1b2720; font-size: .78rem !important; font-weight: 600 !important; line-height: 1.2; cursor: pointer; transition: border-color .16s ease, background .16s ease, color .16s ease; }
+.onboarding-dialog .social-auth-choice-group input[type="checkbox"] { appearance: none; display: grid; place-content: center; flex: 0 0 17px; width: 17px; height: 17px; margin: 0; border: 1px solid #718076; border-radius: 5px; background: #101814; }
+.onboarding-dialog .social-auth-choice-group input[type="checkbox"]::before { content: ""; width: 9px; height: 5px; border: solid #14200e; border-width: 0 0 2px 2px; transform: rotate(-45deg) scale(0); transition: transform .12s ease; }
+.onboarding-dialog .social-auth-choice-group input[type="checkbox"]:checked { border-color: #c8f52e; background: #c8f52e; }
+.onboarding-dialog .social-auth-choice-group input[type="checkbox"]:checked::before { transform: rotate(-45deg) scale(1); }
+.onboarding-dialog .social-auth-choice-group label:has(input:checked) { border-color: #789b28; color: #e9f7cf; background: #26351d; }
+.onboarding-dialog .social-auth-choice-group label:focus-within,
+.onboarding-dialog .social-auth-form :is(input, button):focus-visible { outline: 2px solid #c8f52e; outline-offset: 3px; }
+.onboarding-dialog .social-auth-consent { display: flex; align-items: flex-start; gap: 10px; color: #b6c0b8; font-size: .78rem; line-height: 1.5; }
+.onboarding-dialog .social-auth-consent input { flex: 0 0 18px; width: 18px; height: 18px; margin: 1px 0 0; accent-color: #c8f52e; }
+.onboarding-dialog .wide-button { min-height: 50px; border-radius: 13px; font-weight: 750; }
+.onboarding-dialog .text-button { color: #c8f52e; font-weight: 650; }
+.onboarding-dialog .social-auth-message { color: #ffd2ca; }
+@media (max-width: 560px) {
+  .onboarding-scrim { place-items: end center; padding: 8px 8px max(8px, env(safe-area-inset-bottom)); }
+  .onboarding-dialog { width: min(100%, 480px); max-height: min(94dvh, 820px); padding: 19px 17px; border-radius: 21px; }
+  .onboarding-heading { grid-template-columns: 76px minmax(0, 1fr); gap: 13px; margin-bottom: 17px; }
+  .onboarding-welcome-art { width: 76px; height: 92px; border-radius: 13px; }
+  .onboarding-heading-copy .social-auth-icon { width: 30px; height: 30px; margin-bottom: 7px; }
+  .onboarding-heading-copy .eyebrow { font-size: .58rem; }
+  .onboarding-dialog h2 { font-size: 1.2rem; }
+  .onboarding-dialog > .onboarding-heading p { font-size: .78rem; }
+  .onboarding-dialog .social-auth-form { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .onboarding-dialog .social-auth-choice-group { padding: 12px; }
+  .onboarding-dialog .social-auth-choice-group label { min-height: 40px; font-size: .76rem !important; }
+  .onboarding-dialog .social-auth-form > div { margin-top: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-dialog *, .onboarding-dialog *::before, .onboarding-dialog *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
 .app-screen:has(.social-auth-hero-container) .screen-heading { display:none; }
 
 
