@@ -2339,7 +2339,7 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
   const userId = session?.user?.id;
   const canPublishReels = Boolean(profile?.partnerApproved
     && ["personal", "nutricionista", "academia", "marca"].includes(profile.kind));
-  const filters = [["latest", "Mais recentes"], ["following", "Seguindo"]];
+  const filters = [["latest", "Para você"], ["following", "Seguindo"]];
   const openAuth = mode => {
     const activeElement = document.activeElement;
     authReturnFocusRef.current = activeElement instanceof HTMLElement && activeElement !== document.body ? activeElement : null;
