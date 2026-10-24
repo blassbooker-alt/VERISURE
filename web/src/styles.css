@@ -11389,6 +11389,10 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
 /* Desktop feed: let the publication stream use the content canvas instead of
    inheriting the narrow, phone-first max width used by other screens. */
 @media (min-width: 1024px) {
+  .mobile-app .app-screen:not(.immersive-screen) .social-feed-authenticated {
+    width: 100%;
+    max-width: none;
+  }
   .mobile-app .feed-screen .screen-inner {
     width: 100%;
     max-width: none;
