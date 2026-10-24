@@ -11088,6 +11088,7 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
 
 .app-screen:has(.social-auth-hero-container) :is(.mobile-header,.bottom-nav,.community-navigation) { display:none !important; }
 .app-screen:has(.social-auth-hero-container) .screen-content { width:100%; max-width:none; margin:0; padding:0; }
+.app-screen:has(.social-auth-hero-container) .screen-heading { display:none; }
 
 
 .social-auth-showcase.has-auth-art { isolation:isolate; background:#111513; }
@@ -11097,7 +11098,9 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
 .social-auth-showcase.has-auth-art .showcase-content { display:none; }
 .social-auth-showcase.has-auth-art .showcase-brand-header { position:relative; z-index:1; }
 @media(max-width:767px) {
- .social-auth-showcase.has-auth-art { min-height:260px; height:clamp(260px,36vh,340px); }
+ .social-auth-showcase.has-auth-art { width:100%; min-height:260px; height:clamp(260px,36vh,340px); }
+ .social-auth-form-card { width:100%; }
+ .social-auth-showcase.has-auth-art:not(.professional-auth-art) .auth-welcome-art { object-position:center 63%; }
  .social-auth-showcase.professional-auth-art .auth-welcome-art { object-position:center 38%; }
 }
 
