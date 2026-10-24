@@ -1,4 +1,4 @@
-import { mapProfile, signMedia } from "./socialService.js";
+import { mapProfile, prepareSocialImage, signMedia } from "./socialService.js";
 
 import { createSecureId } from "./secureId.js";
 
@@ -92,11 +92,12 @@ export async function loadStories(client, userId) {
 export async function publishStory(client, userId, file, caption = "") {
   requireUser(client, userId);
   validateStoryMedia(file, caption);
+  const uploadFile = file.type.startsWith("image/") ? await prepareSocialImage(file, { maxDimension: 1600, quality: 0.8 }) : file;
   const id = createSecureId();
-  const extension = MIME_EXTENSIONS.get(file.type);
+  const extension = MIME_EXTENSIONS.get(uploadFile.type) || "webp";
   const path = `${userId}/stories/${id}.${extension}`;
-  const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, file, {
-    contentType: file.type,
+  const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, uploadFile, {
+    contentType: uploadFile.type,
     upsert: false,
   });
   if (uploadError) throw uploadError;
@@ -106,7 +107,7 @@ export async function publishStory(client, userId, file, caption = "") {
     owner_id: userId,
     caption: caption.trim(),
     media_path: path,
-    media_type: file.type.startsWith("video/") ? "video" : "image",
+    media_type: uploadFile.type.startsWith("video/") ? "video" : "image",
   }).select("id,owner_id,caption,media_path,media_type,created_at,expires_at").single();
   if (error) {
     const { error: cleanupError } = await client.storage.from(MEDIA_BUCKET).remove([path]);

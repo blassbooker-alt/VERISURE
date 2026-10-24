@@ -96,6 +96,38 @@ export async function signMedia(client, path) {
   return data.signedUrl;
 }
 
+export async function prepareSocialImage(file, { maxDimension = 1920, quality = 0.82 } = {}) {
+  if (!file?.type?.startsWith("image/") || file.type === "image/gif" || typeof globalThis.createImageBitmap !== "function") {
+    return file;
+  }
+
+  let bitmap;
+  try {
+    bitmap = await globalThis.createImageBitmap(file);
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size <= 768 * 1024) return file;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/webp", quality));
+    if (!blob || !blob.type.startsWith("image/") || blob.size >= file.size) return file;
+
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "imagem-fortalfy";
+    const extension = blob.type === "image/webp" ? "webp" : blob.type === "image/png" ? "png" : "jpg";
+    return new File([blob], `${baseName}.${extension}`, { type: blob.type, lastModified: file.lastModified });
+  } catch {
+    // Keep the user's original file when this browser cannot decode or encode it.
+    return file;
+  } finally {
+    bitmap?.close?.();
+  }
+}
+
 export async function uploadProfileImage(client, userId, file, field) {
   if (!PROFILE_FIELDS.has(field)) throw new Error("Tipo de imagem de perfil inválido.");
   if (!file.type.startsWith("image/") || !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
@@ -683,12 +715,15 @@ export async function publishPost(client, userId, {
   let postCreated = false;
   try {
     for (const [index, file] of files.entries()) {
-      const extension = file.type.startsWith("video/")
-        ? file.type === "video/mp4" ? "mp4" : "webm"
-        : file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "webp";
+      const uploadFile = file.type.startsWith("image/") ? await prepareSocialImage(file) : file;
+      const extension = uploadFile.type.startsWith("video/")
+        ? uploadFile.type === "video/mp4" ? "mp4" : "webm"
+        : uploadFile.type === "image/webp" ? "webp"
+          : uploadFile.type === "image/png" ? "png"
+            : uploadFile.type === "image/gif" ? "gif" : "jpg";
       const path = `${publisherId}/posts/${postId}/${String(index).padStart(2, "0")}.${extension}`;
-      const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, file, {
-        contentType: file.type,
+      const { error: uploadError } = await client.storage.from(MEDIA_BUCKET).upload(path, uploadFile, {
+        contentType: uploadFile.type,
         upsert: false,
       });
       if (uploadError) {
@@ -703,7 +738,7 @@ export async function publishPost(client, userId, {
         }
         throw uploadError;
       }
-      const mediaType = file.type.startsWith("video/") ? "video" : "image";
+      const mediaType = uploadFile.type.startsWith("video/") ? "video" : "image";
       const uploadedMedia = {
         post_id: postId,
         storage_path: path,
