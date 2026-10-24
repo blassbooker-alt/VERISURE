@@ -11529,3 +11529,68 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
     font-size: .8rem;
   }
 }
+
+/* Community feed phone layout: remove the inherited 520px screen cap and the
+   second centered width so the stream follows the phone's actual content box. */
+@media (max-width: 760px) {
+  .mobile-app .app-screen > .screen-content.community-feed-screen.feed-screen {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 10px max(12px, env(safe-area-inset-left)) calc(132px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right));
+    overflow-x: clip;
+  }
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header {
+    height: calc(58px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
+  }
+  .community-feed-screen .social-feed-authenticated,
+  .community-feed-screen .social-guest-feed {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 4px 0 0;
+  }
+  .community-feed-screen .social-feed-authenticated {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .community-feed-screen .social-feed-main { width: 100%; min-width: 0; }
+  .community-feed-screen .social-feed-side-panel,
+  .community-feed-screen .social-feed-quick-actions { display: none; }
+  .community-feed-screen .social-feed-header { padding: 10px 2px 8px; }
+  .community-feed-screen .social-feed-toolbar { top: calc(58px + env(safe-area-inset-top)); gap: 8px; }
+  .community-feed-screen .social-filter-tabs { min-width: 0; flex: 1 1 auto; }
+  .community-feed-screen .social-filter-tabs button { min-height: 40px; padding-inline: 12px; white-space: nowrap; }
+  .community-feed-screen .social-refresh { flex: 0 0 auto; min-height: 40px; padding-inline: 11px; }
+  .community-feed-screen .social-post-header { min-width: 0; gap: 8px; }
+  .community-feed-screen .social-post-author { flex: 1 1 0; }
+  .community-feed-screen .social-post-author > span { flex-wrap: wrap; line-height: 1.35; }
+  .community-feed-screen .social-post-follow { min-height: 40px; padding-inline: 9px; font-size: .7rem; white-space: nowrap; }
+  .community-feed-screen .social-icon-button { width: 40px; height: 40px; }
+  .community-feed-screen .social-post-actions button { min-height: 46px; }
+  .community-feed-screen .social-media-grid {
+    max-height: none;
+    margin-right: -12px;
+    margin-left: -12px;
+  }
+  .community-feed-screen .social-media-item { min-width: 0; }
+  .community-feed-screen .social-media-item img,
+  .community-feed-screen .social-media-item video {
+    width: 100%;
+    height: auto;
+    max-height: min(72svh, 720px);
+    object-fit: contain;
+  }
+  .community-feed-screen .social-create-post { min-width: 0; padding: 14px 12px; }
+  .community-feed-screen .social-create-text textarea { min-width: 0; }
+}
+
+@media (max-width: 380px) {
+  .community-feed-screen .social-post-card { padding: 12px; }
+  .community-feed-screen .social-feed-header h1 { font-size: 1.3rem; }
+  .community-feed-screen .social-filter-tabs { gap: 5px; }
+  .community-feed-screen .social-filter-tabs button { padding-inline: 9px; font-size: .75rem; }
+  .community-feed-screen .social-refresh { padding-inline: 9px; font-size: .75rem; }
+}
