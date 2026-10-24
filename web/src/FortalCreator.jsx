@@ -1,10 +1,11 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BadgeCheck, BookOpen, Camera, Clapperboard, GraduationCap, HeartHandshake, LockKeyhole, Radio, Sparkles, Users } from "lucide-react";
 import { loadProfessionalApplications, professionalStatusLabel } from "./professionalService.js";
 import Brand from "./Brand.jsx";
 import { brandCampaignAsset } from "./assetPath.js";
 import CreatorGallery from "./CreatorGallery.jsx";
+import SponsoredCreative from "./SponsoredCreative.jsx";
 import {
   applyToCreatorCampaign, authorizeCreatorInstructor, createCreatorCampaign, createCreatorCourse,
   createCreatorCourseLesson, createCreatorLive, enrollFreeCreatorCourse,
@@ -137,6 +138,7 @@ function CreatorLanding({ onApply, onAcademy, onLevels }) {
       <div className="creator-pillar-grid">{creatorPillars.map(({ image, icon: Icon, title, description }) => <article className="creator-pillar-card" key={title}><div className="creator-pillar-photo"><img src={brandCampaignAsset(image)} alt="" loading="lazy" decoding="async"/><span><Icon size={19}/></span></div><div><h3>{title}</h3><p>{description}</p></div></article>)}</div>
     </section>
 
+    <SponsoredCreative image="03-creator-campaign.png" alt="Campanha em destaque do FortalCreator: crie com autenticidade e evolua com consistência." label="Campanha Fortalfy" to="/creator" className="creator-campaign-creative" />
     <section className="creator-landing-section creator-audience" aria-labelledby="creator-audience-title">
       <div className="creator-section-heading"><span className="eyebrow">DIFERENTES CAMINHOS, UMA MESMA VONTADE DE CRIAR</span><h2 id="creator-audience-title">Para quem é?</h2><p>Para pessoas adultas que querem compartilhar ideias e construir uma presença digital com autenticidade.</p></div>
       <div className="creator-audience-grid">{creatorAudiences.map(item => <article className="creator-audience-card" key={item.title}><img src={brandCampaignAsset(item.image)} alt="" loading="lazy" decoding="async"/><div><h3>{item.title}</h3><p>{item.description}</p></div></article>)}</div>

@@ -6,6 +6,7 @@ import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 import { filterShopProducts, getShopDepartment } from "./shopData.js";
 import { addShopCartItem, getShopCartLineKey, getShopCartOptionsLabel, getShopCartProduct, getShopCartSummary, removeShopCartItem, updateShopCartQuantity } from "./shopCartService.js";
 import { brandCampaignAsset } from "./assetPath.js";
+import SponsoredCreative from "./SponsoredCreative.jsx";
 import { loadMarketplaceProducts } from "./partnerStoreService.js";
 
 const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -176,6 +177,7 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
           <label className="shop-sort"><ArrowDownUp size={16} aria-hidden="true" /><span>Ordenar:</span><select aria-label="Ordenar produtos" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">Recomendados</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome (A–Z)</option></select></label>
         </div>
         <p className="shop-catalog-disclaimer"><ShoppingBag size={16} aria-hidden="true" /><span>Produtos publicados por lojas parceiras. Confirme disponibilidade, entrega e condições diretamente com o vendedor. Checkout e pagamentos ainda não estão habilitados.</span></p>
+        {visibleProducts.length > 0 && <SponsoredCreative image="10-shop-product.png" alt="Produto em destaque do FortalShop com acessórios para acompanhar o treino." label="Produto em destaque" onActivate={() => setSelectedProduct(visibleProducts[0])} className="shop-featured-creative" />}
         <div className="shop-product-grid">
           {visibleProducts.map(product => <article className="shop-product-card" key={product.id}>
             <button className="shop-product-visual" onClick={() => setSelectedProduct(product)} aria-label={`Ver detalhes de ${product.name}`}><img src={product.image} alt={product.imageAlt} loading="lazy" /><span className="shop-product-tag">{getShopDepartment(product)}</span></button>

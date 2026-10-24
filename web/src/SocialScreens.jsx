@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import SponsoredCreative from "./SponsoredCreative.jsx";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BadgeCheck, Bookmark, Calendar, Camera, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Clapperboard, Compass, Dumbbell, Eye, EyeOff, ExternalLink, Heart,
@@ -2534,14 +2535,14 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
         {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
         {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando Reels…</p>}
         {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Ainda não há Reels de perfis seguidos" : "Ainda não há Reels"}</h2><p>{filter === "following" ? "Siga criadores para ver os vídeos deles aqui." : "Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui."}</p></div>}
-        {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode onCreateReel={canPublishReels ? () => setComposerOpen(true) : undefined} />)}
+        {posts.map((post, index) => <Fragment key={post.id}>{index === 2 && posts.length >= 3 && <SponsoredCreative frequencyKey="fortalfy.ads.session.v1" image="07-reels-sponsored.png" alt="Reel patrocinado Fortalfy: ligue o modo treino. Constância vence." label="Patrocinado" to="/campaigns" className="reels-sponsored-creative" />}<SocialPost post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode onCreateReel={canPublishReels ? () => setComposerOpen(true) : undefined} /></Fragment>)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais Reels"}</button>}
       </section>
       : <>
         {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
         {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando publicações…</p>}
         {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Você ainda não segue ninguém" : "O Feed está começando"}</h2><p>{filter === "following" ? "Siga perfis para ver as publicações deles aqui." : "Quando as pessoas publicarem, as novidades aparecerão aqui. Você pode começar com uma publicação sua."}</p></div>}
-        {posts.map(post => <SocialPost key={post.id} post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} />)}
+        {posts.map((post, index) => <Fragment key={post.id}>{index === 5 && posts.length >= 6 && <SponsoredCreative frequencyKey="fortalfy.ads.session.v1" image="06-feed-sponsored.png" alt="Publicação patrocinada Fortalfy sobre evolução e consistência no treino." label="Patrocinado · Fortalfy" to="/campaigns" className="feed-sponsored-creative" />}<SocialPost post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} /></Fragment>)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais publicações"}</button>}
       </>}
     </main>

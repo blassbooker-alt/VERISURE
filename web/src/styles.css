@@ -10846,3 +10846,31 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
     font-size: .875rem;
   }
 }
+
+/* Fortalfy ad pack: preserve artwork proportions and keep attribution outside the image. */
+.sponsored-creative { width: 100%; min-width: 0; margin: 18px 0; }
+.sponsored-creative-label { width: fit-content; margin: 0 0 8px; padding: 6px 10px; border: 1px solid color-mix(in srgb, var(--color-accent, #b7ff00) 44%, transparent); border-radius: 999px; color: var(--color-text, #f4f7f1); background: #111713; font-size: .72rem; font-weight: 800; letter-spacing: .06em; }
+.sponsored-creative-link { display: block; width: 100%; overflow: hidden; padding: 0; border: 0; border-radius: 18px; background: #101612; cursor: pointer; }
+.sponsored-creative-link img { display: block; width: 100%; height: auto; object-fit: contain; }
+.sponsored-creative-link:focus-visible { outline: 3px solid #b7ff00; outline-offset: 4px; }
+.home-hero-art { display: block; width: min(100%, 1440px); margin: 8px auto 0; overflow: hidden; border-radius: 24px; }
+.home-hero-art img { display: block; width: 100%; height: auto; }
+.home-native-creative { max-width: 980px; margin: 26px auto 32px; }
+.creator-campaign-creative { max-width: 1200px; margin: 24px auto 36px; }
+.campaigns-cover-creative { max-width: 740px; margin: 18px auto 30px; }
+.fortalpass-partner-creative { max-width: 840px; margin: 22px 0; }
+.workout-partner-creative { max-width: 760px; margin: 22px 0; }
+.fortalfood-creative { max-width: 760px; margin: 24px auto; }
+.shop-featured-creative { max-width: 760px; margin: 22px auto; }
+.professional-b2b-creative { max-width: 1180px; margin: 24px auto 34px; }
+.feed-sponsored-creative { max-width: 620px; }
+.reels-sponsored-creative { width: min(100%, 420px); margin-inline: auto; }
+.reels-sponsored-creative .sponsored-creative-link { border-radius: 20px; }
+.live-sponsored-creative, .academy-course-creative { max-width: 900px; margin: 20px auto 28px; }
+@media (max-width: 760px) {
+  .home-hero-art { margin: 0 auto; border-radius: 0 0 18px 18px; }
+  .sponsored-creative { margin-block: 16px; }
+  .sponsored-creative-link { border-radius: 14px; }
+  .campaigns-cover-creative { max-width: 100%; }
+  .reels-sponsored-creative { width: min(100%, 390px); }
+}

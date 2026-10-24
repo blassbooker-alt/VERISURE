@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import SponsoredCreative from "./SponsoredCreative.jsx";
 import {
   ArrowRight, BriefcaseBusiness, CheckCircle2, CircleAlert, Dumbbell, ExternalLink, LoaderCircle,
   Store, Tags, Utensils, UserRound, Users,
@@ -688,6 +689,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
         <h1>Sua conta profissional começa aqui.</h1>
         <p>Conecte seu negócio, apresente seu trabalho e cresça dentro do ecossistema Fortalfy.</p>
       </header>
+      <SponsoredCreative image="11-professional-b2b.png" alt="Fortalfy para negócios: anuncie sua marca na Fortalfy." label="Oportunidades para negócios" to="/professional" className="professional-b2b-creative" />
       <div className="professional-category-grid">
         {PROFESSIONAL_CATEGORIES.map(item => {
           const Icon = CATEGORY_ICONS[item.id] || BriefcaseBusiness;

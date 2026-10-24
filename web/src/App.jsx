@@ -15,6 +15,7 @@ const GymPartnerCheckinsPage = lazy(() => import("./GymAccess.jsx").then(module 
 const GymPlateAdminPage = lazy(() => import("./GymAccess.jsx").then(module => ({ default: module.GymPlateAdminPage })));
 import Brand from "./Brand.jsx";
 import CreatorGallery from "./CreatorGallery.jsx";
+import SponsoredCreative from "./SponsoredCreative.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 const FortalShop = lazy(() => import("./FortalShop.jsx"));
 const FortalfyStudio = lazy(() => import("./FortalfyStudio.jsx"));
@@ -39,11 +40,12 @@ import {
   loadApprovedPartners, loadOwnPartnerListing, openStreetMapUrl,
   orderPartnersByDistance, savePartnerListing,
 } from "./partnerService.js";
-import { brandCampaignAsset, fortalfyAsset, visualPackAsset } from "./assetPath.js";
+import { adPackAsset, brandCampaignAsset, fortalfyAsset, visualPackAsset } from "./assetPath.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
+import { loadCreatorCourses, loadCreatorLives } from "./creatorProgramService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
 import {
   applyAccessibilityPreferences, DEFAULT_ACCESSIBILITY_PREFERENCES, getAccountAccessibilityPreferences,
@@ -392,14 +394,11 @@ function HomeScreen({ activity, session, profile: accountProfile, activityError 
     { campaign: HOME_BRAND_CAMPAIGNS[19], category: "CRIADORES", title: "Conhecer o FortalCreator", to: "/creator" },
   ];
   return <Screen className="home-screen">
-    <section className="home-hero">
-      <img className="home-hero-image" src={visualPackAsset("fortalfy-pack-hero-training.jpg")} alt="" aria-hidden="true" loading="eager" decoding="async" />
-      <div className="home-hero-top"><span className="location-label">FORTALFY · TREINO, CONTEÚDO E COMUNIDADE</span><Link to="/profile" className="home-hero-profile" aria-label="Abrir meu perfil">{accountProfile?.avatar ? <img src={accountProfile.avatar} alt="" /> : <span>{firstName?.slice(0, 1).toUpperCase() || <Users size={16} />}</span>}Meu perfil <ArrowUpRight size={14} /></Link></div>
-      <div className="home-hello"><p>{firstName ? `Olá, ${firstName}` : "Bem-vindo(a) ao Fortalfy"}</p><h1>Seu próximo nível<br />começa hoje.</h1><span className="hero-copy">Treine, registre sua evolução e encontre o suporte certo para a sua rotina.</span><div className="home-hero-actions"><Link to={isSignedIn ? "/progress" : "/pass"} className="hero-cta">{isSignedIn ? "Ver meu progresso" : "Explorar parceiros"} <ArrowRight size={16} /></Link></div></div>
-    </section>
+    <Link to="/pass" className="home-hero-art" aria-label="Seu próximo nível começa hoje. Explorar a Fortalfy e conhecer parceiros."><img src={adPackAsset("01-home-hero.png")} alt="Seu próximo nível começa hoje. Campanha institucional Fortalfy com atleta treinando em uma academia." fetchPriority="high" decoding="async" /></Link>{/* Hero art includes its own logo, message and CTA. */}
     <div className="screen-inner home-inner">
       <section className="home-next-step" id="home-next-step" aria-labelledby="home-next-step-title"><div className="home-next-step-icon"><nextStep.icon size={23} aria-hidden="true" /></div><div className="home-next-step-copy"><span className="eyebrow">SEU PRÓXIMO PASSO</span><h2 id="home-next-step-title">{nextStep.title}</h2><p>{nextStep.description}</p></div><Link to={nextStep.to} className="button primary home-next-step-action">{nextStep.label} <ArrowRight size={16} /></Link></section>
       <section className="home-performance" aria-labelledby="home-performance-title"><div className="home-section-heading"><span className="eyebrow">SEU DESEMPENHO</span><h2 id="home-performance-title">Sua evolução em números</h2><p>{activity.workoutsLogged || activity.mealsLogged ? "Resumo dos registros da sua conta." : "Comece seu primeiro treino para acompanhar sua evolução."}</p></div><div className="home-performance-metrics"><div><strong>{workoutsThisWeek}</strong><span>treinos nesta semana</span></div><div><strong>{activity.workoutsLogged}</strong><span>treinos registrados</span></div><div><strong>{activity.mealsLogged}</strong><span>refeições registradas</span></div></div>{activityError && <p className="home-data-status" role="status">{activityError}</p>}</section>
+      <SponsoredCreative image="02-home-native-card.png" alt="Fortalfy em destaque: uma rotina que acompanha seu ritmo." to="/creator" className="home-native-creative" />
       <section className="home-shortcuts" aria-labelledby="home-shortcuts-title"><div className="home-section-heading"><span className="eyebrow">ACESSO RÁPIDO</span><h2 id="home-shortcuts-title">Sua rotina</h2></div><div className="home-shortcut-grid"><Link to="/workout" className="home-shortcut"><Dumbbell size={24} /><strong>Treinos</strong><span>Registre sua atividade</span><ArrowUpRight size={17} /></Link><Link to="/progress" className="home-shortcut"><Activity size={24} /><strong>Meu progresso</strong><span>Acompanhe seus registros</span><ArrowUpRight size={17} /></Link><Link to="/feed" className="home-shortcut"><Users size={24} /><strong>Comunidade</strong><span>Converse e compartilhe</span><ArrowUpRight size={17} /></Link><Link to="/nutrition" className="home-shortcut"><Utensils size={24} /><strong>Nutrição</strong><span>Abra seu diário alimentar</span><ArrowUpRight size={17} /></Link></div></section>
       <section className="home-featured" aria-labelledby="home-featured-title"><div className="home-section-heading"><span className="eyebrow">EXPLORE EM DESTAQUE</span><h2 id="home-featured-title">Acesse outras áreas</h2><p>Treino, comunidade e criação de conteúdo, em seus espaços próprios.</p></div><div className="home-featured-grid">{featured.map(({ campaign: { image }, category, title, to }) => <Link key={category} to={to} className="home-featured-card"><img src={image} alt="" loading="lazy" decoding="async" /><span className="home-featured-label">{category}</span><strong>{title}</strong><span className="home-featured-arrow"><ArrowUpRight size={18} /></span></Link>)}</div><Link to="/campaigns" className="home-inline-link">Ver campanhas oficiais <ArrowRight size={15} /></Link></section>
     </div>
@@ -407,7 +406,7 @@ function HomeScreen({ activity, session, profile: accountProfile, activityError 
 }
 
 function CampaignsScreen() {
-  return <Screen title="Campanhas oficiais" subtitle="FORTALFY EM MOVIMENTO" className="campaigns-screen"><CreatorGallery
+  return <Screen title="Campanhas oficiais" subtitle="FORTALFY EM MOVIMENTO" className="campaigns-screen"><SponsoredCreative image="04-campaigns-cover.png" alt="Campanhas Fortalfy em movimento: treino, performance e rotina." to="/campaigns" className="campaigns-cover-creative" /><CreatorGallery
     className="campaigns-gallery"
     galleryId="campaigns-gallery-title"
     eyebrow="CAMPANHAS FORTALFY"
@@ -553,6 +552,7 @@ function FoodScreen({ client, configured, session }) {
     {loading && <p className="food-status" role="status">Carregando cardápios…</p>}
     {needsLogin && <div className="empty-state"><Lock size={24} /><h3>Entre para acessar os cardápios</h3><p>Os cardápios são carregados da plataforma e exigem uma conta autenticada.</p><Link className="button primary" to="/feed">Entrar ou criar conta <ArrowRight size={16} /></Link></div>}
     {error && <div className="social-inline-error" role="alert">{error}</div>}
+    {!loading && !error && !needsLogin && visible.length > 0 && <SponsoredCreative image="09-nutrition-food.png" alt="Parceiro em destaque FortalFood com opções para acompanhar a rotina." label="Parceiro em destaque" to="/food" className="fortalfood-creative" />}
     {!loading && !error && !needsLogin && <div className="food-card-list">{visible.map(item => <article className="food-card" key={item.id}>
       <button type="button" className="food-card-image" onClick={() => setMenu(item)} aria-label={`Ver detalhes de ${item.name}`}>{item.image ? <img className="food-item-image" src={item.image} alt="" loading="lazy" /> : <div className="food-item-placeholder" aria-hidden="true"><Utensils size={28} /></div>}<span className="food-card-image-label">CARDÁPIO PARCEIRO</span>{item.nutrition?.status === "verified" && <span className="food-verified-pill"><BadgeCheck size={13} /> Nutrição verificada</span>}</button>
       <div className="food-card-body"><div className="food-card-heading"><div><span className="food-restaurant-label">{item.restaurant.name}{item.restaurant.city ? ` · ${item.restaurant.city}` : ""}</span><h3>{item.name}</h3></div></div>
@@ -994,12 +994,14 @@ function WorkoutScreen({ notify, onActivity, activity, client, session, activity
 }
 
 function NutritionScreen({ notify, onActivity, activity, client, session, activityStatus, activityError }) {
+  const [hasPublishedFood, setHasPublishedFood] = useState(false);
   const [addingMeal, setAddingMeal] = useState(false);
   const [mealName, setMealName] = useState("");
   const [mealCalories, setMealCalories] = useState("");
   const todayKey = localDateKey();
   const todaysMeals = mealsForDate(activity.mealEntries, todayKey);
   const calories = sumMealCalories(todaysMeals);
+  useEffect(() => { let active = true; if (!session?.user?.id || !client) { setHasPublishedFood(false); return () => { active = false; }; } loadAvailableFoodMenu(client).then(items => { if (active) setHasPublishedFood(items.length > 0); }).catch(() => { if (active) setHasPublishedFood(false); }); return () => { active = false; }; }, [client, session?.user?.id]);
   const today = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   const registerMeal = async event => {
     event.preventDefault();
@@ -1022,6 +1024,7 @@ function NutritionScreen({ notify, onActivity, activity, client, session, activi
     <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Os registros ficam associados à sua conta quando você entra; sem login, permanecem neste navegador.</small></span></div>
     <SectionTitle title="Seu diário" />
     <div className="meal-list">{todaysMeals.length ? todaysMeals.map((meal, index) => <div className="meal-row" key={meal.id}><span className={`meal-icon meal-${index % 4}`}>{["☀", "◒", "✳", "☾"][index % 4]}</span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · {activityStatus}</small></div><button className="meal-remove-button" aria-label={`Remover ${meal.name} do diário`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={16} /></button></div>) : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><p>Adicione o que você consumiu para acompanhar suas calorias.</p></div>}</div>
+    {hasPublishedFood && <SponsoredCreative image="09-nutrition-food.png" alt="Parceiro em destaque FortalFood com opções para acompanhar a rotina." label="Parceiro em destaque" to="/food" className="fortalfood-creative" />}
     <Link to="/food" className="nutrition-curation"><span className="quick-icon mint"><Utensils size={18} /></span><span><small>FORTALFOOD</small><strong>Consulte cardápios publicados por restaurantes aprovados.</strong><small>Informações e disponibilidade são cadastradas pelos parceiros.</small></span><ArrowRight size={18} /></Link>
     <button className="button primary wide-button mt-5" onClick={() => setAddingMeal(value => !value)}><Plus size={18} /> {addingMeal ? "Cancelar registro" : "Registrar refeição"}</button>
     {addingMeal && <form className="meal-entry-form" onSubmit={registerMeal}><label>Nome da refeição<input required maxLength={60} value={mealName} onChange={event => setMealName(event.target.value)} placeholder="Ex.: almoço" /></label><label>Calorias (kcal)<input required type="number" min="0" max="10000" step="1" value={mealCalories} onChange={event => setMealCalories(event.target.value)} placeholder="Ex.: 520" /></label><button className="button primary wide-button" type="submit">Salvar refeição</button></form>}
@@ -1041,16 +1044,22 @@ function EarningsScreen({ session }) {
   </Screen>;
 }
 
-function AcademyScreen() {
+function AcademyScreen({ client }) {
+  const [courses, setCourses] = useState([]);
+  useEffect(() => { let active = true; loadCreatorCourses(client).then(data => { if (active) setCourses(data); }).catch(error => console.error("Não foi possível carregar cursos publicados.", error)); return () => { active = false; }; }, [client]);
   return <Screen title="Fortalfy Academy" subtitle="CURSOS E APRENDIZADO" className="academy-screen">
     <div className="academy-banner"><span className="academy-cap"><Play size={20} /></span><span className="eyebrow">FORTALFY ACADEMY</span><h2>Aprenda no seu ritmo.</h2><p>Cursos e aulas aparecerão aqui quando forem publicados por profissionais.</p></div>
-    <div className="empty-state"><CircleHelp size={24} /><h3>Nenhum curso publicado</h3><p>A Academy ainda não possui cursos disponíveis. Não há aulas, preços ou certificados fictícios.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
+    {courses.length > 0 && <><SponsoredCreative image="13-academy-course.png" alt="Academia Fortalfy: aprenda a criar melhor com conteúdo, edição e marca pessoal." label="Academia Fortalfy" to="/academy" className="academy-course-creative" /><div className="academy-course-list">{courses.map(course => <article className="dash-panel" key={course.id}><span className="eyebrow">CURSO PUBLICADO</span><h2>{course.title}</h2><p>{course.summary || "Descrição não informada pelo instrutor."}</p><p>{course.price_cents === 0 ? "Gratuito" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: course.currency || "BRL" }).format(course.price_cents / 100)}</p></article>)}</div></>}
+    <div className="empty-state" hidden={courses.length > 0}><CircleHelp size={24} /><h3>Nenhum curso publicado</h3><p>A Academy ainda não possui cursos disponíveis. Não há aulas, preços ou certificados fictícios.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
   </Screen>;
 }
 
-function LiveScreen() {
+function LiveScreen({ client }) {
+  const [lives, setLives] = useState([]);
+  useEffect(() => { let active = true; loadCreatorLives(client).then(data => { if (active) setLives(data); }).catch(error => console.error("Não foi possível carregar transmissões publicadas.", error)); return () => { active = false; }; }, [client]);
   return <Screen title="Fortalfy Live" subtitle="TRANSMISSÕES" className="live-screen">
-    <div className="empty-state"><Play size={24} /><h3>Nenhuma transmissão programada</h3><p>Lives só serão exibidas após a publicação de uma transmissão real por um profissional. Não há chat, público ou cobrança simulados.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
+    {lives.length > 0 && <><SponsoredCreative image="12-live-sponsored.png" alt="Live patrocinada Fortalfy: treino ao vivo no seu ritmo." label="Live patrocinada" to={`/profile/${lives[0].instructor_id}`} className="live-sponsored-creative" /><div className="live-event-list">{lives.map(live => <article className="dash-panel" key={live.id}><span className="eyebrow">TRANSMISSÃO PUBLICADA</span><h2>{live.title}</h2>{live.description && <p>{live.description}</p>}<p>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(live.starts_at))}</p><Link className="button primary" to={`/profile/${live.instructor_id}`}>Ver perfil do profissional <ArrowRight size={16} /></Link></article>)}</div></>}
+    <div className="empty-state" hidden={lives.length > 0}><Play size={24} /><h3>Nenhuma transmissão programada</h3><p>Lives só serão exibidas após a publicação de uma transmissão real por um profissional. Não há chat, público ou cobrança simulados.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
   </Screen>;
 }
 
@@ -1229,6 +1238,7 @@ function PartnerDiscoverySection({ client, session, kind, notify }) {
     {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
     {loading && <p className="social-inline-status" role="status">Carregando profissionais aprovados…</p>}
     {!loading && !error && !shown.length && <div className="empty-state"><Users size={24} /><h3>{query ? "Nenhum profissional encontrado" : `Ainda não há ${kindLabel} aprovados`}</h3><p>{query ? "Tente outro nome, cidade ou modalidade." : "Novos perfis reais aparecerão aqui após a aprovação pela equipe Fortalfy."}</p></div>}
+    {kind === "personal" && shown.length > 0 && <SponsoredCreative image="08-workout-partner.png" alt="Profissional em destaque: encontre um personal trainer aprovado." label="Profissional em destaque" to={`/profile/${shown[0].profileId}`} className="workout-partner-creative" />}
     {shown.length > 0 && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <LivePartnerCard key={partner.id} partner={partner} appointment session={session} followState={followStates[partner.profileId]} followBusy={followBusyId === partner.profileId} followStateLoaded={followStateLoaded} followStateError={Boolean(followError)} onToggleFollow={toggleFollow} />)}</div>}
     <div className="partner-discovery-footnote"><ShieldCheck size={15} /> Nenhum preço, avaliação ou horário é estimado quando o profissional não cadastrou esses dados.</div>
   </section>;
@@ -1306,6 +1316,7 @@ function LivePassScreen({ client, session, notify }) {
       {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
       {loading && <p className="social-inline-status" role="status">Carregando parceiros aprovados…</p>}
       {!loading && !error && !shown.length && <div className="empty-state"><MapPin size={24} /><h3>{query ? "Nenhum parceiro encontrado" : "Nenhum parceiro aprovado nesta categoria"}</h3><p>{query ? "Tente outro termo ou categoria." : "Parceiros reais aparecerão aqui após concluírem o cadastro e serem aprovados."}</p></div>}
+      {shown.length > 0 && <SponsoredCreative image="05-fortalpass-partner.png" alt="Parceiro em destaque no FortalPass: encontre seu próximo passo perto de você." label="Parceiro aprovado em destaque" to={`/profile/${shown[0].profileId}`} className="fortalpass-partner-creative" />}
       {shown.length > 0 && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <LivePartnerCard key={partner.id} partner={partner} appointment session={session} />)}</div>}
       <div className="partner-discovery-footnote"><ShieldCheck size={15} /> Não exibimos preços, avaliações ou disponibilidade que não tenham sido informados pelo parceiro.</div>
     </section>
@@ -2162,9 +2173,9 @@ function AppContent() {
       <Route path="/curated" element={<Navigate to="/food" replace />} />
       <Route path="/progress" element={<ProgressScreen client={supabase} session={authSession} />} />
       <Route path="/earnings" element={<EarningsScreen session={authSession} />} />
-      <Route path="/academy" element={<AcademyScreen />} />
-      <Route path="/live" element={<LiveScreen />} />
-      <Route path="/live/:liveId" element={<LiveScreen />} />
+      <Route path="/academy" element={<AcademyScreen client={supabase} />} />
+      <Route path="/live" element={<LiveScreen client={supabase} />} />
+      <Route path="/live/:liveId" element={<LiveScreen client={supabase} />} />
       <Route path="/stories" element={<Navigate to="/feed" replace />} />
       <Route path="/gyms" element={<Navigate to="/pass" replace />} />
       <Route path="/courses" element={<Navigate to="/academy" replace />} />

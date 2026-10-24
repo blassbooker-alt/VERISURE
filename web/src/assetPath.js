@@ -17,3 +17,8 @@ export function publicAsset(filename) {
   const basePath = import.meta.env?.BASE_URL || "/";
   return `${basePath}assets/${filename}`;
 }
+
+export function adPackAsset(filename) {
+  const basePath = import.meta.env?.BASE_URL || "/";
+  return `${basePath}assets/ad-pack/${filename}`;
+}
