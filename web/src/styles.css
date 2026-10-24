@@ -12395,7 +12395,7 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
 /* Feed social mobile: use the supplied reference's compact Stories rail,
    direct filters and full-width publication stream. Desktop stays unchanged. */
 @media (max-width: 760px) {
-  .community-feed-screen .social-feed-main > .community-navigation,
+  .community-feed-screen .social-feed-main > .social-community-tabs,
   .community-feed-screen .social-feed-header {
     display: none;
   }
