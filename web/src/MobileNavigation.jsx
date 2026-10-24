@@ -1,4 +1,4 @@
-import { Activity, Bell, BookOpen, Brush, Building2, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, ShoppingCart, Sparkles, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2, Compass, Radio } from "lucide-react";
+import { Activity, Bell, BookOpen, Brush, Building2, ChevronDown, Clapperboard, Dumbbell, Home, Menu, MessageCircle, ShoppingBag, ShoppingCart, Sparkles, Utensils, Wallet, X, Ticket, UserRound, Users, Settings2, Compass, Radio } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -48,7 +48,7 @@ const navigationGroups = [
     { to: "/settings/notifications", label: "Preferências de notificação", detail: "Escolha o que receber", icon: Bell },
     { to: "/settings", label: "Configurações", detail: "Aparência e acessibilidade", icon: Settings2 },
   ] },
-  { title: "Profissional", items: [
+  { title: "Área profissional", items: [
     { to: "/earnings", label: "Rendimentos", detail: "Informações financeiras", icon: Wallet },
     { to: "/trainer", label: "Painel do personal", detail: "Agendamentos profissionais", icon: Dumbbell },
     { to: "/nutritionist", label: "Painel do nutricionista", detail: "Agendamentos profissionais", icon: Utensils },
@@ -112,6 +112,7 @@ export function NavigationDrawer({ desktopOpen = false, onDesktopOpenChange }) {
 
 export default function BottomNav({ desktopExpanded = false, onNotificationsOpen }) {
   const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const location = useLocation();
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
@@ -121,6 +122,7 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     return () => media.removeEventListener?.("change", update);
   }, []);
   const expanded = desktop && desktopExpanded;
+  const activeGroup = navigationGroups.find(group => group.items.some(item => location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(`${item.to}/`))))?.title;
   const communityRoutes = ["/feed", "/reels", "/people", "/messages", "/live"];
   const active = location.pathname === "/home" ? "/home"
     : ["/workout", "/progress", "/trainer"].includes(location.pathname) ? "/workout"
@@ -130,14 +132,28 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     : undefined;
   if (location.pathname === "/reels") return null;
   const activeIndex = primaryTabs.findIndex(tab => tab.to === active);
+  const renderDesktopGroups = () => navigationGroups.map(group => {
+    const groupOpen = expandedGroups[group.title] ?? (group.title === "Principal" || group.title === activeGroup);
+    const groupId = `desktop-nav-group-${group.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    return <section className={`desktop-nav-group${groupOpen ? " is-open" : ""}${group.title === activeGroup ? " has-active-route" : ""}`} key={group.title}>
+      <button type="button" className="desktop-nav-group-toggle" aria-expanded={groupOpen} aria-controls={groupId} onClick={() => setExpandedGroups(current => ({ ...current, [group.title]: !groupOpen }))}>
+        <span>{group.title}</span><ChevronDown size={15} aria-hidden="true" />
+      </button>
+      <div className="desktop-nav-group-items" id={groupId} hidden={!groupOpen}>{group.items.map(({ to, label, icon: Icon }) => {
+        const isActive = location.pathname === to || (to !== "/" && location.pathname.startsWith(`${to}/`));
+        return <Link key={`${to}-${label}`} to={to} className={`bottom-nav-item ${isActive ? "active" : ""}`} aria-current={isActive ? "page" : undefined}>
+          <span className="bottom-nav-icon"><Icon size={21} strokeWidth={isActive ? 2.5 : 1.8} /></span><span>{label}</span>
+        </Link>;
+      })}</div>
+    </section>;
+  });
   return <nav id="fortalfy-desktop-navigation" className={`bottom-nav${expanded ? " desktop-nav-expanded" : ""}`} aria-label="Navegação principal">
     {activeIndex >= 0 && <span
       className="bottom-nav-indicator"
       aria-hidden="true"
       style={{ "--nav-active-offset": `calc(${10 + activeIndex * 20}% - 22px)` }}
     ><span /></span>}
-    {(expanded ? navigationGroups.flatMap(group => [{ groupTitle: group.title }, ...group.items]) : primaryTabs).map(item => {
-      if (item.groupTitle) return <h2 className="desktop-nav-group-title" key={item.groupTitle}>{item.groupTitle}</h2>;
+    {expanded ? renderDesktopGroups() : primaryTabs.map(item => {
       const { to, label, icon: Icon } = item;
       return (
       <Link key={`${to}-${label}`} to={to} className={`bottom-nav-item ${active === to && label !== "Criar" ? "active" : ""}${label === "Criar" ? " bottom-nav-create" : ""}`} aria-current={active === to && label !== "Criar" ? "page" : undefined} aria-label={label === "Criar" ? "Criar publicação" : undefined}>
