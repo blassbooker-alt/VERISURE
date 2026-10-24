@@ -10968,3 +10968,12 @@ html[data-theme="light"] .shop-image-zoom > section > button { border-color: #d7
   .perk-icon { width: 36px; height: 36px; flex-basis: 36px; }
   .showcase-perk-item small { font-size: .66rem; }
 }
+@media (max-width: 859px) {
+  .mobile-app .social-auth-showcase .showcase-perk-item {
+    color: #183323 !important;
+    background-color: #f7faf1 !important;
+    border-color: rgba(255, 255, 255, .86) !important;
+  }
+  .mobile-app .social-auth-showcase .showcase-perk-item strong { color: #173321 !important; }
+  .mobile-app .social-auth-showcase .showcase-perk-item small { color: #5b6e60 !important; }
+}

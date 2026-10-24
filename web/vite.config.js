@@ -29,7 +29,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         assetFileNames(assetInfo) {
-          if (assetInfo.name?.endsWith(".css")) return "assets/[name]-v33-[hash][extname]";
+          if (assetInfo.name?.endsWith(".css")) return "assets/[name]-v34-[hash][extname]";
           return "assets/[name]-[hash][extname]";
         },
         manualChunks(id) {
