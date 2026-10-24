@@ -297,10 +297,13 @@ export async function loadFeed(client, userId, {
   const engagementRelations = mediaType === "video"
     ? ""
     : ",\n    likes:post_likes(count),\n    comments:post_comments(count)";
+  const authorRelation = filter === "academies"
+    ? "author:profiles!posts_author_id_fkey!inner(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private)"
+    : "author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private)";
   const createFeedQuery = includeCommercialContent => {
     let query = client.from("posts").select(`
       id,author_id,body,visibility,shared_post_id,published_at,sponsored${includeCommercialContent ? ",commercial_content" : ""},
-      author:profiles!posts_author_id_fkey(id,display_name,username,avatar_path,kind,verified_at,partner_approved_at,is_private),
+      ${authorRelation},
       ${mediaRelation}(id,storage_path,media_type,sort_order)
       ${engagementRelations}
     `, mediaType === "video" ? undefined : { count: "exact" })
@@ -309,6 +312,7 @@ export async function loadFeed(client, userId, {
       .range(offset, offset + pageLimit);
     if (followedIds) query = query.in("author_id", followedIds);
     if (authorId) query = query.eq("author_id", authorId);
+    if (filter === "academies") query = query.eq("author.kind", "academia");
     if (mediaType) query = query.eq("post_media.media_type", mediaType);
     if (mediaType === "video") query = query.eq("is_reel", true).eq("post_media.reel_validated", true);
     return query;

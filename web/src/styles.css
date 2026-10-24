@@ -12392,44 +12392,85 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
   }
 }
 
-/* Feed social mobile: compact community tabs, direct filters and a full-width
-   publication stream. Stories live on their own route; desktop stays unchanged. */
+/* Mobile Feed follows the Fortalfy reference: Stories, compact filters and a
+   full-width publication stream. Community destinations stay in app navigation. */
 @media (max-width: 760px) {
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px 40px;
+    gap: 10px;
+    justify-content: initial;
+    padding-inline: 14px;
+  }
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header > .drawer-trigger { grid-column: 1; }
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header > a:not(.feed-header-search) {
+    position: static;
+    grid-column: 2;
+    justify-self: start;
+    margin: 0;
+    transform: none;
+  }
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header .feed-header-search {
+    position: static;
+    grid-column: 3;
+    transform: none;
+  }
+  .app-screen:has(> .screen-content.community-feed-screen) > .mobile-header .notification-bell { grid-column: 4; }
+
   .community-feed-screen .social-feed-header {
     display: none;
   }
 
-  .community-feed-screen .social-community-tabs {
+  .community-feed-screen .social-community-tabs { display: none; }
+  .community-feed-screen .stories-experience {
+    margin: 0 0 10px;
+    padding: 4px 0 2px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .community-feed-screen .stories-section-heading,
+  .community-feed-screen .stories-filter-disclosure,
+  .community-feed-screen .stories-filter-empty { display: none; }
+  .community-feed-screen .stories-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin: 0 -4px;
+    padding: 2px 4px 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+  .community-feed-screen .stories-row::-webkit-scrollbar { display: none; }
+  .community-feed-screen .story-item-wrap { position: relative; width: 59px; flex: 0 0 59px; }
+  .community-feed-screen .story-item {
     display: flex;
     width: 100%;
-    min-width: 0;
-    gap: 3px;
-    margin: 4px 0 12px;
-    padding: 4px;
-    border: 1px solid #26372b;
-    border-radius: 15px;
-    background: #101814;
-  }
-  .community-feed-screen .social-community-tabs a {
-    display: inline-flex;
-    min-width: 0;
-    min-height: 44px;
-    flex: 1 1 0;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 0 5px;
-    border-radius: 11px;
-    color: #c3ccc5;
-    background: transparent;
-    font-size: .7rem;
-    font-weight: 700;
-    white-space: nowrap;
+    gap: 5px;
+    color: #f4f7f4;
+    font-size: .66rem;
+    line-height: 1.2;
   }
-  .community-feed-screen .social-community-tabs a svg { width: 14px; height: 14px; flex: 0 0 auto; }
-  .community-feed-screen .social-community-tabs a.active {
-    color: #0b100d;
-    background: #c8f52e;
+  .community-feed-screen .story-ring {
+    width: 54px;
+    height: 54px;
+    padding: 2px;
+    background: #26372b;
+  }
+  .community-feed-screen .story-ring.has-story { background: conic-gradient(from 30deg, #c8f52e, #759b29, #c8f52e); }
+  .community-feed-screen .story-ring .story-avatar { border: 2px solid #0b100d; }
+  .community-feed-screen .story-ring.own i,
+  .community-feed-screen .story-add-own { color: #0b100d; background: #c8f52e; }
+  .community-feed-screen .stories-status { margin: 0 0 7px; color: #a1aba3; font-size: .72rem; }
+  .community-feed-screen .stories-status.error { color: #f0a2a2; }
+  .community-feed-screen .social-feed-toolbar { margin-top: 0; }
+  .community-feed-screen .social-filter-tabs button {
+    padding-inline: 12px;
+    font-size: .74rem;
   }
 
   .community-feed-screen .social-feed-toolbar {
@@ -12510,9 +12551,8 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
 }
 
 @media (max-width: 380px) {
-  .community-feed-screen .social-community-tabs { gap: 2px; }
-  .community-feed-screen .social-community-tabs a { gap: 3px; padding-inline: 3px; font-size: .66rem; }
-  .community-feed-screen .social-community-tabs a svg { width: 13px; height: 13px; }
-  .community-feed-screen .social-filter-tabs button { padding-inline: 12px; font-size: .74rem; }
+  .community-feed-screen .story-item-wrap { width: 55px; flex-basis: 55px; }
+  .community-feed-screen .story-ring { width: 50px; height: 50px; }
+  .community-feed-screen .social-filter-tabs button { padding-inline: 9px; font-size: .71rem; }
   .community-feed-screen .social-refresh { padding-inline: 10px; }
 }
