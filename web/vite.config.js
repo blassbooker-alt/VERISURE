@@ -28,6 +28,10 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
+        assetFileNames(assetInfo) {
+          if (assetInfo.name?.endsWith(".css")) return "assets/[name]-v33-[hash][extname]";
+          return "assets/[name]-[hash][extname]";
+        },
         manualChunks(id) {
           if (/node_modules[\\/]lucide-react[\\/]/.test(id)) return "lucide-icons";
           if (/node_modules[\\/]@supabase[\\/]/.test(id)) return "supabase";
