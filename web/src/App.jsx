@@ -1648,6 +1648,8 @@ function AppContent() {
     }].slice(-50));
   }, [authSession?.user?.id]);
   const accountUserId = authSession?.user?.id && !isDemoUser(authSession.user.id) ? authSession.user.id : null;
+  const requestedAuthReturn = new URLSearchParams(window.location.search).get("fortalfy_return") || "";
+  const authReturnPath = requestedAuthReturn.startsWith("/") && !requestedAuthReturn.startsWith("//") ? requestedAuthReturn : "/home";
   const unreadNotificationCount = notifications.reduce((count, item) => count + (item.read ? 0 : 1), 0);
   const refreshNotifications = useCallback(async () => {
     if (!supabase || !accountUserId) return;
@@ -2151,7 +2153,7 @@ function AppContent() {
     <InstallAppContext.Provider value={{ isAppInstalled, startInstall }}>
     <NotificationContext.Provider value={{ open: () => setNotificationCenterOpen(true), unreadCount: unreadNotificationCount, push: pushNotification }}>
     <Routes>
-      <Route path="/" element={authSession?.user?.id ? <Navigate to="/home" replace /> : <PublicLanding />} />
+      <Route path="/" element={authSession?.user?.id ? <Navigate to={authReturnPath} replace /> : <PublicLanding />} />
       <Route path="/home" element={<HomeScreen activity={activity} session={authSession} profile={socialProfile} activityError={activityError} />} />
       <Route path="/campaigns" element={<CampaignsScreen />} />
       <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />

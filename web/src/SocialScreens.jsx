@@ -497,9 +497,13 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
     setBusy(true);
     setMessage("");
     try {
-      const redirectTo = professionalKind
-        ? `${window.location.origin}${window.location.pathname}#/professional/manage?category=${encodeURIComponent(professionalKind)}`
-        : `${window.location.origin}${window.location.pathname}#${location.pathname}${location.search}`;
+      const returnTo = professionalKind
+        ? `/professional/manage?category=${encodeURIComponent(professionalKind)}`
+        : `${location.pathname}${location.search}`;
+      const callbackUrl = new URL(window.location.href);
+      callbackUrl.hash = "";
+      callbackUrl.searchParams.set("fortalfy_return", returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/home");
+      const redirectTo = callbackUrl.toString();
       await signInWithGoogle(client, redirectTo);
     } catch (error) {
       console.error("Falha ao iniciar autenticação com Google.", error);
