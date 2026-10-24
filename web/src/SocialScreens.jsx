@@ -340,6 +340,7 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
         const data = await createAccount(client, fields, redirectTo);
         if (isExistingEmailSignup(data)) {
           // signUp does not resend confirmation for an existing unconfirmed account.
+          const registeredEmailMessage = "Este Gmail já está cadastrado. Entre na sua conta ou use Recuperar senha. Se ainda não confirmou o cadastro, confira seu e-mail e o spam ou solicite um novo código abaixo.";
           setFields(current => ({ ...current, password: "" }));
           setOtpToken("");
           setResendSeconds(0);
@@ -347,14 +348,15 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
           try {
             await resendSignupOtp(client, fields.email);
             setResendSeconds(60);
-            setMessage("Se o cadastro ainda estiver pendente, enviamos um novo c\u00f3digo. Se voc\u00ea j\u00e1 tem uma conta, use Entrar ou Recuperar senha abaixo. Confira tamb\u00e9m o spam.");
+            setMessage(registeredEmailMessage);
             setMessageType("success");
           } catch (emailError) {
             const errorText = (emailError?.message || "").toLowerCase();
             const rateLimited = emailError?.code === "over_email_send_rate_limit" || /rate limit/i.test(errorText);
-            setMessage(rateLimited
-              ? "O servi\u00e7o limitou novos envios. Aguarde um minuto e toque em Reenviar c\u00f3digo de confirma\u00e7\u00e3o."
-              : getAuthEmailFailureMessage(emailError, "N\u00e3o foi poss\u00edvel enviar o c\u00f3digo agora. Tente reenviar ou use Recuperar senha abaixo."));
+            const resendMessage = rateLimited
+              ? "O limite de envio foi atingido. Aguarde um pouco antes de pedir outro código."
+              : getAuthEmailFailureMessage(emailError, "Não foi possível enviar o código agora. Tente novamente mais tarde.");
+            setMessage(`${registeredEmailMessage} ${resendMessage}`);
             setMessageType("error");
           }
           return;
