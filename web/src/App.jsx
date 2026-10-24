@@ -2149,7 +2149,7 @@ function AppContent() {
       <Route path="/home" element={<HomeScreen activity={activity} session={authSession} profile={socialProfile} activityError={activityError} />} />
       <Route path="/campaigns" element={<CampaignsScreen />} />
       <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />
-      <Route path="/feed" element={<Screen compactHeader className="feed-screen community-feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} authReady={authReady} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/feed" element={<Screen compactHeader className="feed-screen community-feed-screen"><SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} authReady={authReady} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="DESCUBRA A COMUNIDADE" className="feed-screen people-screen"><SocialPeople client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} messagePreferences={notificationPreferences} /></Screen>} />
@@ -2171,7 +2171,9 @@ function AppContent() {
       <Route path="/academy" element={<AcademyScreen client={supabase} />} />
       <Route path="/live" element={<LiveScreen client={supabase} />} />
       <Route path="/live/:liveId" element={<LiveScreen client={supabase} />} />
-      <Route path="/stories" element={<Navigate to="/feed" replace />} />
+      <Route path="/stories" element={authSession?.user?.id && socialProfile
+        ? <Screen title="Stories" subtitle="MOMENTOS DA COMUNIDADE" className="feed-screen stories-screen"><StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} /></Screen>
+        : <Navigate to="/feed" replace />} />
       <Route path="/gyms" element={<Navigate to="/pass" replace />} />
       <Route path="/courses" element={<Navigate to="/academy" replace />} />
       <Route path="/academy/:courseId" element={<Navigate to="/academy" replace />} />
