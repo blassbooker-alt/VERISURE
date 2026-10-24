@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v31";
+const CACHE = "fortalfy-pwa-v32";
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const response = await fetch("./precache-manifest.json", { cache: "reload" });
@@ -74,7 +74,7 @@ self.addEventListener("push", event => {
     }
   const options = {
     body: String(message.body || "Você tem uma nova atualização no Fortalfy.").slice(0, 240),
-    icon: new URL("assets/fortalfy-icon-192.png", self.registration.scope).href,
+    icon: new URL("assets/fortalfy-icon-v2-192.png", self.registration.scope).href,
     badge: new URL("assets/fortalfy-notification-badge.svg", self.registration.scope).href,
     tag: String(message.tag || message.id || "fortalfy-notification").slice(0, 100),
     // Notifications share tags to keep the tray tidy. Ask the OS to alert

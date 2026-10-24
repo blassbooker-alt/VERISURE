@@ -215,7 +215,7 @@ export async function sendTestNotification() {
   const registration = await navigator.serviceWorker.ready;
   await registration.showNotification("Fortalfy · teste de notificação", {
     body: "Tudo certo! As notificações do Fortalfy aparecem na barra do seu telefone.",
-    icon: publicAsset("assets/fortalfy-icon-192.png"),
+    icon: publicAsset("assets/fortalfy-icon-v2-192.png"),
     badge: publicAsset("assets/fortalfy-notification-badge.svg"),
     tag: "fortalfy-notification-test",
     renotify: true,
