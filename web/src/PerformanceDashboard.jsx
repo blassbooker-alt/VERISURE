@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, ArrowRight, CalendarDays, CheckCircle2, Clock3, Dumbbell, LoaderCircle, TrendingUp } from "lucide-react";
 import { getMonday, loadTrainingPerformance, loadWeeklyPlans } from "./weeklyPlanService.js";
+import { credibilityPackAsset } from "./assetPath.js";
 
 const dateKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const addDays = (date, amount) => { const next = new Date(date); next.setDate(next.getDate() + amount); return next; };
@@ -89,6 +90,7 @@ export default function PerformanceDashboard({ client, session }) {
   const maxWeek = Math.max(1, ...weekBars.map(item => item.count));
   const maxMonth = Math.max(1, ...monthBars.map(item => item.count));
   return <div className="performance-dashboard">
+    <img className="performance-editorial-art" src={credibilityPackAsset("24-progress-achievement.png")} alt="Registro de treino em um caderno ao lado de uma garrafa esportiva" loading="lazy" />
     <section className="performance-hero"><div><span className="eyebrow">DADOS DAS SUAS SESSÕES</span><h2>A evolução começa com consistência.</h2><p>Veja seus treinos concluídos e o que foi registrado ao longo do tempo.</p></div><Link className="button lime-button" to="/workout">Abrir meus treinos <ArrowRight size={16} /></Link></section>
     {!userId && <section className="weekly-empty"><span className="weekly-empty-icon"><Activity size={22} /></span><h2>Entre para acompanhar seu desempenho</h2><p>Histórico de sessões e cargas fica associado à sua conta.</p><Link className="button primary" to="/profile">Entrar na conta <ArrowRight size={16} /></Link></section>}
     {loading && <p className="social-inline-status" role="status"><LoaderCircle className="spin" size={17} /> Carregando seus registros de treino…</p>}

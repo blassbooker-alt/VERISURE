@@ -8,7 +8,7 @@ import {
   Move, Play, Search, Send, Share2, ShieldCheck, Sparkles, Trash2, User, UserMinus, UserPlus, Users, Video, Volume2, VolumeX, X, Zap,
 } from "lucide-react";
 import Brand from "./Brand.jsx";
-import { fortalfyAsset, visualPackAsset } from "./assetPath.js";
+import { credibilityPackAsset, fortalfyAsset, visualPackAsset } from "./assetPath.js";
 import { playNotificationSound } from "./notificationService.js";
 import PartnerStorefront from "./PartnerStorefront.jsx";
 import { ReelCameraRecorder, ReelVideoEditor } from "./ReelVideoEditor.jsx";
@@ -1103,6 +1103,7 @@ export function OnboardingGate({ client, userId, configured, notify, onSignOut }
 
   return <div className="onboarding-scrim">
     <section className="onboarding-dialog" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <img className="onboarding-welcome-art" src={credibilityPackAsset("26-onboarding-welcome.png")} alt="Pessoa amarrando o tênis ao nascer do sol no Rio de Janeiro" />
       <span className="social-auth-icon"><ShieldCheck size={20} /></span>
       <span className="eyebrow">SEU RITMO, SUAS ESCOLHAS</span>
       <h2 id="onboarding-title">Vamos personalizar sua jornada</h2>
@@ -2534,14 +2535,14 @@ export function SocialFeed({ client, configured, session, authReady = true, prof
       }}>
         {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
         {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando Reels…</p>}
-        {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Ainda não há Reels de perfis seguidos" : "Ainda não há Reels"}</h2><p>{filter === "following" ? "Siga criadores para ver os vídeos deles aqui." : "Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui."}</p></div>}
+        {!loading && !error && !posts.length && <div className="social-empty-feed"><img className="credibility-empty-art" src={credibilityPackAsset("23-empty-live-illustration.png")} alt="Estúdio preparado para uma transmissão ao vivo" loading="lazy" /><Users size={25} /><h2>{filter === "following" ? "Ainda não há Reels de perfis seguidos" : "Ainda não há Reels"}</h2><p>{filter === "following" ? "Siga criadores para ver os vídeos deles aqui." : "Os vídeos verticais 9:16 publicados pela comunidade aparecerão aqui."}</p></div>}
         {posts.map((post, index) => <Fragment key={post.id}>{index === 2 && posts.length >= 3 && <SponsoredCreative frequencyKey="fortalfy.ads.session.v1" image="07-reels-sponsored.png" alt="Reel patrocinado Fortalfy: ligue o modo treino. Constância vence." label="Patrocinado" to="/campaigns" className="reels-sponsored-creative" />}<SocialPost post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} reelMode onCreateReel={canPublishReels ? () => setComposerOpen(true) : undefined} /></Fragment>)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais Reels"}</button>}
       </section>
       : <>
         {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button onClick={refresh}>Tentar novamente</button></div>}
         {loading && !posts.length && <p className="social-inline-status"><LoaderCircle className="spin" size={17} /> Carregando publicações…</p>}
-        {!loading && !error && !posts.length && <div className="social-empty-feed"><Users size={25} /><h2>{filter === "following" ? "Você ainda não segue ninguém" : "O Feed está começando"}</h2><p>{filter === "following" ? "Siga perfis para ver as publicações deles aqui." : "Quando as pessoas publicarem, as novidades aparecerão aqui. Você pode começar com uma publicação sua."}</p></div>}
+        {!loading && !error && !posts.length && <div className="social-empty-feed"><img className="credibility-empty-art" src={credibilityPackAsset("21-empty-feed-illustration.png")} alt="Caminho de treino Fortalfy em direção ao horizonte" loading="lazy" /><Users size={25} /><h2>{filter === "following" ? "Você ainda não segue ninguém" : "O Feed está começando"}</h2><p>{filter === "following" ? "Siga perfis para ver as publicações deles aqui." : "Quando as pessoas publicarem, as novidades aparecerão aqui. Você pode começar com uma publicação sua."}</p></div>}
         {posts.map((post, index) => <Fragment key={post.id}>{index === 5 && posts.length >= 6 && <SponsoredCreative frequencyKey="fortalfy.ads.session.v1" image="06-feed-sponsored.png" alt="Publicação patrocinada Fortalfy sobre evolução e consistência no treino." label="Patrocinado · Fortalfy" to="/campaigns" className="feed-sponsored-creative" />}<SocialPost post={post} client={client} userId={userId} onRefresh={refresh} notify={notify} /></Fragment>)}
         {hasMore && <button className="button subtle wide-button social-load-more" onClick={loadMore} disabled={loading}>{loading ? "Carregando…" : "Carregar mais publicações"}</button>}
       </>}

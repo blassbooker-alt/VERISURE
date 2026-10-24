@@ -22,3 +22,8 @@ export function adPackAsset(filename) {
   const basePath = import.meta.env?.BASE_URL || "/";
   return `${basePath}assets/ad-pack/${filename}`;
 }
+
+export function credibilityPackAsset(filename) {
+  const basePath = import.meta.env?.BASE_URL || "/";
+  return `${basePath}assets/credibility-pack/${filename}`;
+}

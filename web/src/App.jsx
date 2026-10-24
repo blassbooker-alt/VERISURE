@@ -16,6 +16,7 @@ const GymPlateAdminPage = lazy(() => import("./GymAccess.jsx").then(module => ({
 import Brand from "./Brand.jsx";
 import CreatorGallery from "./CreatorGallery.jsx";
 import SponsoredCreative from "./SponsoredCreative.jsx";
+import { credibilityPackAsset } from "./assetPath.js";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 const FortalShop = lazy(() => import("./FortalShop.jsx"));
 const FortalfyStudio = lazy(() => import("./FortalfyStudio.jsx"));
@@ -1048,7 +1049,7 @@ function AcademyScreen({ client }) {
   const [courses, setCourses] = useState([]);
   useEffect(() => { let active = true; loadCreatorCourses(client).then(data => { if (active) setCourses(data); }).catch(error => console.error("Não foi possível carregar cursos publicados.", error)); return () => { active = false; }; }, [client]);
   return <Screen title="Fortalfy Academy" subtitle="CURSOS E APRENDIZADO" className="academy-screen">
-    <div className="academy-banner"><span className="academy-cap"><Play size={20} /></span><span className="eyebrow">FORTALFY ACADEMY</span><h2>Aprenda no seu ritmo.</h2><p>Cursos e aulas aparecerão aqui quando forem publicados por profissionais.</p></div>
+    <div className="academy-banner"><img className="academy-creator-art" src={credibilityPackAsset("27-academy-creator.png")} alt="Criador editando conteúdo de treino no computador" /><span className="academy-cap"><Play size={20} /></span><span className="eyebrow">FORTALFY ACADEMY</span><h2>Aprenda no seu ritmo.</h2><p>Cursos e aulas aparecerão aqui quando forem publicados por profissionais.</p></div>
     {courses.length > 0 && <><SponsoredCreative image="13-academy-course.png" alt="Academia Fortalfy: aprenda a criar melhor com conteúdo, edição e marca pessoal." label="Academia Fortalfy" to="/academy" className="academy-course-creative" /><div className="academy-course-list">{courses.map(course => <article className="dash-panel" key={course.id}><span className="eyebrow">CURSO PUBLICADO</span><h2>{course.title}</h2><p>{course.summary || "Descrição não informada pelo instrutor."}</p><p>{course.price_cents === 0 ? "Gratuito" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: course.currency || "BRL" }).format(course.price_cents / 100)}</p></article>)}</div></>}
     <div className="empty-state" hidden={courses.length > 0}><CircleHelp size={24} /><h3>Nenhum curso publicado</h3><p>A Academy ainda não possui cursos disponíveis. Não há aulas, preços ou certificados fictícios.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
   </Screen>;
@@ -1059,7 +1060,7 @@ function LiveScreen({ client }) {
   useEffect(() => { let active = true; loadCreatorLives(client).then(data => { if (active) setLives(data); }).catch(error => console.error("Não foi possível carregar transmissões publicadas.", error)); return () => { active = false; }; }, [client]);
   return <Screen title="Fortalfy Live" subtitle="TRANSMISSÕES" className="live-screen">
     {lives.length > 0 && <><SponsoredCreative image="12-live-sponsored.png" alt="Live patrocinada Fortalfy: treino ao vivo no seu ritmo." label="Live patrocinada" to={`/profile/${lives[0].instructor_id}`} className="live-sponsored-creative" /><div className="live-event-list">{lives.map(live => <article className="dash-panel" key={live.id}><span className="eyebrow">TRANSMISSÃO PUBLICADA</span><h2>{live.title}</h2>{live.description && <p>{live.description}</p>}<p>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(live.starts_at))}</p><Link className="button primary" to={`/profile/${live.instructor_id}`}>Ver perfil do profissional <ArrowRight size={16} /></Link></article>)}</div></>}
-    <div className="empty-state" hidden={lives.length > 0}><Play size={24} /><h3>Nenhuma transmissão programada</h3><p>Lives só serão exibidas após a publicação de uma transmissão real por um profissional. Não há chat, público ou cobrança simulados.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
+    <div className="empty-state" hidden={lives.length > 0}><img className="credibility-empty-art" src={credibilityPackAsset("23-empty-live-illustration.png")} alt="Estúdio preparado para uma transmissão ao vivo" loading="lazy" /><Play size={24} /><h3>Nenhuma transmissão programada</h3><p>Lives só serão exibidas após a publicação de uma transmissão real por um profissional. Não há chat, público ou cobrança simulados.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
   </Screen>;
 }
 
