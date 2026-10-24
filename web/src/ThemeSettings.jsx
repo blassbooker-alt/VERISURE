@@ -1,19 +1,13 @@
-import { MonitorCog, Moon, Sun } from "lucide-react";
+import { Moon } from "lucide-react";
 
-const options = [
-  { value: "dark", label: "Escuro", description: "Grafite e verde-limão", icon: Moon },
-  { value: "light", label: "Claro", description: "Superfícies claras e verdes da marca", icon: Sun },
-  { value: "system", label: "Automático", description: "Segue a aparência deste dispositivo", icon: MonitorCog },
-];
-
-export default function ThemeSettings({ value, onChange }) {
+export default function ThemeSettings() {
   return <section className="theme-settings-card" aria-labelledby="appearance-heading">
-    <div className="theme-settings-heading"><span className="theme-settings-icon"><Sun size={19} /></span><div><span className="eyebrow">PERSONALIZE SEU FORTALFY</span><h2 id="appearance-heading">Aparência</h2><p>Escolha como o app aparece neste perfil.</p></div></div>
-    <div className="theme-choice-list" role="group" aria-label="Tema do aplicativo">
-      {options.map(({ value: option, label, description, icon: Icon }) => <button key={option} type="button" className={`theme-choice${value === option ? " selected" : ""}`} aria-pressed={value === option} onClick={() => onChange(option)}>
-        <span className="theme-choice-icon"><Icon size={19} /></span><span className="theme-choice-copy"><strong>{label}</strong><small>{description}</small></span><span className="theme-choice-check" aria-hidden="true" />
-      </button>)}
+    <div className="theme-settings-heading"><span className="theme-settings-icon"><Moon size={19} /></span><div><span className="eyebrow">PERSONALIZE SEU FORTALFY</span><h2 id="appearance-heading">Aparência</h2><p>O app está usando o tema escuro.</p></div></div>
+    <div className="theme-choice-list" aria-label="Tema do aplicativo">
+      <div className="theme-choice selected" role="status">
+        <span className="theme-choice-icon"><Moon size={19} /></span><span className="theme-choice-copy"><strong>Escuro</strong><small>Grafite e verde-limão</small></span><span className="theme-choice-check" aria-hidden="true" />
+      </div>
     </div>
-    <p className="theme-settings-caption">A mudança é imediata. Sua escolha fica salva na conta quando você está conectado.</p>
+    <p className="theme-settings-caption">A versão clara está desativada temporariamente.</p>
   </section>;
 }

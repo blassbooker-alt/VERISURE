@@ -4940,7 +4940,7 @@ body { color: #172b20; background: var(--canvas); }
   .shop-screen .shop-editorial-copy p { max-width: 390px; font-size: 0.75rem; }
   .settings-screen { max-width: 860px; }
   .settings-screen .theme-settings-card { padding: 24px; }
-  .settings-screen .theme-choice-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .settings-screen .theme-choice-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
 
 @media (min-width: 1200px) {
@@ -11228,6 +11228,68 @@ html[data-theme="dark"] .mobile-app :is(.button.primary, .social-feed-primary,
   background: var(--color-primary);
   border-color: var(--color-primary);
   box-shadow: 0 8px 22px #c6ff0026;
+}
+
+/* Dark Fortalfy chat surfaces: keep the conversation readable without white panels. */
+html[data-theme="dark"] .social-messages-page .social-messages-panel {
+  color: var(--color-text-primary);
+  background: #101814;
+  border-color: #2a3a30;
+}
+html[data-theme="dark"] .social-messages-page .social-conversation-list {
+  background: #101814;
+  border-color: #2a3a30;
+}
+html[data-theme="dark"] .social-messages-page .social-conversation-list > header {
+  border-color: #2a3a30;
+}
+html[data-theme="dark"] .social-messages-page :is(.social-conversation-list h2, .social-conversation-preview strong, .social-chat-placeholder h3, .social-chat-person strong) {
+  color: #f4f7f4;
+}
+html[data-theme="dark"] .social-messages-page :is(.social-conversation-preview small, .social-conversation-item > time, .social-chat-placeholder, .social-chat-person small) {
+  color: #a1aba3;
+}
+html[data-theme="dark"] .social-messages-page .social-conversation-item:hover,
+html[data-theme="dark"] .social-messages-page .social-conversation-item.active {
+  background: #1a2a20;
+}
+html[data-theme="dark"] .social-messages-page .social-conversation-search {
+  color: #a1aba3;
+  background: #0b100d;
+  border-color: #2a3a30;
+}
+html[data-theme="dark"] .social-messages-page .social-conversation-search:focus-within {
+  background: #101814;
+  border-color: #648548;
+}
+html[data-theme="dark"] .social-messages-page .social-conversation-search input {
+  color: #f4f7f4;
+}
+html[data-theme="dark"] .social-messages-page .social-chat-header,
+html[data-theme="dark"] .social-messages-page .social-chat-composer {
+  color: #f4f7f4;
+  background: #15221a;
+  border-color: #2a3a30;
+  box-shadow: none;
+}
+html[data-theme="dark"] .social-messages-page .social-chat-messages {
+  background: #0b100d;
+}
+html[data-theme="dark"] .social-messages-page .social-chat-bubble {
+  color: #e5eee7;
+  background: #17271d;
+}
+html[data-theme="dark"] .social-messages-page .social-chat-bubble.own {
+  color: #f4f7f4;
+  background: #245a39;
+}
+html[data-theme="dark"] .social-messages-page .social-chat-composer textarea {
+  color: #f4f7f4;
+  background: #0b100d;
+  border-color: #35483a;
+}
+html[data-theme="dark"] .social-messages-page .social-chat-composer textarea::placeholder {
+  color: #a1aba3;
 }
 html[data-theme="dark"] .mobile-app :is(.button.primary, .social-feed-primary,
   .auth-submit-btn, .creator-final-button):hover:not(:disabled) {

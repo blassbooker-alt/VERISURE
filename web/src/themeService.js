@@ -1,6 +1,7 @@
 export const THEME_PREFERENCE_KEY = "fortalfy.theme.guest.v1";
 export const THEME_METADATA_KEY = "fortalfy_theme";
-export const THEME_PREFERENCES = ["dark", "light", "system"];
+// Light appearance is temporarily disabled throughout the product.
+export const THEME_PREFERENCES = ["dark"];
 
 function browserStorage() {
   try { return globalThis.localStorage; } catch { return null; }
@@ -11,8 +12,7 @@ export function normalizeThemePreference(value) {
 }
 
 export function resolveThemePreference(preference, systemPrefersDark = true) {
-  const normalized = normalizeThemePreference(preference);
-  return normalized === "system" ? (systemPrefersDark ? "dark" : "light") : normalized;
+  return "dark";
 }
 
 export function themeStorageKey(userId) {
@@ -63,7 +63,5 @@ export async function saveThemePreference(client, userId, preference) {
 }
 
 export function getAccountThemePreference(user, storage = browserStorage()) {
-  const metadataPreference = user?.user_metadata?.[THEME_METADATA_KEY];
-  if (THEME_PREFERENCES.includes(metadataPreference)) return metadataPreference;
-  return readThemePreference(storage, user?.id || null);
+  return "dark";
 }

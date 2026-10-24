@@ -1835,16 +1835,8 @@ function AppContent() {
   }, [accessibilityPreferences]);
   useEffect(() => {
     const media = window.matchMedia?.("(prefers-color-scheme: dark)");
-    if (!media) { applyThemePreference(themePreference, true); return undefined; }
-    const update = () => applyThemePreference(themePreference, media.matches);
-    update();
-    if (media.addEventListener) media.addEventListener("change", update);
-    else media.addListener?.(update);
-    return () => {
-      if (media.removeEventListener) media.removeEventListener("change", update);
-      else media.removeListener?.(update);
-    };
-  }, [themePreference]);
+    applyThemePreference("dark", media?.matches ?? true);
+  }, []);
   const changeThemePreference = async preference => {
     setThemePreference(preference);
     try {
