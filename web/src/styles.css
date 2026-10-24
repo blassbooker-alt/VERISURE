@@ -12445,7 +12445,7 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
     scrollbar-width: none;
   }
   .community-feed-screen .stories-row::-webkit-scrollbar { display: none; }
-  .community-feed-screen .story-item-wrap { position: relative; width: 59px; flex: 0 0 59px; }
+  .community-feed-screen .story-item-wrap { position: relative; width: 68px; flex: 0 0 68px; }
   .community-feed-screen .story-item {
     display: flex;
     width: 100%;
@@ -12456,8 +12456,8 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
     line-height: 1.2;
   }
   .community-feed-screen .story-ring {
-    width: 54px;
-    height: 54px;
+    width: 62px;
+    height: 62px;
     padding: 2px;
     background: #26372b;
   }
@@ -12467,7 +12467,7 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
   .community-feed-screen .story-add-own { color: #0b100d; background: #c8f52e; }
   .community-feed-screen .stories-status { margin: 0 0 7px; color: #a1aba3; font-size: .72rem; }
   .community-feed-screen .stories-status.error { color: #f0a2a2; }
-  .community-feed-screen .social-feed-toolbar { margin-top: 0; }
+  .community-feed-screen .social-feed-toolbar { display: none; }
   .community-feed-screen .social-filter-tabs button {
     padding-inline: 12px;
     font-size: .74rem;
@@ -12551,8 +12551,6 @@ html[data-theme="dark"] .mobile-app :is(.theme-settings-card, .accessibility-set
 }
 
 @media (max-width: 380px) {
-  .community-feed-screen .story-item-wrap { width: 55px; flex-basis: 55px; }
-  .community-feed-screen .story-ring { width: 50px; height: 50px; }
-  .community-feed-screen .social-filter-tabs button { padding-inline: 9px; font-size: .71rem; }
-  .community-feed-screen .social-refresh { padding-inline: 10px; }
+  .community-feed-screen .story-item-wrap { width: 64px; flex-basis: 64px; }
+  .community-feed-screen .story-ring { width: 58px; height: 58px; }
 }
