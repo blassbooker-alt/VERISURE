@@ -12730,3 +12730,27 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .shop-screen .shop-editorial-copy p { max-width: 27ch; }
   .shop-screen .shop-category-chip { border-radius: 7px; }
 }
+/* Restore the Fortalfy forest and lime brand palette. */
+.shop-screen .shop-search-panel { border-color: #d8e5d8; box-shadow: 0 8px 24px #103d2c0c; }
+.shop-screen .shop-search { border-color: #8caf7c; }
+.shop-screen .shop-search > svg { color: #245b39; }
+.shop-screen .shop-search-panel .shop-search:focus-within { border-color: #2e603d; box-shadow: 0 0 0 3px #2e603d19; }
+.shop-screen .shop-editorial { background: linear-gradient(112deg, #0b2b1d 0%, #123e2b 54%, #2f6942 100%); box-shadow: 0 12px 30px #103d2c25; }
+.shop-screen .shop-editorial::after { background: linear-gradient(90deg, #071a12f5 0%, #103c2bd9 44%, #174a3325 100%); }
+.shop-screen .shop-editorial-label { color: #d1f596; }
+.shop-screen .shop-editorial-copy .lime-button { color: #17251b; background: #b8f432; border-color: #b8f432; box-shadow: 0 5px 14px #071f1330; }
+.shop-screen .shop-editorial-copy .lime-button:hover { color: #17251b; background: #c9f85c; }
+.shop-screen .shop-department-card:hover, .shop-screen .shop-department-card.is-active { border-color: #75a748; box-shadow: 0 6px 18px #1c4d2812; }
+.shop-screen .shop-category-chip.is-active { color: #17251b; background: #b8f432; border-color: #b8f432; }
+.shop-screen .shop-category-chip:hover { border-color: #75a748; color: #245b39; }
+.shop-screen .shop-catalog-heading .eyebrow { color: #397344; }
+.shop-screen .shop-catalog-count { color: #254f33; background: #eff6e8; border-color: #dce9cf; }
+.shop-screen .shop-product-card { border-color: #e1e9df; box-shadow: 0 3px 12px #153b220a; }
+.shop-screen .shop-product-card:hover { border-color: #8caf7c; box-shadow: 0 10px 22px #174a3318; }
+.shop-screen .shop-product-tag { color: #17251b; background: #b8f432; }
+.shop-screen .shop-product-category { color: #7a897d; }
+.shop-screen .shop-demo-price { color: #8a987f; }
+.shop-screen .shop-price-line strong { color: #1c633a; }
+.shop-screen .shop-add-button { color: #245b39; background: #f3f8ed; border-color: #dce9cf; }
+.shop-screen .shop-add-button:hover { color: #17251b; background: #b8f432; border-color: #b8f432; }
+.shop-screen .shop-catalog-disclaimer { color: #586a5c; background: #f5f9f1; border-color: #e1eadb; }
