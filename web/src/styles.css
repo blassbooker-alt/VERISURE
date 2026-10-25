@@ -5571,6 +5571,83 @@ html { color-scheme: dark; }
   .pass-demo-network-card { grid-template-columns:66px minmax(0,1fr) 28px; gap:7px; }
   .pass-demo-network-card > img { width:66px; height:72px; }
 }
+
+/* FortalPass: refinement of hierarchy, spacing and interaction states. */
+.pass-screen .screen-heading { margin-bottom:16px; }
+.pass-screen > .screen-heading h1 { letter-spacing:-.035em; }
+.pass-hero { min-height:210px; height:auto; padding:clamp(22px,3vw,38px); border-color:#294b35; box-shadow:0 18px 46px #0003; }
+.pass-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,#06130e 0%,#06130edb 45%,transparent 100%); pointer-events:none; }
+.pass-hero > div { position:relative; z-index:1; max-width:760px; }
+.pass-hero .eyebrow { color:#c5e642; font-size:.65rem; font-weight:750; letter-spacing:.12em; }
+.pass-hero h2 { max-width:680px; margin:9px 0 8px; font-size:clamp(1.7rem,3.1vw,2.45rem); letter-spacing:-.04em; line-height:1.05; }
+.pass-hero p { max-width:610px; font-size:.9rem; }
+.pass-hero-stats { gap:9px 20px; margin-top:18px; font-size:.73rem; }
+.pass-hero-stats span { padding:6px 9px; color:#d5e0d5; background:#0b1b12aa; border:1px solid #35503a; border-radius:8px; }
+.pass-marketplace-shell { grid-template-columns:220px minmax(0,1fr) 275px; gap:15px; }
+.pass-filters-panel,.pass-discovery,.pass-account-panel section { box-shadow:0 12px 30px #0002; }
+.pass-filters-panel { gap:13px; padding:15px; border-color:#2a4030; }
+.pass-discovery { padding:18px; border-radius:15px; }
+.pass-discovery .partner-discovery-heading { margin-bottom:15px; }
+.pass-discovery .partner-discovery-heading .eyebrow { font-weight:750; letter-spacing:.1em; }
+.pass-discovery .partner-discovery-heading h2 { margin:5px 0; font-size:1.35rem; letter-spacing:-.025em; }
+.pass-discovery .partner-discovery-heading p { font-size:.78rem; }
+.pass-tabs { margin:15px 0; padding:5px; border-color:#283b2c; }
+.pass-tabs button { min-height:36px; padding:9px 13px; font-size:.72rem; transition:background .18s ease,color .18s ease; }
+.pass-tabs button:not(.active):hover,.pass-catalog-switch button:not(.active):hover { color:#f2f8ef; background:#1a291d; }
+.pass-catalog-switch { gap:8px; margin-bottom:12px; }
+.pass-catalog-switch button { min-height:36px; padding:8px 13px; }
+.pass-demo-disclosure { padding:10px 12px; border-radius:10px; }
+.pass-demo-network-list { gap:11px; }
+.pass-demo-network-card { grid-template-columns:150px minmax(0,1fr) 38px; gap:15px; min-height:124px; padding:12px; background:linear-gradient(110deg,#0e1a12,#0b160f 72%); border-color:#2a4030; border-radius:13px; box-shadow:0 7px 18px #0002; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.pass-demo-network-card:hover { transform:translateY(-2px); border-color:#527238; box-shadow:0 12px 24px #0003; }
+.pass-demo-network-card > img { width:150px; height:100px; border:1px solid #ffffff12; border-radius:9px; }
+.pass-demo-network-card > div { gap:6px; }
+.pass-demo-network-card > div > span { font-size:.55rem; letter-spacing:.04em; }
+.pass-demo-network-card h3 { font-size:1rem; letter-spacing:-.02em; }
+.pass-demo-network-card p { max-width:620px; font-size:.72rem; }
+.pass-demo-detail-link { padding-top:2px; font-size:.7rem; font-weight:700; }
+.pass-demo-network-card .pass-listing-favorite { width:36px; height:36px; color:#c8d4c8; background:#122016; border-color:#364b39; }
+.pass-demo-network-card .pass-listing-favorite:hover,.pass-demo-network-card .pass-listing-favorite.active { color:#c5e642; border-color:#849a3d; }
+.pass-account-panel { gap:12px; }
+.pass-account-panel section { padding:17px; border-color:#2b4230; border-radius:14px; }
+.pass-account-panel h3 { font-size:1.02rem; letter-spacing:-.015em; }
+.pass-account-status { gap:10px; padding-top:14px; margin-top:14px; }
+.pass-account-status svg { flex:0 0 auto; padding:3px; width:25px; height:25px; background:#1b2a1b; border-radius:8px; }
+.pass-account-status strong { color:#f0f5ef; font-size:.76rem; }
+.pass-account-status small { font-size:.69rem; }
+.pass-account-meter { font-size:.75rem; }
+.pass-account-recent { gap:10px; }
+.pass-account-help { background:linear-gradient(145deg,#17251a,#0d180f)!important; }
+.pass-account-help h3 { color:#eaf3e9; }
+.pass-account-help button { min-height:34px; }
+.pass-screen :is(button,a,input,select,summary):focus-visible { outline:2px solid #c5e642; outline-offset:3px; }
+.pass-screen button { transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease; }
+@media (max-width:1100px) and (min-width:761px) {
+  .pass-marketplace-shell { grid-template-columns:200px minmax(0,1fr); gap:13px; }
+  .pass-account-panel { grid-column:1/-1; grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:760px) {
+  .pass-marketplace-shell { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .pass-filters-panel { display:none; }
+  .pass-account-panel { grid-template-columns:1fr; }
+  .pass-screen .screen-heading { margin-bottom:12px; }
+  .pass-hero { min-height:160px; padding:17px; box-shadow:0 10px 28px #0003; }
+  .pass-hero::before { background:linear-gradient(90deg,#06130ef2 0%,#06130ed9 56%,#06130e78 100%); }
+  .pass-hero .eyebrow { font-size:.53rem; }
+  .pass-hero h2 { margin:6px 0; font-size:1.4rem; }
+  .pass-hero p { max-width:390px; font-size:.69rem; }
+  .pass-hero-stats { gap:5px 7px; margin-top:10px; font-size:.58rem; }
+  .pass-hero-stats span { padding:4px 6px; }
+  .pass-discovery { padding:13px; }
+  .pass-discovery .partner-discovery-heading h2 { font-size:1.17rem; }
+  .pass-demo-network-card { grid-template-columns:76px minmax(0,1fr) 32px; min-height:98px; padding:8px; }
+  .pass-demo-network-card:hover { transform:none; }
+  .pass-demo-network-card > img { width:76px; height:78px; }
+  .pass-demo-network-card .pass-listing-favorite { width:30px; height:30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pass-screen *, .pass-screen *::before, .pass-screen *::after { scroll-behavior:auto!important; transition:none!important; }
+}
 .workout-screen .partner-discovery, .nutrition-screen .partner-discovery {
   color: #e8eee8;
   background: linear-gradient(145deg, #141c15, #101711 72%);
