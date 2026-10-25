@@ -124,46 +124,51 @@ export function professionalStatusLabel(status) {
 
 export async function loadPublicProfessionalDirectory(client, { offset = 0, limit = 24, kind = "", search = "", city = "" } = {}) {
   if (!client) throw new Error("O diretório profissional está indisponível.");
-  const kinds = ["personal", "nutricionista", "academia"];
+  const kinds = ["cliente", "personal", "nutricionista", "academia", "restaurante", "marca", "empresa", "vendedor", "influenciador"];
   if (kind && !kinds.includes(kind)) throw new Error("Especialidade inválida.");
-  let query = client.from("professional_profile_public")
-    .select("application_id,profile_id,kind,public_data,updated_at", { count: "exact" })
-    .in("kind", kind ? [kind] : kinds)
-    .order("updated_at", { ascending: false })
+  let query = client.from("profiles")
+    .select("id,display_name,username,bio,city,avatar_path,kind,verified_at,partner_approved_at,is_private,created_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
     .range(offset, offset + limit - 1);
   const safeTerm = String(search).trim().replace(/[,%()\\_*]/g, " ").replace(/\s+/g, " ").slice(0, 80);
-  if (safeTerm) query = query.or(`public_data->>displayName.ilike.%${safeTerm}%,public_data->>city.ilike.%${safeTerm}%,public_data->>description.ilike.%${safeTerm}%`);
+  if (kind) query = query.eq("kind", kind);
+  if (safeTerm) query = query.or(`display_name.ilike.%${safeTerm}%,username.ilike.%${safeTerm}%,bio.ilike.%${safeTerm}%,city.ilike.%${safeTerm}%`);
   const safeCity = String(city).trim().replace(/[%_]/g, " ").slice(0, 80);
-  if (safeCity) query = query.ilike("public_data->>city", `%${safeCity}%`);
+  if (safeCity) query = query.ilike("city", `%${safeCity}%`);
   const { data, error, count } = await query;
   if (error) throw error;
 
-  const profileIds = [...new Set((data || []).map(row => row.profile_id).filter(Boolean))];
-  let profiles = [];
+  const profileIds = [...new Set((data || []).map(row => row.id).filter(Boolean))];
+  let approvedProfiles = [];
   if (profileIds.length) {
-    const result = await client.from("profiles")
-      .select("id,display_name,username,city,avatar_path,verified_at,partner_approved_at,is_private")
-      .in("id", profileIds);
+    const result = await client.from("professional_profile_public")
+      .select("application_id,profile_id,kind,public_data,updated_at")
+      .in("profile_id", profileIds);
     if (result.error) throw result.error;
-    profiles = result.data || [];
+    approvedProfiles = result.data || [];
   }
-  const profileById = new Map(profiles.map(row => [row.id, row]));
+  const approvedByProfile = new Map();
+  approvedProfiles.forEach(row => {
+    if (!approvedByProfile.has(row.profile_id)) approvedByProfile.set(row.profile_id, row);
+  });
   const professionals = await Promise.all((data || []).map(async row => {
-    const profile = mapProfile(profileById.get(row.profile_id));
-    const publicData = row.public_data || {};
+    const profile = mapProfile(row);
+    const approval = approvedByProfile.get(row.id);
+    const publicData = approval?.public_data || {};
     return {
-      id: row.profile_id,
-      applicationId: row.application_id,
-      name: publicData.displayName || profile?.name || "Profissional Fortalfy",
+      id: row.id,
+      applicationId: row.id,
+      name: (approval && publicData.displayName) || profile?.name || "Pessoa Fortalfy",
       username: profile?.username || "",
       city: publicData.city || profile?.city || "",
       description: publicData.description || profile?.bio || "",
       avatar: await signMedia(client, profile?.avatar || ""),
-      verified: true,
+      verified: Boolean(approval),
       isPrivate: profile ? Boolean(profile.isPrivate) : true,
-      kind: row.kind,
+      kind: approval?.kind || profile?.kind || "cliente",
       website: publicData.website || "",
-      updatedAt: row.updated_at,
+      updatedAt: row.created_at || approval?.updated_at || "",
     };
   }));
   return {
