@@ -13818,14 +13818,14 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .live-page-intro p { font-size: .68rem; white-space: nowrap; }
   .live-page-intro .live-search { width: 270px; height: 36px; min-height: 36px; flex: 0 0 270px; padding-inline: 10px; }
   .live-page-intro .live-search input { height: 32px; font-size: .62rem; }
-  .live-feature { min-height: clamp(116px,16.5vw,210px); grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); }
-  .live-feature > img { min-height: 116px; height: 100%; align-self: stretch; object-fit: cover; }
+  .live-feature { height: clamp(116px,16.5vw,140px); min-height: 0; grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); grid-template-rows: minmax(0,1fr); }
+  .live-feature > img { min-height: 0; height: 100%; align-self: stretch; object-fit: cover; }
   .live-feature::after { background: linear-gradient(90deg,transparent 28%,#06130fb5 48%,#06130f 61%); }
   .live-feature-copy { padding: 8px 14px 8px 0; }
   .live-feature-badge { padding: 3px 7px; font-size: .48rem; }
   .live-feature-copy h2 { margin: 4px 0 3px; font-size: clamp(.82rem,1.5vw,1rem); }
   .live-feature-copy > p { font-size: .61rem; }
-  .live-feature-copy .button { height: 30px; min-height: 30px; padding-inline: 10px; font-size: .58rem; }
+  .screen-content.live-screen .live-feature-copy > .button { height: 30px !important; min-height: 30px !important; padding: 0 10px !important; font-size: .58rem; }
   .live-filter-tabs { gap: 6px; margin: 7px 0 10px; }
   .live-filter-tabs button { height: 24px; min-height: 24px; padding-inline: 10px; font-size: .56rem; }
   .live-section-heading { align-items: center; margin-bottom: 7px; }
