@@ -13820,7 +13820,7 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .live-page-intro .live-search { width: 270px; height: 36px; min-height: 36px; flex: 0 0 270px; padding-inline: 10px; }
   .live-page-intro .live-search input { height: 32px; font-size: .62rem; }
   .live-feature { height: clamp(116px,16.5vw,140px); min-height: 0; grid-template-columns: minmax(0,1.08fr) minmax(0,.92fr); grid-template-rows: minmax(0,1fr); }
-  .live-feature > img { min-height: 0; height: 100%; align-self: stretch; object-fit: cover; }
+  .live-feature > img { min-height: 0; height: 100%; max-height: 100%; align-self: stretch; object-fit: cover; }
   .live-feature::after { background: linear-gradient(90deg,transparent 28%,#06130fb5 48%,#06130f 61%); }
   .live-feature-copy { padding: 8px 14px 8px 0; }
   .live-feature-badge { padding: 3px 7px; font-size: .48rem; }
