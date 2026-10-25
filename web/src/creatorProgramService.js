@@ -1,3 +1,5 @@
+import { signMedia } from "./socialService.js";
+
 function assertClient(client) {
   if (!client) throw new Error("O Supabase não está configurado.");
 }
@@ -52,14 +54,80 @@ export async function createCreatorLive(client, instructorId, live) {
   const title = String(live.title || "").trim();
   const startsAt = new Date(live.startsAt);
   if (!instructorId || title.length < 3 || title.length > 160 || Number.isNaN(startsAt.getTime()) || startsAt <= new Date()) throw new Error("Informe um título e uma data futura para a live.");
-  const { data, error } = await client.from("creator_live_events").insert({ instructor_id: instructorId, title, description: String(live.description || "").trim(), starts_at: startsAt.toISOString(), access_mode: live.accessMode, status: "draft" }).select("id").single();
+  const values = normalizeCreatorLive(live, title, startsAt);
+  let coverPath = "";
+  if (live.coverFile) coverPath = await uploadCreatorLiveCover(client, instructorId, live.coverFile);
+  const { data, error } = await client.from("creator_live_events").insert({ instructor_id: instructorId, ...values, cover_url: coverPath ? client.storage.from("creator-live-covers").getPublicUrl(coverPath).data.publicUrl : values.cover_url, status: "draft" }).select("id").single();
+  if (error && coverPath) await client.storage.from("creator-live-covers").remove([coverPath]).catch(() => {});
   if (error) throw error;
   return data;
 }
 
-export async function publishCreatorLive(client, liveId) {
+function normalizeCreatorLive(live, title, startsAt) {
+  const categories = new Set(["treino", "nutricao", "emagrecimento", "hipertrofia", "saude_bem_estar", "marketing_fitness"]);
+  const description = String(live.description || "").trim();
+  const priceCents = Number(live.priceCents) || 0;
+  const durationMinutes = Number(live.durationMinutes) || 60;
+  const participantLimit = live.participantLimit === "" || live.participantLimit == null ? null : Number(live.participantLimit);
+  const coverUrl = String(live.coverUrl || "").trim();
+  const category = live.category || "treino";
+  if (description.length > 3000 || !categories.has(category) || !["public", "approved_creator"].includes(live.accessMode) || !Number.isSafeInteger(priceCents) || priceCents < 0 || !Number.isInteger(durationMinutes) || durationMinutes < 5 || durationMinutes > 480 || (participantLimit !== null && (!Number.isInteger(participantLimit) || participantLimit < 1 || participantLimit > 100000)) || (coverUrl && !/^https:\/\//i.test(coverUrl))) {
+    throw new Error("Confira categoria, descrição, duração, valor, limite de participantes e capa HTTPS.");
+  }
+  return {
+    title, description, starts_at: startsAt.toISOString(), access_mode: live.accessMode,
+    category, duration_minutes: durationMinutes, price_cents: priceCents,
+    participant_limit: participantLimit, cover_url: coverUrl || null,
+    cancellation_policy: String(live.cancellationPolicy || "").trim().slice(0, 2000),
+    participant_information: String(live.participantInformation || "").trim().slice(0, 2000),
+  };
+}
+
+async function uploadCreatorLiveCover(client, instructorId, file) {
+  if (!file?.type || !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+    throw new Error("A capa deve ser JPG, PNG ou WebP e ter no máximo 5 MB.");
+  }
+  const suffix = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const randomId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const path = `${instructorId}/${randomId}.${suffix}`;
+  const { error } = await client.storage.from("creator-live-covers").upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
+  if (error) throw error;
+  return path;
+}
+
+export async function updateCreatorLive(client, liveId, live) {
   assertClient(client);
-  const { data, error } = await client.from("creator_live_events").update({ status: "published" }).eq("id", liveId).select("id,status").single();
+  if (!liveId) throw new Error("Selecione uma transmissão.");
+  const title = String(live.title || "").trim();
+  const startsAt = new Date(live.startsAt);
+  if (title.length < 3 || title.length > 160 || Number.isNaN(startsAt.getTime()) || startsAt <= new Date()) throw new Error("Informe um título e uma data futura para a live.");
+  const values = normalizeCreatorLive(live, title, startsAt);
+  let coverPath = "";
+  if (live.coverFile) {
+    coverPath = await uploadCreatorLiveCover(client, live.instructorId, live.coverFile);
+    values.cover_url = client.storage.from("creator-live-covers").getPublicUrl(coverPath).data.publicUrl;
+  }
+  const { data, error } = await client.from("creator_live_events").update(values).eq("id", liveId).select("id").single();
+  if (error && coverPath) await client.storage.from("creator-live-covers").remove([coverPath]).catch(() => {});
+  if (error) throw error;
+  return data;
+}
+
+export async function publishCreatorLive(client, liveId, isAdmin = false) {
+  assertClient(client);
+  const status = isAdmin ? "published" : "pending_approval";
+  const { data, error } = await client.from("creator_live_events").update({ status }).eq("id", liveId).select("id,status").single();
+  if (error) throw error;
+  return data;
+}
+
+export async function cancelCreatorLive(client, liveId) {
+  assertClient(client);
+  if (!liveId) throw new Error("Selecione uma transmissão.");
+  const { data, error } = await client.from("creator_live_events")
+    .update({ status: "cancelled" }).eq("id", liveId)
+    .in("status", ["draft", "pending_approval", "published"])
+    .select("id,status").single();
   if (error) throw error;
   return data;
 }
@@ -95,11 +163,63 @@ export async function enrollFreeCreatorCourse(client, courseId) {
 
 export async function loadCreatorLives(client, profileId = "", isAdmin = false) {
   assertClient(client);
-  let query = client.from("creator_live_events").select("id,instructor_id,title,description,starts_at,access_mode,status");
+  let query = client.from("creator_live_events").select("id,instructor_id,title,description,starts_at,access_mode,status,category,cover_url,duration_minutes,price_cents,participant_limit,cancellation_policy,participant_information");
   if (!isAdmin) query = profileId ? query.or(`status.eq.published,instructor_id.eq.${profileId}`) : query.eq("status", "published");
   const { data, error } = await query.gte("starts_at", new Date().toISOString()).order("starts_at").limit(100);
   if (error) throw error;
   return data || [];
+}
+
+export async function loadCreatorLiveRegistrations(client, liveIds) {
+  assertClient(client);
+  if (!Array.isArray(liveIds) || !liveIds.length) return [];
+  const { data, error } = await client.from("creator_live_registrations")
+    .select("id,live_id,profile_id,status,created_at")
+    .in("live_id", liveIds.slice(0, 100))
+    .order("created_at", { ascending: false }).limit(1000);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function loadCreatorLiveOrders(client, liveIds) {
+  assertClient(client);
+  if (!Array.isArray(liveIds) || !liveIds.length) return [];
+  const { data, error } = await client.from("creator_live_orders")
+    .select("id,live_id,profile_id,amount_cents,status,created_at")
+    .in("live_id", liveIds.slice(0, 100))
+    .order("created_at", { ascending: false }).limit(1000);
+  if (error) throw error;
+  return data || [];
+}
+
+// The public Live catalog only exposes events that the existing RLS policy
+// makes available to every signed-in member. `public` is the audience scope;
+// this catalog currently has no payment or playback provider integration.
+export async function loadPublicCreatorLiveCatalog(client) {
+  assertClient(client);
+  const { data, error } = await client.from("creator_live_events")
+    .select("id,instructor_id,title,description,starts_at,access_mode,status,category,cover_url,duration_minutes,price_cents,participant_limit,cancellation_policy,participant_information")
+    .eq("status", "published")
+    .eq("access_mode", "public")
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(100);
+  if (error) throw error;
+  const events = data || [];
+  const instructorIds = [...new Set(events.map(event => event.instructor_id).filter(Boolean))];
+  if (!instructorIds.length) return events.map(event => ({ ...event, instructor: null }));
+
+  const { data: profiles, error: profileError } = await client.from("profiles")
+    .select("id,display_name,username,bio,avatar_path,kind,verified_at,partner_approved_at")
+    .in("id", instructorIds);
+  if (profileError) return events.map(event => ({ ...event, instructor: null }));
+  const profileById = new Map((profiles || []).map(profile => [profile.id, profile]));
+  return Promise.all(events.map(async event => {
+    const instructor = profileById.get(event.instructor_id) || null;
+    let avatar = "";
+    if (instructor?.avatar_path) { try { avatar = await signMedia(client, instructor.avatar_path); } catch { /* Name and event remain visible if a profile photo cannot be signed. */ } }
+    return { ...event, instructor: instructor ? { ...instructor, avatar } : null };
+  }));
 }
 
 export async function loadMyCreatorLiveRegistrations(client, profileId) {

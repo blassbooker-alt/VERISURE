@@ -46,7 +46,7 @@ import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 import { gyms, profile } from "./data.js";
 import { localDateKey, mealsForDate, normalizeMealEntries, sumMealCalories } from "./appLogic.js";
 import { loadAvailableFoodMenu } from "./foodService.js";
-import { loadCreatorCourses, loadCreatorLives } from "./creatorProgramService.js";
+import { loadCreatorCourses, loadCreatorLives, loadMyCreatorLiveRegistrations, loadPublicCreatorLiveCatalog, registerCreatorLive } from "./creatorProgramService.js";
 import { applyThemePreference, getAccountThemePreference, readThemePreference, saveThemePreference } from "./themeService.js";
 import {
   applyAccessibilityPreferences, DEFAULT_ACCESSIBILITY_PREFERENCES, getAccountAccessibilityPreferences,
@@ -1142,12 +1142,140 @@ function AcademyScreen({ client }) {
   </Screen>;
 }
 
-function LiveScreen({ client }) {
+const LIVE_TOPICS = [
+  { label: "Treino", category: "treino", image: "fortalfy-pack-training-card.jpg", terms: ["treino", "exercício", "musculação", "corrida", "pilates", "yoga"] },
+  { label: "Nutrição", category: "nutricao", image: "fortalfy-pack-food-breakfast.jpg", terms: ["nutrição", "nutri", "alimentação", "dieta"] },
+  { label: "Emagrecimento", category: "emagrecimento", image: "fortalfy-pack-training-running.jpg", terms: ["emagrecimento", "emagrecer", "peso"] },
+  { label: "Hipertrofia", category: "hipertrofia", image: "fortalfy-pack-training-card.jpg", terms: ["hipertrofia", "massa", "muscular", "força"] },
+  { label: "Saúde e bem-estar", category: "saude_bem_estar", image: "fortalfy-pack-training-yoga.jpg", terms: ["saúde", "bem-estar", "mobilidade", "recuperação"] },
+  { label: "Marketing fitness", category: "marketing_fitness", image: "fortalfy-pack-reels-training.jpg", terms: ["marketing", "negócio", "conteúdo", "creator"] },
+];
+const LIVE_FILTERS = ["Todas", "Ao vivo agora", "Gratuitas", "Pagas", "Agendadas", "Minhas inscrições"];
+function liveTopicFor(event) {
+  if (event?.category) {
+    const exact = LIVE_TOPICS.find(topic => topic.category === event.category);
+    if (exact) return exact;
+  }
+  const text = `${event.title || ""} ${event.description || ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return LIVE_TOPICS.find(topic => topic.terms.some(term => text.includes(term.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) || LIVE_TOPICS[0];
+}
+function liveDateLabel(value, options = { dateStyle: "full", timeStyle: "short" }) {
+  return new Intl.DateTimeFormat("pt-BR", { ...options, timeZone: "America/Fortaleza" }).format(new Date(value));
+}
+function LiveScreen({ client, session, notify }) {
+  const { liveId } = useParams();
+  const navigate = useNavigate();
   const [lives, setLives] = useState([]);
-  useEffect(() => { let active = true; loadCreatorLives(client).then(data => { if (active) setLives(data); }).catch(error => console.error("Não foi possível carregar transmissões publicadas.", error)); return () => { active = false; }; }, [client]);
-  return <Screen title="Fortalfy Live" subtitle="TRANSMISSÕES" className="live-screen">
-    {lives.length > 0 && <><SponsoredCreative image="12-live-sponsored.png" alt="Live patrocinada Fortalfy: treino ao vivo no seu ritmo." label="Live patrocinada" to={`/profile/${lives[0].instructor_id}`} className="live-sponsored-creative" /><div className="live-event-list">{lives.map(live => <article className="dash-panel" key={live.id}><span className="eyebrow">TRANSMISSÃO PUBLICADA</span><h2>{live.title}</h2>{live.description && <p>{live.description}</p>}<p>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(live.starts_at))}</p><Link className="button primary" to={`/profile/${live.instructor_id}`}>Ver perfil do profissional <ArrowRight size={16} /></Link></article>)}</div></>}
-    <div className="empty-state" hidden={lives.length > 0}><img className="credibility-empty-art" src={credibilityPackAsset("23-empty-live-illustration.png")} alt="Estúdio preparado para uma transmissão ao vivo" loading="lazy" /><Play size={24} /><h3>Nenhuma transmissão programada</h3><p>Lives só serão exibidas após a publicação de uma transmissão real por um profissional. Não há chat, público ou cobrança simulados.</p><Link to="/pass" className="button subtle">Conhecer profissionais <ArrowRight size={16} /></Link></div>
+  const [registrationIds, setRegistrationIds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("Todas");
+  const [busyLiveId, setBusyLiveId] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const profileId = session?.user?.id || "";
+
+  const refreshCatalog = useCallback(async () => {
+    if (!client) { setLives([]); setLoading(false); setLoadError("O catálogo de transmissões precisa da conexão com o Supabase."); return; }
+    setLoading(true); setLoadError("");
+    try {
+      const [catalog, registrations] = await Promise.all([
+        loadPublicCreatorLiveCatalog(client),
+        profileId ? loadMyCreatorLiveRegistrations(client, profileId) : Promise.resolve([]),
+      ]);
+      setLives(catalog);
+      setRegistrationIds(registrations.filter(item => item.status === "registered").map(item => item.live_id));
+    } catch (error) {
+      console.error("Não foi possível carregar o catálogo Fortalfy Live.", error);
+      setLoadError(error.code === "PGRST205" ? "O catálogo Fortalfy Live ainda não foi habilitado neste Supabase. A migração de banco precisa ser aplicada para carregar e reservar transmissões." : "Não foi possível carregar as transmissões agora. Tente novamente em instantes.");
+    } finally { setLoading(false); }
+  }, [client, profileId]);
+  useEffect(() => { refreshCatalog(); }, [refreshCatalog]);
+
+  const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
+  const visibleLives = lives.filter(live => {
+    const mine = registrationIds.includes(live.id);
+    const topic = liveTopicFor(live);
+    const matchesSearch = !normalizedSearch || `${live.title} ${live.description} ${topic.label} ${live.instructor?.display_name || ""}`.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
+    if (!matchesSearch) return false;
+    if (filter === "Minhas inscrições") return mine;
+    if (filter === "Ao vivo agora") return false; // Current schema has no server-confirmed live state.
+    if (filter === "Pagas") return Number(live.price_cents) > 0;
+    if (filter === "Agendadas") return new Date(live.starts_at) > new Date();
+    if (filter === "Gratuitas") return live.access_mode === "public" && Number(live.price_cents) === 0;
+    return true;
+  });
+  const selectedLive = liveId ? lives.find(item => item.id === liveId) : null;
+  const featuredLive = lives[0] || null;
+
+  async function joinLive(live) {
+    if (!profileId) { setFeedback("Entre na sua conta Fortalfy para reservar sua participação."); return; }
+    if (registrationIds.includes(live.id)) return;
+    setBusyLiveId(live.id); setFeedback("");
+    try {
+      await registerCreatorLive(client, live.id);
+      setRegistrationIds(current => current.includes(live.id) ? current : [...current, live.id]);
+      setFeedback("Inscrição confirmada. A transmissão também está disponível em Minhas inscrições.");
+      notify?.("Inscrição confirmada na Fortalfy Live.");
+    } catch (error) {
+      setFeedback(error.message?.includes("Authentication") ? "Entre na sua conta Fortalfy para se inscrever." : "Não foi possível confirmar a inscrição. Confira o status da transmissão e tente novamente.");
+    } finally { setBusyLiveId(""); }
+  }
+
+  function liveImage(event) {
+    const topic = event ? liveTopicFor(event) : LIVE_TOPICS[0];
+    return event?.cover_url || visualPackAsset(topic.image);
+  }
+  function instructorName(event) {
+    return event?.instructor?.display_name || (event?.instructor?.username ? `@${event.instructor.username}` : "Profissional Fortalfy");
+  }
+  const registrationButton = (live, detail = false) => {
+    const registered = registrationIds.includes(live.id);
+    const busy = busyLiveId === live.id;
+    if (Number(live.price_cents) > 0) return <button type="button" className="button subtle live-register-button" disabled title="Checkout ainda não foi integrado com confirmação segura no servidor"><Lock size={14}/> Compra indisponível</button>;
+    return <button type="button" className="button primary live-register-button" disabled={registered || busy || !client} onClick={event => { event.stopPropagation(); joinLive(live); }}>
+      {registered ? <><Check size={15} /> Inscrito</> : busy ? "Confirmando…" : <><Ticket size={15} /> Participar grátis</>}
+    </button>;
+  };
+  const eventCard = live => {
+    const topic = liveTopicFor(live);
+    return <article className="live-event-card" key={live.id}>
+      <Link className="live-event-card-link" to={`/live/${live.id}`} aria-label={`Ver detalhes: ${live.title}`}>
+        <div className="live-event-cover"><img src={liveImage(live)} alt={live.cover_url ? `Capa de ${live.title}` : `Imagem ilustrativa: ${topic.label}`} loading="lazy"/><span className="live-event-topic"><Dumbbell size={13}/>{topic.label}</span><span className={`live-event-access${Number(live.price_cents) > 0 ? " paid" : ""}`}>{Number(live.price_cents) > 0 ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(live.price_cents / 100) : "GRÁTIS"}</span></div>
+        <div className="live-event-copy"><span className="live-event-kicker">FORTALFY LIVE · {topic.label.toUpperCase()}</span><h3>{live.title}</h3><p className="live-event-instructor">{live.instructor?.avatar ? <img src={live.instructor.avatar} alt="" loading="lazy"/> : <span className="live-instructor-initial">{instructorName(live).slice(0, 1).toUpperCase()}</span>}<span>com <strong>{instructorName(live)}</strong></span>{Boolean(live.instructor?.verified_at || live.instructor?.partner_approved_at) && <BadgeCheck size={14} aria-label="Perfil verificado"/>}</p>
+          <div className="live-event-datetime"><span><CalendarDays size={14}/>{liveDateLabel(live.starts_at, { day: "2-digit", month: "2-digit", year: "numeric" })}</span><span><Clock3 size={14}/>{liveDateLabel(live.starts_at, { hour: "2-digit", minute: "2-digit" })}</span><span><Timer size={14}/>{live.duration_minutes || 60} min</span></div>
+        </div>
+      </Link>
+      <div className="live-event-card-footer">{registrationButton(live)}<Link to={`/live/${live.id}`} className="live-more-link">Detalhes <ArrowRight size={14}/></Link></div>
+    </article>;
+  };
+
+  return <Screen title="Fortalfy Live" subtitle="APRENDIZADO EM MOVIMENTO" className="live-screen">
+    <section className="live-page-intro"><div><span className="eyebrow">TRANSMISSÕES E AULAS ESPECIAIS</span><h1>Fortalfy Live</h1><h2>Aprenda ao vivo com especialistas do universo fitness</h2><p>Encontre encontros publicados por profissionais e acompanhe sua agenda em um só lugar.</p></div><div className="live-intro-mark"><Play size={22}/><span>FORTALFY<br/><strong>LIVE</strong></span></div></section>
+    <label className="live-search"><Search size={18}/><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Busque por tema, profissional ou transmissão" aria-label="Buscar transmissões"/></label>
+
+    {liveId ? selectedLive ? <section className="live-detail-layout">
+      <button className="live-back-button" onClick={() => navigate("/live")}><ArrowLeft size={16}/> Voltar para Fortalfy Live</button>
+      <article className="live-detail-card"><div className="live-detail-cover"><img src={liveImage(selectedLive)} alt={selectedLive.cover_url ? `Capa de ${selectedLive.title}` : `Imagem ilustrativa: ${liveTopicFor(selectedLive).label}`}/>{!selectedLive.cover_url && <span>Imagem ilustrativa</span>}</div><div className="live-detail-body"><span className="live-event-kicker">{liveTopicFor(selectedLive).label.toUpperCase()} · TRANSMISSÃO AGENDADA</span><h2>{selectedLive.title}</h2><p className="live-detail-description">{selectedLive.description || "O profissional ainda não adicionou uma descrição para esta transmissão."}</p><div className="live-detail-professional">{selectedLive.instructor?.avatar ? <img src={selectedLive.instructor.avatar} alt={`Foto de ${instructorName(selectedLive)}`}/> : <span>{instructorName(selectedLive).slice(0, 1).toUpperCase()}</span>}<div><small>Conduzida por</small><Link to={`/profile/${selectedLive.instructor_id}`}>{instructorName(selectedLive)} <ArrowUpRight size={14}/></Link><p>{selectedLive.instructor?.bio || "Conheça o perfil do profissional e acompanhe outros conteúdos na Fortalfy."}</p></div></div><div className="live-detail-facts"><span><CalendarDays size={17}/><span><small>Data e horário</small><strong>{liveDateLabel(selectedLive.starts_at)}</strong></span></span><span><Timer size={17}/><span><small>Duração prevista</small><strong>{selectedLive.duration_minutes || 60} minutos</strong></span></span><span><Ticket size={17}/><span><small>Acesso</small><strong>{Number(selectedLive.price_cents) > 0 ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(selectedLive.price_cents / 100) : "Gratuito · inscrição pela Fortalfy"}</strong></span></span>{selectedLive.participant_limit && <span><Users size={17}/><span><small>Vagas</small><strong>Limite de {selectedLive.participant_limit} participantes</strong></span></span>}</div>{registrationButton(selectedLive, true)}<p className="live-access-note"><Lock size={14}/> A inscrição gratuita é validada pela sua conta e registrada no servidor. A compra paga e o player só serão habilitados quando pagamento e transmissão estiverem integrados.</p></div></article>
+      <aside className="live-detail-support"><h3>Informações da transmissão</h3><p>{selectedLive.participant_information || "O link de acesso será disponibilizado quando a Fortalfy conectar um serviço de transmissão ao evento."}</p><p><strong>Cancelamento:</strong> {selectedLive.cancellation_policy || "Consulte o profissional responsável para orientações sobre cancelamento e reagendamento."}</p><p>Para dúvidas sobre a agenda, consulte o perfil do profissional responsável.</p></aside>
+    </section> : <div className="live-empty-state"><CircleHelp size={26}/><h2>Transmissão não encontrada</h2><p>Ela pode ter sido encerrada, cancelada ou não estar publicada para o público.</p><button className="button subtle" onClick={() => navigate("/live")}>Voltar ao catálogo</button></div> : <>
+      <section className={`live-feature${featuredLive ? " has-event" : ""}`}>
+        <img src={liveImage(featuredLive)} alt={featuredLive ? `Imagem ilustrativa: ${liveTopicFor(featuredLive).label}` : "Ambiente de treino Fortalfy"} loading="lazy"/>
+        <div className="live-feature-copy">{featuredLive ? <><span className="live-feature-badge"><span/> PRÓXIMA TRANSMISSÃO</span><h2>{featuredLive.title}</h2><p>com {instructorName(featuredLive)}</p><div className="live-feature-meta"><span><CalendarDays size={14}/>{liveDateLabel(featuredLive.starts_at, { day: "2-digit", month: "long" })}</span><span><Clock3 size={14}/>{liveDateLabel(featuredLive.starts_at, { hour: "2-digit", minute: "2-digit" })}</span><span className="live-feature-free">{Number(featuredLive.price_cents) > 0 ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(featuredLive.price_cents / 100) : "Gratuita"}</span></div><Link className="button primary" to={`/live/${featuredLive.id}`}>Ver transmissão <ArrowRight size={16}/></Link></> : <><span className="live-feature-badge"><span/> EXPERIÊNCIAS FORTALFY</span><h2>Conhecimento que acompanha o seu ritmo.</h2><p>Participe de aulas e encontros online publicados por profissionais da comunidade.</p><button type="button" className="button primary" onClick={() => document.getElementById("live-catalog")?.scrollIntoView({ behavior: "smooth" })}>Explorar transmissões <ArrowRight size={16}/></button></>}</div>
+      </section>
+
+      <nav className="live-filter-tabs" aria-label="Filtrar transmissões">{LIVE_FILTERS.map(item => <button type="button" key={item} className={filter === item ? "selected" : ""} aria-pressed={filter === item} onClick={() => setFilter(item)}>{item}{item === "Minhas inscrições" && profileId && <span>{registrationIds.length}</span>}</button>)}</nav>
+      <section className="live-catalog-section" id="live-catalog"><div className="live-section-heading"><div><span className="eyebrow">AGENDA FORTALFY</span><h2>{filter === "Minhas inscrições" ? "Minhas inscrições" : filter === "Pagas" ? "Transmissões pagas" : filter === "Ao vivo agora" ? "Ao vivo agora" : "Próximas transmissões"}</h2><p>{filter === "Pagas" ? "A compra de acesso estará disponível quando o provedor de pagamento for configurado." : loading ? "Buscando transmissões publicadas…" : `${visibleLives.length} ${visibleLives.length === 1 ? "transmissão publicada" : "transmissões publicadas"}`}</p></div><button className="live-refresh-button" type="button" onClick={refreshCatalog} disabled={loading}><Activity size={15}/> Atualizar</button></div>
+        {loadError && <div className="live-inline-state error" role="alert"><CircleAlert size={18}/><span>{loadError}</span><button onClick={refreshCatalog}>Tentar novamente</button></div>}
+        {feedback && <div className="live-inline-state success" role="status"><Check size={18}/><span>{feedback}</span><button aria-label="Fechar" onClick={() => setFeedback("")}><X size={16}/></button></div>}
+        {!loadError && loading && <div className="live-loading-grid" aria-label="Carregando transmissões">{[0, 1, 2].map(item => <div className="live-skeleton-card" key={item}/>)}</div>}
+        {!loadError && !loading && visibleLives.length > 0 && <div className="live-event-grid">{visibleLives.map(eventCard)}</div>}
+        {!loadError && !loading && !visibleLives.length && <div className="live-empty-state"><div className="live-empty-icon">{filter === "Pagas" ? <Lock size={22}/> : filter === "Minhas inscrições" ? <Ticket size={22}/> : <CalendarDays size={22}/>}</div><h3>{filter === "Pagas" ? "Compras ainda não disponíveis" : filter === "Minhas inscrições" ? "Sua agenda começa com uma inscrição" : filter === "Ao vivo agora" ? "Nenhuma transmissão ao vivo confirmada" : "Nenhuma transmissão publicada para este filtro"}</h3><p>{filter === "Pagas" ? "A Fortalfy ainda não possui checkout integrado para lives. Nenhuma cobrança será iniciada até que o pagamento seja configurado e confirmado no servidor." : filter === "Minhas inscrições" ? "Quando você se inscrever em um encontro gratuito, ele ficará disponível aqui." : filter === "Ao vivo agora" ? "O catálogo atual não recebe confirmação de início de transmissão. A Fortalfy não exibirá um player ou status ao vivo sem essa integração." : normalizedSearch ? "Tente outro termo ou limpe a busca para ver a agenda publicada." : "Novos encontros aparecerão aqui depois que um profissional autorizado publicar a agenda."}</p>{filter === "Minhas inscrições" && <button type="button" className="button primary" onClick={() => setFilter("Todas")}>Explorar transmissões <ArrowRight size={15}/></button>}{filter === "Pagas" && <Link to="/pass" className="button subtle">Descobrir profissionais <ArrowRight size={15}/></Link>}</div>}
+      </section>
+
+      <section className="live-topics-section"><div className="live-section-heading"><div><span className="eyebrow">CONTEÚDO PARA SUA JORNADA</span><h2>Explore por tema</h2><p>Escolha um assunto para filtrar as transmissões publicadas.</p></div></div><div className="live-topic-grid">{LIVE_TOPICS.map(topic => <button key={topic.label} type="button" className="live-topic-card" onClick={() => { setSearch(topic.label); setFilter("Todas"); document.getElementById("live-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><img src={visualPackAsset(topic.image)} alt="" loading="lazy"/><span className="live-topic-overlay"/><span className="live-topic-title">{topic.label}<ArrowRight size={15}/></span></button>)}</div></section>
+      <aside className="live-platform-note"><ShieldCheck size={18}/><p><strong>Participação segura.</strong> Inscrições são registradas pela conta Fortalfy. Pagamentos, acesso a players, chat e lembretes só serão habilitados após integrações e validações próprias.</p></aside>
+    </>}
   </Screen>;
 }
 
@@ -2269,8 +2397,8 @@ function AppContent() {
       <Route path="/progress" element={<ProgressScreen client={supabase} session={authSession} />} />
       <Route path="/earnings" element={<EarningsScreen session={authSession} />} />
       <Route path="/academy" element={<AcademyScreen client={supabase} />} />
-      <Route path="/live" element={<LiveScreen client={supabase} />} />
-      <Route path="/live/:liveId" element={<LiveScreen client={supabase} />} />
+      <Route path="/live" element={<LiveScreen client={supabase} session={authSession} notify={notify} />} />
+      <Route path="/live/:liveId" element={<LiveScreen client={supabase} session={authSession} notify={notify} />} />
       <Route path="/stories" element={authSession?.user?.id && socialProfile
         ? <Screen title="Stories" subtitle="MOMENTOS DA COMUNIDADE" className="feed-screen stories-screen"><StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} /></Screen>
         : <Navigate to="/feed" replace />} />
