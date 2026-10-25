@@ -5404,6 +5404,20 @@ html { color-scheme: dark; }
 .pass-demo-network-card a { display:inline-flex; align-items:center; gap:5px; width:max-content; color:#c5e642; font-size:.67rem; text-decoration:none; }
 .pass-demo-network-card a:hover { text-decoration:underline; }
 .pass-demo-network-card .pass-listing-favorite { position:static; }
+.pass-demo-detail-link,.pass-real-detail-button { display:inline-flex; align-items:center; gap:6px; width:max-content; padding:6px 0 0; color:#c5e642; background:transparent; border:0; font-size:.68rem; cursor:pointer; }
+.pass-real-detail-button { padding:9px 12px; }
+.pass-academy-detail { display:grid; gap:12px; margin-top:14px; padding:16px; color:#e7eee7; background:#0b170f; border:1px solid #344933; border-radius:12px; }
+.pass-academy-detail-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.pass-academy-detail-heading h3 { margin:4px 0 0; color:#f0f5ef; font-size:1.05rem; }
+.pass-detail-close { width:32px; height:32px; color:#d8e3d8; background:#17231a; border:1px solid #394b3b; border-radius:8px; font-size:1.15rem; cursor:pointer; }
+.pass-academy-detail > img { width:100%; max-height:230px; object-fit:cover; border-radius:9px; }
+.pass-academy-detail > p { margin:0; color:#a6b2a7; font-size:.76rem; line-height:1.5; }
+.pass-academy-detail dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0; }
+.pass-academy-detail dl > div { padding:10px; background:#101b13; border:1px solid #26392a; border-radius:8px; }
+.pass-academy-detail dt { color:#9eaf9f; font-size:.62rem; }
+.pass-academy-detail dd { margin:4px 0 0; color:#e4ece4; font-size:.7rem; overflow-wrap:anywhere; }
+.pass-detail-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.pass-detail-actions p { flex:1 1 100%; margin:0; color:#d9e6a4; font-size:.7rem; line-height:1.45; }
 .pass-tab-empty { display:grid; justify-items:start; gap:8px; padding:18px; color:#dbe6db; background:#0b170f; border:1px solid #26392a; border-radius:11px; }
 .pass-tab-empty svg { color:#c5e642; }
 .pass-tab-empty p { margin:0; color:#a6b2a7; font-size:.78rem; }
