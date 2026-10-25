@@ -75,7 +75,7 @@ export async function saveStoreProduct(client, profile, userId, fields, existing
 
   let imagePath = existing?.image_path || "";
   if (fields.imageFile) {
-    const uploadFile = await prepareSocialImage(fields.imageFile, { maxDimension: 1600, quality: 0.82 });
+    const uploadFile = await prepareSocialImage(fields.imageFile, { maxDimension: 1280, quality: 0.75 });
     const extension = uploadFile.type === "image/png" ? "png" : uploadFile.type === "image/webp" ? "webp" : "jpg";
     imagePath = `${userId}/store-products/${createSecureId()}.${extension}`;
     const { error: uploadError } = await client.storage.from("social-media").upload(imagePath, uploadFile, {

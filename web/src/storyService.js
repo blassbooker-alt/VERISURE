@@ -92,7 +92,7 @@ export async function loadStories(client, userId) {
 export async function publishStory(client, userId, file, caption = "") {
   requireUser(client, userId);
   validateStoryMedia(file, caption);
-  const uploadFile = file.type.startsWith("image/") ? await prepareSocialImage(file, { maxDimension: 1600, quality: 0.8 }) : file;
+  const uploadFile = file.type.startsWith("image/") ? await prepareSocialImage(file, { maxDimension: 1440, quality: 0.76 }) : file;
   const id = createSecureId();
   const extension = MIME_EXTENSIONS.get(uploadFile.type) || "webp";
   const path = `${userId}/stories/${id}.${extension}`;

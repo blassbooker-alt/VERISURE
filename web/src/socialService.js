@@ -3,6 +3,37 @@ import { createSecureId } from "./secureId.js";
 const MEDIA_BUCKET = "social-media";
 const PROFILE_FIELDS = new Set(["avatar_path", "cover_path"]);
 const PROFILE_COVER_RATIO = 820 / 312;
+const SIGNED_MEDIA_URL_TTL_MS = 55 * 60 * 1000;
+const SIGNED_MEDIA_URL_CACHE_LIMIT = 600;
+const signedMediaUrlCache = new Map();
+
+function signedMediaCacheKey(client, path) {
+  return `${client?.supabaseUrl || ""}:${MEDIA_BUCKET}:${path}`;
+}
+
+function getCachedSignedMediaUrl(client, path) {
+  const key = signedMediaCacheKey(client, path);
+  const entry = signedMediaUrlCache.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    signedMediaUrlCache.delete(key);
+    return null;
+  }
+  return entry.promise;
+}
+
+function cacheSignedMediaUrl(client, path, promise) {
+  const key = signedMediaCacheKey(client, path);
+  const entry = { promise, expiresAt: Date.now() + SIGNED_MEDIA_URL_TTL_MS };
+  signedMediaUrlCache.set(key, entry);
+  while (signedMediaUrlCache.size > SIGNED_MEDIA_URL_CACHE_LIMIT) {
+    signedMediaUrlCache.delete(signedMediaUrlCache.keys().next().value);
+  }
+  promise.catch(() => {
+    if (signedMediaUrlCache.get(key) === entry) signedMediaUrlCache.delete(key);
+  });
+  return promise;
+}
 
 function isMissingCommercialContentColumn(error) {
   return Boolean(
@@ -91,12 +122,16 @@ export function mapProfile(row) {
 export async function signMedia(client, path) {
   if (!path) return "";
   if (/^https?:\/\//i.test(path) || path.startsWith("data:")) return path;
-  const { data, error } = await client.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
-  if (error) throw error;
-  return data.signedUrl;
+  const cachedUrl = getCachedSignedMediaUrl(client, path);
+  if (cachedUrl) return cachedUrl;
+  const request = client.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600).then(({ data, error }) => {
+    if (error) throw error;
+    return data.signedUrl;
+  });
+  return cacheSignedMediaUrl(client, path, request);
 }
 
-export async function prepareSocialImage(file, { maxDimension = 1920, quality = 0.82 } = {}) {
+export async function prepareSocialImage(file, { maxDimension = 1440, quality = 0.76 } = {}) {
   if (!file?.type?.startsWith("image/") || file.type === "image/gif" || typeof globalThis.createImageBitmap !== "function") {
     return file;
   }
@@ -256,14 +291,21 @@ async function signMediaBatch(client, paths) {
   const uniquePaths = [...new Set(paths.filter(path => path && !/^https?:\/\//i.test(path) && !path.startsWith("data:")))];
   if (!uniquePaths.length) return new Map();
   const signedUrls = new Map();
-  for (let offset = 0; offset < uniquePaths.length; offset += 100) {
-    const pathsBatch = uniquePaths.slice(offset, offset + 100);
+  const uncachedPaths = [];
+  for (const path of uniquePaths) {
+    const cachedUrl = getCachedSignedMediaUrl(client, path);
+    if (cachedUrl) signedUrls.set(path, await cachedUrl);
+    else uncachedPaths.push(path);
+  }
+  for (let offset = 0; offset < uncachedPaths.length; offset += 100) {
+    const pathsBatch = uncachedPaths.slice(offset, offset + 100);
     const { data, error } = await client.storage.from(MEDIA_BUCKET).createSignedUrls(pathsBatch, 3600);
     if (error) throw error;
     for (const item of data || []) {
       if (item.error) throw item.error;
       if (!item.signedUrl) throw new Error("Não foi possível preparar as mídias do Feed.");
-      signedUrls.set(item.path, item.signedUrl);
+      const cachedUrl = cacheSignedMediaUrl(client, item.path, Promise.resolve(item.signedUrl));
+      signedUrls.set(item.path, await cachedUrl);
     }
   }
   if (signedUrls.size !== uniquePaths.length) {
@@ -719,7 +761,9 @@ export async function publishPost(client, userId, {
   let postCreated = false;
   try {
     for (const [index, file] of files.entries()) {
-      const uploadFile = file.type.startsWith("image/") ? await prepareSocialImage(file) : file;
+      const uploadFile = file.type.startsWith("image/")
+        ? await prepareSocialImage(file, { maxDimension: 1440, quality: 0.76 })
+        : file;
       const extension = uploadFile.type.startsWith("video/")
         ? uploadFile.type === "video/mp4" ? "mp4" : "webm"
         : uploadFile.type === "image/webp" ? "webp"
