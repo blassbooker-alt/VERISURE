@@ -6244,7 +6244,8 @@ html[data-theme="light"] .mobile-app .nutrition-curation small { color: #59695d;
 .nutrition-date-heading h2, .nutrition-meals-heading h2, .nutrition-history-card h2 { margin: 5px 0 0; color: #f0f5ef; font-size: 1.12rem; line-height: 1.25; letter-spacing: -.025em; }
 .nutrition-date-heading > span, .nutrition-meals-heading > span, .nutrition-history-card > header > span { padding: 6px 9px; color: #d7e5d4; background: #1b271d; border: 1px solid #2c3b2d; border-radius: 999px; font-size: .67rem; font-weight: 700; white-space: nowrap; }
 .nutrition-overview-card { display: grid; grid-template-columns: 118px minmax(160px, 1fr) minmax(260px, 1.25fr); align-items: center; gap: 18px; padding: 18px; background: linear-gradient(135deg, #142019, #101812); border: 1px solid #2a392d; border-radius: 17px; box-shadow: 0 10px 30px #0003; }
-.nutrition-calorie-ring { width: 108px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#c8ef45 0 74%, #2d5137 74% 100%); box-shadow: 0 0 0 5px #1b281d, 0 0 24px #b9df3220; }
+.nutrition-calorie-ring { width: 108px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: #2d5137; box-shadow: 0 0 0 5px #1b281d, 0 0 24px #b9df3220; }
+.nutrition-calorie-ring.has-calories { background: #c8ef45; }
 .nutrition-calorie-ring > div { width: 84px; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; background: #121a14; border-radius: 50%; }
 .nutrition-calorie-ring strong { color: #f4f7f2; font-size: 1.18rem; line-height: 1.1; letter-spacing: -.04em; }
 .nutrition-calorie-ring span { color: #cfdfca; font-size: .65rem; font-weight: 750; }
@@ -6275,6 +6276,9 @@ html[data-theme="light"] .mobile-app .nutrition-curation small { color: #59695d;
 .nutrition-meal-card > header h3 { overflow: hidden; margin: 0; color: #eef3ed; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
 .nutrition-meal-card > header small { display: block; margin-top: 3px; color: #94a094; font-size: .6rem; }
 .nutrition-meal-card > header > strong { color: #cce858; font-size: .66rem; white-space: nowrap; }
+.nutrition-meal-photo { position: relative; min-width: 0; aspect-ratio: 16 / 9; overflow: hidden; margin: 12px 0 5px; background: #101812; border: 1px solid #2b392d; border-radius: 11px; }
+.nutrition-meal-photo img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.nutrition-meal-photo figcaption { position: absolute; right: 7px; bottom: 7px; padding: 4px 7px; color: #f3f6f0; background: #07110dd9; border: 1px solid #ffffff24; border-radius: 999px; font-size: .5rem; font-weight: 700; letter-spacing: .02em; }
 .nutrition-food-list { display: grid; }
 .nutrition-food-row { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 30px 30px; align-items: center; gap: 3px; padding: 10px 0; border-bottom: 1px solid #263128; }
 .nutrition-food-copy { min-width: 0; display: grid; gap: 3px; }
@@ -6325,6 +6329,10 @@ html[data-theme="light"] .mobile-app .nutrition-curation small { color: #59695d;
 .nutrition-history-list > article > b { color: #d8e5d4; font-size: .61rem; white-space: nowrap; }
 .nutrition-history-list > article > button, .nutrition-form-heading > button { width: 28px; height: 28px; display: grid; place-items: center; color: #c3d0c3; background: #1a251c; border: 1px solid #334136; border-radius: 8px; }
 .nutrition-history-empty { padding: 8px 0; color: #99a598; font-size: .67rem; }
+.nutrition-macro-track { width: 100%; height: 4px; overflow: hidden; background: #29352b; border-radius: 999px; }
+.nutrition-macro-track i { width: 0; height: 100%; display: block; background: #c8ef45; border-radius: inherit; transition: width .25s ease; }
+.nutrition-macro-track i.carbs { background: #55bd78; }
+.nutrition-macro-track i.fat { background: #a5c875; }
 .nutrition-entry-form { margin: 0; padding: 18px; background: #131b15; border: 1px solid #344338; border-radius: 16px; }
 .nutrition-form-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .nutrition-form-heading .eyebrow { color: #a9bd8c; font-size: .6rem; }
@@ -6348,7 +6356,7 @@ html[data-theme="light"] .mobile-app .nutrition-curation small { color: #59695d;
 @media (min-width: 1024px) {
   .nutrition-screen { padding-top: 36px; }
   .nutrition-overview-card { grid-template-columns: 122px minmax(180px, 1fr) minmax(315px, 1.45fr); gap: 20px; padding: 20px; }
-  .nutrition-meal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .nutrition-meal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
   .nutrition-meal-card, .nutrition-side-card, .nutrition-history-card { padding: 17px; }
 }
 @media (max-width: 900px) {
