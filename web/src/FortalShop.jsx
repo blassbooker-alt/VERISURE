@@ -3,10 +3,9 @@ import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronRight, Minus, Plus, S
 import { Link } from "react-router-dom";
 import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
-import { demoShopStores, filterShopProducts, getShopDepartment } from "./shopData.js";
+import { demoShopProducts, filterShopProducts, getShopDepartment } from "./shopData.js";
 import { addShopCartItem, getShopCartLineKey, getShopCartOptionsLabel, getShopCartProduct, getShopCartSummary, removeShopCartItem, updateShopCartQuantity } from "./shopCartService.js";
-import { brandCampaignAsset, credibilityPackAsset } from "./assetPath.js";
-import SponsoredCreative from "./SponsoredCreative.jsx";
+import { brandCampaignAsset } from "./assetPath.js";
 import { loadMarketplaceProducts } from "./partnerStoreService.js";
 
 const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -14,6 +13,7 @@ function ShopDialog({ product, onClose, onAddToCart }) {
   const [selectedOption, setSelectedOption] = useState(product?.variation?.values[0] || "");
   const [quantity, setQuantity] = useState(1);
   const [imageZoomOpen, setImageZoomOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(product?.image || "");
   useEffect(() => {
     if (!imageZoomOpen) return undefined;
     const closeOnEscape = event => event.key === "Escape" && setImageZoomOpen(false);
@@ -27,7 +27,7 @@ function ShopDialog({ product, onClose, onAddToCart }) {
     <section className="modal-card shop-dialog shop-product-dialog" role="dialog" aria-modal="true" aria-label={`Produto ${product.name}`}>
       <div className="shop-detail-topbar"><span className="eyebrow">{product.isDemo ? "VITRINE DEMONSTRATIVA" : "LOJA PARCEIRA · PRODUTO PUBLICADO"}</span><button className="icon-button" aria-label="Fechar produto" onClick={onClose}><X size={18} /></button></div>
       <div className="shop-product-detail-layout">
-        <div className="shop-detail-gallery"><button type="button" className="shop-dialog-image-trigger" onClick={() => setImageZoomOpen(true)} aria-label={`Ampliar imagem de ${product.name}`}><img className="shop-dialog-image" src={product.image} alt={product.imageAlt} /><span><ZoomIn size={17} /> Ampliar foto</span></button><span className="shop-image-caption">Imagem do catálogo Fortal</span></div>
+        <div className="shop-detail-gallery"><button type="button" className="shop-dialog-image-trigger" onClick={() => setImageZoomOpen(true)} aria-label={`Ampliar imagem de ${product.name}`}><img className="shop-dialog-image" src={activeImage || product.image} alt={product.imageAlt} /><span><ZoomIn size={17} /> Ampliar foto</span></button>{product.gallery?.length > 1 && <div className="shop-gallery-thumbnails" aria-label="Fotos do produto">{product.gallery.map((image, index) => <button type="button" key={image} className={activeImage === image ? "is-active" : ""} aria-label={`Ver foto ${index + 1}`} aria-pressed={activeImage === image} onClick={() => setActiveImage(image)}><img src={image} alt="" /></button>)}</div>}<span className="shop-image-caption">Fotos da coleção demonstrativa FortalShop</span></div>
         <div className="shop-detail-information">
           <span className="shop-detail-category">{getShopDepartment(product)} <span>·</span> {product.isDemo ? "Demonstração" : "Loja parceira"}</span>
           <h2>{product.name}</h2>
@@ -39,7 +39,7 @@ function ShopDialog({ product, onClose, onAddToCart }) {
           <div className="shop-detail-description"><h3>Sobre este produto</h3><p>{product.detail}</p><ul>{product.specs.map(spec => <li key={spec}>{spec}</li>)}</ul></div>
         </div>
       </div>
-      {imageZoomOpen && <div className="shop-image-zoom" role="presentation" onMouseDown={event => event.target === event.currentTarget && setImageZoomOpen(false)}><section role="dialog" aria-modal="true" aria-label={`Imagem ampliada: ${product.name}`}><button type="button" aria-label="Fechar imagem ampliada" onClick={() => setImageZoomOpen(false)}><X size={21} /></button><img src={product.image} alt={product.imageAlt} /><p>{product.name} · {getShopDepartment(product)}</p></section></div>}
+      {imageZoomOpen && <div className="shop-image-zoom" role="presentation" onMouseDown={event => event.target === event.currentTarget && setImageZoomOpen(false)}><section role="dialog" aria-modal="true" aria-label={`Imagem ampliada: ${product.name}`}><button type="button" aria-label="Fechar imagem ampliada" onClick={() => setImageZoomOpen(false)}><X size={21} /></button><img src={activeImage || product.image} alt={product.imageAlt} /><p>{product.name} · {getShopDepartment(product)}</p></section></div>}
     </section>
   </div>;
 }
@@ -135,10 +135,10 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
     }).finally(() => { if (active) setCatalogLoading(false); });
     return () => { active = false; };
   }, [client, catalogRevision]);
-  const categories = useMemo(() => ["Todas", ...new Set(marketplaceProducts.map(getShopDepartment))], [marketplaceProducts]);
-  const visibleProducts = useMemo(() => filterShopProducts(marketplaceProducts, { search, category, sort }), [category, search, sort]);
+  const categories = useMemo(() => ["Todas", ...new Set(demoShopProducts.map(getShopDepartment))], []);
+  const visibleProducts = useMemo(() => filterShopProducts(demoShopProducts, { search, category, sort }), [category, search, sort]);
   const searchSuggestions = useMemo(() => search.trim()
-    ? filterShopProducts(marketplaceProducts, { search }).slice(0, 5)
+    ? filterShopProducts(demoShopProducts, { search }).slice(0, 5)
     : [], [search]);
   const { itemCount, subtotal } = getShopCartSummary(cart);
   const selectCategory = nextCategory => {
@@ -200,45 +200,38 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
           if (!event.currentTarget.contains(event.relatedTarget)) setSearchFocused(false);
         }}>
           <label className="shop-search" htmlFor="shop-search-input"><Search size={19} aria-hidden="true" /><input id="shop-search-input" type="search" value={search} onFocus={() => setSearchFocused(true)} onChange={event => { setSearch(event.target.value); setActiveSuggestion(0); }} onKeyDown={handleSearchKeyDown} placeholder="Busque por produto, categoria ou código" autoComplete="off" aria-label="Buscar produtos por nome, categoria ou código" aria-controls={searchSuggestions.length ? "shop-search-suggestions" : undefined} aria-activedescendant={searchFocused && searchSuggestions.length ? `shop-suggestion-${searchSuggestions[activeSuggestion]?.id}` : undefined} aria-expanded={searchFocused && searchSuggestions.length > 0} role="combobox" aria-autocomplete="list" />{search && <button className="shop-search-clear" type="button" onClick={() => { setSearch(""); setActiveSuggestion(0); }} aria-label="Limpar busca"><X size={17} /></button>}</label>
-          {searchFocused && searchSuggestions.length > 0 && <div className="shop-search-suggestions" id="shop-search-suggestions" role="listbox" aria-label="Sugestões de produtos">{searchSuggestions.map((product, index) => <button key={product.id} id={`shop-suggestion-${product.id}`} type="button" role="option" aria-selected={activeSuggestion === index} onMouseDown={event => event.preventDefault()} onClick={() => selectSearchSuggestion(product)}><img src={product.image} alt="" /><span><strong>{product.name}</strong><small>Loja parceira · {getShopDepartment(product)}</small></span><ChevronRight size={16} /></button>)}</div>}
+          {searchFocused && searchSuggestions.length > 0 && <div className="shop-search-suggestions" id="shop-search-suggestions" role="listbox" aria-label="Sugestões de produtos">{searchSuggestions.map((product, index) => <button key={product.id} id={`shop-suggestion-${product.id}`} type="button" role="option" aria-selected={activeSuggestion === index} onMouseDown={event => event.preventDefault()} onClick={() => selectSearchSuggestion(product)}><img src={product.image} alt="" /><span><strong>{product.name}</strong><small>FortalShop · {getShopDepartment(product)}</small></span><ChevronRight size={16} /></button>)}</div>}
         </div>
       </section>
+      <div className="shop-demo-banner"><span><Check size={15} /></span><p><strong>Vitrine de apresentação</strong> · produtos, preços e disponibilidade são demonstrativos. A sacola conclui apenas uma compra simulada.</p><span className="shop-demo-banner-count">30 itens</span></div>
       <section className="shop-editorial" aria-label="Destaque FortalShop">
         <img className="shop-editorial-banner" src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="" />
-        <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Suplementos, acessórios e tecnologia para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
+        <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Vestuário, acessórios e nutrição para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
       </section>
-      <section className="shop-demo-stores" aria-label="Lojas demonstrativas FortalShop">
-        <div className="shop-demo-heading"><div><span className="eyebrow">VITRINES PARA DEMONSTRAÇÃO</span><h2>Conheça algumas lojas</h2><p>Exemplos visuais de como os parceiros podem apresentar seus produtos.</p></div><span>3 vitrines demonstrativas</span></div>
-        <div className="shop-demo-store-grid">{demoShopStores.map(store => <article className="shop-demo-store" key={store.name}>
-          <header><span className="shop-demo-store-icon"><ShoppingBag size={17} /></span><div><span>LOJA DE DEMONSTRAÇÃO</span><h3>{store.name.replace("Vitrine demonstrativa · ", "FortalShop · ")}</h3></div></header>
-          <div className="shop-demo-store-products">{store.products.map(product => <button type="button" className="shop-demo-item" key={product.id} onClick={() => setSelectedProduct(product)}><img src={product.image} alt={product.imageAlt} loading="lazy"/><span><strong>{product.name}</strong><small>Preço ilustrativo · {formatPrice(product.price)}</small></span><ChevronRight size={16} /></button>)}</div>
-          <p>Loja de teste para apresentação. Explore os itens e conclua uma compra simulada.</p>
-        </article>)}</div>
-      </section>
-      {marketplaceProducts.length > 0 && <section className="shop-departments" aria-label="Explore por departamento">
+      <section className="shop-departments" aria-label="Explore por departamento">
         <div className="shop-section-heading"><div><span className="eyebrow">ENCONTRE SEU RITMO</span><h2>Explore por categoria</h2></div><span>{categories.length - 1} departamentos</span></div>
         <div className="shop-department-grid">{categories.slice(1).map(department => {
-          const product = marketplaceProducts.find(item => getShopDepartment(item) === department);
-          const count = marketplaceProducts.filter(item => getShopDepartment(item) === department).length;
+          const product = demoShopProducts.find(item => getShopDepartment(item) === department);
+          const count = demoShopProducts.filter(item => getShopDepartment(item) === department).length;
           return <button key={department} type="button" className={`shop-department-card${category === department ? " is-active" : ""}`} onClick={() => selectCategory(department)} aria-pressed={category === department}><img src={product.image} alt="" /><span><strong>{department}</strong><small>{count} produtos</small></span><ChevronRight size={17} /></button>;
         })}</div>
-      </section>}
+      </section>
       <section className="shop-catalog" id="shop-products" aria-label="Catálogo FortalShop">
-        <div className="shop-catalog-heading"><div><span className="eyebrow">CATÁLOGO FORTALFY</span><h2>Produtos para sua rotina</h2><p>Encontre o que combina com seu treino.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
+        <div className="shop-catalog-heading"><div><span className="eyebrow">CATÁLOGO DE DEMONSTRAÇÃO</span><h2>Produtos para sua rotina</h2><p>Explore a coleção de acessórios, nutrição e vestuário FortalShop.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
         <div className="shop-catalog-toolbar">
           <div className="shop-categories" role="group" aria-label="Filtrar produtos por categoria">{categories.map(item => <button type="button" key={item} className={`shop-category-chip${category === item ? " is-active" : ""}`} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
           <label className="shop-sort"><ArrowDownUp size={16} aria-hidden="true" /><span>Ordenar:</span><select aria-label="Ordenar produtos" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">Recomendados</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome (A–Z)</option></select></label>
         </div>
-        <p className="shop-catalog-disclaimer"><ShoppingBag size={16} aria-hidden="true" /><span>Produtos publicados por lojas parceiras. Confirme disponibilidade, entrega e condições diretamente com o vendedor. Checkout e pagamentos ainda não estão habilitados.</span></p>
-        {visibleProducts.length > 0 && <SponsoredCreative image="10-shop-product.png" alt="Produto em destaque do FortalShop com acessórios para acompanhar o treino." label="Produto em destaque" onActivate={() => setSelectedProduct(visibleProducts[0])} className="shop-featured-creative" />}
+        <p className="shop-catalog-disclaimer"><ShoppingBag size={16} aria-hidden="true" /><span>Catálogo demonstrativo: nomes, valores e disponibilidade são ilustrativos. Use a sacola para experimentar o fluxo de compra de teste; nenhum pedido ou pagamento real será realizado.</span></p>
         <div className="shop-product-grid">
           {visibleProducts.map(product => <article className="shop-product-card" key={product.id}>
             <button className="shop-product-visual" onClick={() => setSelectedProduct(product)} aria-label={`Ver detalhes de ${product.name}`}><img src={product.image} alt={product.imageAlt} loading="lazy" /><span className="shop-product-tag">{getShopDepartment(product)}</span></button>
-            <div className="shop-product-info"><span className="shop-product-category">Loja parceira · {getShopDepartment(product)}</span><button className="shop-product-name" onClick={() => setSelectedProduct(product)}>{product.name}</button><span className="shop-demo-price">Preço publicado</span><div className="shop-price-line"><strong>{formatPrice(product.price)}</strong></div><button className="button subtle shop-add-button" onClick={() => setSelectedProduct(product)}>Ver produto <ChevronRight size={15} /></button></div>
+            <div className="shop-product-info"><span className="shop-product-category">Coleção FortalShop · {getShopDepartment(product)}</span><button className="shop-product-name" onClick={() => setSelectedProduct(product)}>{product.name}</button><span className="shop-demo-price">Preço ilustrativo</span><div className="shop-price-line"><strong>{formatPrice(product.price)}</strong></div><button className="button subtle shop-add-button" onClick={() => setSelectedProduct(product)}>Ver produto <ChevronRight size={15} /></button></div>
           </article>)}
-          {!visibleProducts.length && <div className="empty-state shop-empty">{!catalogLoading && !catalogError && !marketplaceProducts.length && <img className="credibility-empty-art" src={credibilityPackAsset("22-empty-shop-illustration.png")} alt="Bolsa e acessórios esportivos Fortalfy" loading="lazy" />}<Search size={24} /><h2>{catalogLoading ? "Carregando lojas parceiras" : catalogError ? "Catálogo temporariamente indisponível" : marketplaceProducts.length ? "Nenhum item encontrado" : "Nenhum produto publicado"}</h2><p>{catalogError || (catalogLoading ? "Buscando produtos publicados pelas lojas parceiras." : marketplaceProducts.length ? "Tente buscar outro nome ou selecione outra categoria." : "Quando uma loja parceira publicar produtos, eles aparecerão aqui com preço e foto.")}</p>{catalogError && <button className="button subtle" onClick={() => setCatalogRevision(value => value + 1)}>Tentar novamente</button>}{!catalogLoading && !catalogError && marketplaceProducts.length > 0 && <button className="button subtle" onClick={() => { setSearch(""); setCategory("Todas"); }}>Limpar filtros</button>}</div>}
+          {!visibleProducts.length && <div className="empty-state shop-empty"><Search size={24} /><h2>Nenhum produto encontrado</h2><p>Tente buscar outro nome ou selecione outra categoria.</p><button className="button subtle" onClick={() => { setSearch(""); setCategory("Todas"); }}>Limpar filtros</button></div>}
         </div>
       </section>
+      {marketplaceProducts.length > 0 && <section className="shop-live-marketplace" aria-label="Produtos publicados por lojas parceiras"><div className="shop-catalog-heading"><div><span className="eyebrow">MARKETPLACE</span><h2>Lojas parceiras</h2><p>Produtos reais publicados por vendedores na plataforma.</p></div><span className="shop-catalog-count">{marketplaceProducts.length} publicados</span></div><div className="shop-product-grid">{marketplaceProducts.map(product => <article className="shop-product-card" key={`partner-${product.id}`}><button className="shop-product-visual" onClick={() => setSelectedProduct(product)} aria-label={`Ver detalhes de ${product.name}`}><img src={product.image} alt={product.imageAlt} loading="lazy" /><span className="shop-product-tag">{getShopDepartment(product)}</span></button><div className="shop-product-info"><span className="shop-product-category">Loja parceira · {getShopDepartment(product)}</span><button className="shop-product-name" onClick={() => setSelectedProduct(product)}>{product.name}</button><span className="shop-demo-price">Preço publicado pela loja</span><div className="shop-price-line"><strong>{formatPrice(product.price)}</strong></div><button className="button subtle shop-add-button" onClick={() => setSelectedProduct(product)}>Ver produto <ChevronRight size={15} /></button></div></article>)}</div></section>}
       <section className="shop-studio-cta"><div className="shop-studio-icon"><Sparkles size={20} /></div><div><span className="eyebrow">FORTALFY STUDIO</span><h2>Suas ideias merecem virar arte.</h2><p>Crie imagens originais para sua rotina e compartilhe no Feed.</p></div><Link to="/studio" className="button lime-button">Abrir Studio <ArrowRight size={16} /></Link></section>
     </main>
     <BottomNav />

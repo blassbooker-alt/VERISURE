@@ -110,6 +110,76 @@ export const demoShopStores = demoStoreDefinitions.map(store => ({
   })),
 }));
 
+const demoCatalog = [
+  ["01_garrafa_agua.jpg", "Garrafa de Água Esportiva", "Acessórios", 39.9],
+  ["02_coqueteleira.jpg", "Coqueteleira com Misturador", "Acessórios", 34.9],
+  ["03_toalha_treino.jpg", "Toalha de Treino", "Acessórios", 29.9],
+  ["04_luvas_treino.jpg", "Luvas para Musculação", "Acessórios", 49.9],
+  ["05_straps_musculacao.jpg", "Straps para Musculação", "Acessórios", 39.9],
+  ["06_faixas_elasticas.jpg", "Kit de Faixas Elásticas", "Acessórios", 59.9],
+  ["07_corda_pular.jpg", "Corda de Pular com Rolamento", "Acessórios", 44.9],
+  ["08_mochila_fitness.jpg", "Mochila Fitness", "Acessórios", 139.9],
+  ["09_tapete_exercicios.jpg", "Tapete para Exercícios", "Acessórios", 89.9],
+  ["10_munhequeiras.jpg", "Munhequeiras Esportivas", "Acessórios", 29.9],
+  ["11_whey_baunilha.jpg", "Whey Protein Sabor Baunilha", "Nutrição", 129.9],
+  ["12_barra_proteica_chocolate.jpg", "Barra Proteica de Chocolate", "Nutrição", 12.9],
+  ["13_barra_cereais_aveia_mel.jpg", "Barra de Cereais Aveia e Mel", "Nutrição", 8.9],
+  ["14_mix_castanhas.jpg", "Mix de Castanhas", "Nutrição", 19.9],
+  ["15_pasta_amendoim.jpg", "Pasta de Amendoim Integral", "Nutrição", 29.9],
+  ["16_eletrolitos.jpg", "Eletrólitos para Treino", "Nutrição", 9.9],
+  ["17_bebida_isotonica.jpg", "Bebida Isotônica", "Nutrição", 7.9],
+  ["18_granola_fitness.jpg", "Granola Fitness", "Nutrição", 24.9],
+  ["19_cookies_proteicos.jpg", "Cookies Proteicos", "Nutrição", 14.9],
+  ["20_marmita_fitness.jpg", "Marmita Fitness com Divisórias", "Acessórios", 69.9],
+].map(([image, name, category, price], index) => ({
+  id: `demo-gear-${index + 1}`,
+  name,
+  image: fortalfyAsset("shop-demo", image),
+  imageAlt: name,
+  category,
+  price,
+  isDemo: true,
+  demoStore: "FortalShop · Acessórios e nutrição",
+  description: "Produto demonstrativo inspirado no catálogo de acessórios e nutrição FortalShop.",
+  detail: "Este item faz parte de uma apresentação demonstrativa. Nome, preço, vendedor e disponibilidade são referências visuais e não representam uma oferta ativa.",
+  specs: [`Categoria: ${category}`, "Preço apenas para demonstração", "Venda e disponibilidade não confirmadas"],
+  variation: null,
+  tag: "DEMONSTRAÇÃO",
+}));
+
+const apparelProducts = [
+  ["01", "Camiseta Performance Verde", "Roupas", 89.9],
+  ["02", "Regata Performance Preta", "Roupas", 79.9],
+  ["03", "Camiseta Oversized Off-white", "Roupas", 99.9],
+  ["04", "Camiseta Técnica Verde", "Roupas", 89.9],
+  ["05", "Short Esportivo Preto", "Roupas", 89.9],
+  ["06", "Short Biker Verde", "Roupas", 79.9],
+  ["07", "Calça Jogger Preta", "Roupas", 139.9],
+  ["08", "Jaqueta Corta-vento", "Roupas", 169.9],
+  ["09", "Top Esportivo de Sustentação", "Roupas", 89.9],
+  ["10", "Legging Performance Verde", "Roupas", 119.9],
+].map(([code, name, category, price]) => {
+  const photo = number => fortalfyAsset("shop-demo", `produto_${code}_foto_${number}.jpg`);
+  return {
+    id: `demo-apparel-${code}`,
+    name,
+    image: photo(1),
+    imageAlt: name,
+    gallery: [photo(1), photo(2), photo(3)],
+    category,
+    price,
+    isDemo: true,
+    demoStore: "FortalShop · Vestuário",
+    description: "Peça demonstrativa da coleção de vestuário FortalShop.",
+    detail: "Este item faz parte de uma apresentação demonstrativa. Nome, preço, vendedor e disponibilidade são referências visuais e não representam uma oferta ativa.",
+    specs: ["Coleção demonstrativa FortalShop", "Preço apenas para demonstração", "Venda e disponibilidade não confirmadas"],
+    variation: { name: "Tamanho", values: ["P", "M", "G", "GG"] },
+    tag: "DEMONSTRAÇÃO",
+  };
+});
+
+export const demoShopProducts = [...demoCatalog, ...apparelProducts];
+
 export function getShopDepartment(product) {
   return product.category.split(/[·>]/, 1)[0].trim();
 }
