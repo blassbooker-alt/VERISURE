@@ -45,7 +45,7 @@ export default function ProfessionalsDirectory({ client, session, configured, no
   }, [client]);
 
   useEffect(() => {
-    if (!client || !configured || !userId) {
+    if (!client || !configured) {
       setProfessionals([]);
       setTotal(0);
       setHasMore(false);
@@ -62,7 +62,7 @@ export default function ProfessionalsDirectory({ client, session, configured, no
         setProfessionals(result.professionals);
         setTotal(result.total);
         setHasMore(result.hasMore);
-        if (result.professionals.length && !isDemoUser(userId)) {
+        if (userId && result.professionals.length && !isDemoUser(userId)) {
           try {
             setFollowStates(await loadFollowStates(client, userId, result.professionals.map(person => person.id)));
           } catch (failure) {
