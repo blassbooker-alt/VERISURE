@@ -1251,8 +1251,7 @@ function LiveScreen({ client, session, notify }) {
   };
 
   return <Screen title="Fortalfy Live" subtitle="APRENDIZADO EM MOVIMENTO" className="live-screen">
-    <section className="live-page-intro"><div><span className="eyebrow">TRANSMISSÕES E AULAS ESPECIAIS</span><h1>Fortalfy Live</h1><h2>Aprenda ao vivo com especialistas do universo fitness</h2><p>Encontre encontros publicados por profissionais e acompanhe sua agenda em um só lugar.</p></div><div className="live-intro-mark"><Play size={22}/><span>FORTALFY<br/><strong>LIVE</strong></span></div></section>
-    <label className="live-search"><Search size={18}/><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Busque por tema, profissional ou transmissão" aria-label="Buscar transmissões"/></label>
+    <section className="live-page-intro"><div><span className="eyebrow">TRANSMISSÕES</span><h1>Fortalfy <strong>Live</strong></h1><p>Aprenda ao vivo com especialistas do universo fitness.</p></div><label className="live-search"><Search size={16}/><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar por tema ou profissional..." aria-label="Buscar transmissões"/></label></section>
 
     {liveId ? selectedLive ? <section className="live-detail-layout">
       <button className="live-back-button" onClick={() => navigate("/live")}><ArrowLeft size={16}/> Voltar para Fortalfy Live</button>

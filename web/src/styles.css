@@ -13704,3 +13704,84 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .nutrition-meal-card > header > strong { font-size: .4rem; }
   .nutrition-add-food { font-size: .39rem; }
 }
+
+/* Fortalfy Live visual refresh: compact editorial header and clear event cards. */
+.screen-content.live-screen { width: min(100%, 1180px); padding-top: 20px; }
+.live-page-intro { align-items: center; gap: 24px; margin: 0 0 16px; }
+.live-page-intro > div:first-child { min-width: 0; }
+.live-page-intro .eyebrow { color: #c4e642; font-size: .57rem; letter-spacing: .12em; }
+.live-page-intro h1 { margin: 3px 0 2px; font-size: clamp(1.35rem, 2.2vw, 1.8rem); }
+.live-page-intro h1 strong { color: #c4e642; }
+.live-page-intro p { font-size: .75rem; line-height: 1.4; }
+.live-page-intro h2, .live-intro-mark { display: none; }
+.live-page-intro .live-search { width: min(330px, 44%); min-height: 38px; flex: 0 1 330px; gap: 8px; margin: 0 0 0 auto; padding-inline: 11px; border-radius: 999px; }
+.live-page-intro .live-search input { height: 36px; font-size: .68rem; }
+.live-feature { min-height: 116px; grid-template-columns: minmax(190px, 37%) minmax(0, 1fr); border-radius: 9px; }
+.live-feature > img { min-height: 116px; height: 100%; object-fit: cover; }
+.live-feature::after { background: linear-gradient(90deg, transparent 20%, #06130fba 36%, #06130f 55%); }
+.live-feature-copy { padding: 13px 20px 13px 0; }
+.live-feature-badge { padding: 4px 7px; font-size: .52rem; }
+.live-feature-copy h2 { margin: 6px 0 3px; font-size: clamp(.9rem, 1.7vw, 1.12rem); }
+.live-feature-copy > p { font-size: .65rem; }
+.live-feature-meta { gap: 8px; margin: 6px 0 8px; font-size: .61rem; }
+.live-feature-copy .button { min-height: 29px; padding-inline: 12px; font-size: .62rem; }
+.live-filter-tabs { gap: 7px; margin: 10px 0 15px; padding-bottom: 2px; }
+.live-filter-tabs button { min-height: 30px; padding-inline: 12px; font-size: .62rem; }
+.live-section-heading { margin-bottom: 9px; }
+.live-section-heading .eyebrow { font-size: .53rem; }
+.live-section-heading h2 { margin: 2px 0 0; font-size: .98rem; }
+.live-section-heading p { font-size: .65rem; }
+.live-refresh-button { padding: 6px 9px; font-size: .62rem; }
+.live-event-grid { gap: 10px; }
+.live-event-card { border-radius: 9px; }
+.live-event-cover { height: clamp(92px, 13vw, 138px); }
+.live-event-topic, .live-event-access { top: 7px; padding: 4px 6px; border-radius: 5px; font-size: .5rem; }
+.live-event-topic { left: 7px; }
+.live-event-access { right: 7px; }
+.live-event-copy { padding: 8px 9px 6px; }
+.live-event-kicker { display: none; }
+.live-event-copy h3 { min-height: 0; margin: 0 0 4px; font-size: .72rem; line-height: 1.25; }
+.live-event-instructor { gap: 4px; margin: 0 0 6px; font-size: .58rem; }
+.live-event-instructor img, .live-instructor-initial { display: none; }
+.live-event-instructor strong { color: #dbe5dd; }
+.live-event-datetime { gap: 9px; padding-top: 6px; font-size: .53rem; }
+.live-event-datetime svg { width: 12px; height: 12px; }
+.live-event-card-footer { padding: 0 8px 8px; }
+.live-event-card-footer .live-register-button { width: 100%; min-height: 27px; flex: 1; border-radius: 6px; font-size: .58rem; }
+.live-more-link { display: none; }
+.live-event-datetime > span:nth-child(3) { display: none; }
+.live-topics-section { margin-top: 17px; }
+.live-topic-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 9px; }
+.live-topic-card { height: 82px; border-radius: 8px; }
+.live-topic-title { inset: auto 8px 7px; font-size: .6rem; }
+.live-platform-note { margin-top: 14px; padding: 10px 12px; }
+.live-platform-note p { font-size: .64rem; }
+
+@media (max-width: 900px) {
+  .screen-content.live-screen { padding-top: 17px; }
+  .live-feature { grid-template-columns: minmax(160px, 38%) minmax(0,1fr); }
+  .live-event-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .live-topic-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 620px) {
+  .screen-content.live-screen { padding: 16px 14px 92px; }
+  .live-page-intro { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+  .live-page-intro .live-search { width: 100%; min-height: 40px; }
+  .live-feature { display: grid; grid-template-columns: 1fr; }
+  .live-feature > img { min-height: 0; height: 155px; }
+  .live-feature::after { background: linear-gradient(0deg,#06130f 12%,transparent 72%); }
+  .live-feature-copy { margin-top: -27px; padding: 0 13px 13px; }
+  .live-filter-tabs { margin: 11px -14px 16px; padding-inline: 14px; }
+  .live-section-heading h2 { font-size: .95rem; }
+  .live-event-grid, .live-loading-grid { grid-template-columns: 1fr; gap: 10px; }
+  .live-event-card-link { display: block; }
+  .live-event-cover { width: 100%; height: 170px; min-height: 0; }
+  .live-event-copy { padding: 10px 11px 7px; }
+  .live-event-copy h3 { font-size: .85rem; }
+  .live-event-instructor { font-size: .66rem; }
+  .live-event-datetime { font-size: .61rem; }
+  .live-event-card-footer { margin: 0; padding: 0 10px 10px; }
+  .live-event-card-footer .live-register-button { min-height: 34px; font-size: .66rem; }
+  .live-topic-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .live-topic-card { height: 92px; }
+}
