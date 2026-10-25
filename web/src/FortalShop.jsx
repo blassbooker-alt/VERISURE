@@ -3,7 +3,7 @@ import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronRight, Minus, Plus, S
 import { Link } from "react-router-dom";
 import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
-import { filterShopProducts, getShopDepartment } from "./shopData.js";
+import { demoShopStores, filterShopProducts, getShopDepartment } from "./shopData.js";
 import { addShopCartItem, getShopCartLineKey, getShopCartOptionsLabel, getShopCartProduct, getShopCartSummary, removeShopCartItem, updateShopCartQuantity } from "./shopCartService.js";
 import { brandCampaignAsset, credibilityPackAsset } from "./assetPath.js";
 import SponsoredCreative from "./SponsoredCreative.jsx";
@@ -25,17 +25,17 @@ function ShopDialog({ product, onClose, onAddToCart }) {
 
   return <div className="modal-scrim shop-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
     <section className="modal-card shop-dialog shop-product-dialog" role="dialog" aria-modal="true" aria-label={`Produto ${product.name}`}>
-      <div className="shop-detail-topbar"><span className="eyebrow">LOJA PARCEIRA · PRODUTO PUBLICADO</span><button className="icon-button" aria-label="Fechar produto" onClick={onClose}><X size={18} /></button></div>
+      <div className="shop-detail-topbar"><span className="eyebrow">{product.isDemo ? "VITRINE DEMONSTRATIVA" : "LOJA PARCEIRA · PRODUTO PUBLICADO"}</span><button className="icon-button" aria-label="Fechar produto" onClick={onClose}><X size={18} /></button></div>
       <div className="shop-product-detail-layout">
         <div className="shop-detail-gallery"><button type="button" className="shop-dialog-image-trigger" onClick={() => setImageZoomOpen(true)} aria-label={`Ampliar imagem de ${product.name}`}><img className="shop-dialog-image" src={product.image} alt={product.imageAlt} /><span><ZoomIn size={17} /> Ampliar foto</span></button><span className="shop-image-caption">Imagem do catálogo Fortal</span></div>
         <div className="shop-detail-information">
-          <span className="shop-detail-category">{getShopDepartment(product)} <span>·</span> Loja parceira</span>
+          <span className="shop-detail-category">{getShopDepartment(product)} <span>·</span> {product.isDemo ? "Demonstração" : "Loja parceira"}</span>
           <h2>{product.name}</h2>
-          <div className="shop-detail-price-block"><span>Preço publicado pela loja</span><strong>{formatPrice(product.price)}</strong><small>Confirme preço e disponibilidade diretamente com o vendedor.</small></div>
+          <div className="shop-detail-price-block"><span>{product.isDemo ? "Preço ilustrativo" : "Preço publicado pela loja"}</span><strong>{formatPrice(product.price)}</strong><small>{product.isDemo ? "Valor apenas para demonstração. Não é uma oferta de venda." : "Confirme preço e disponibilidade diretamente com o vendedor."}</small></div>
           {product.variation && <fieldset className="shop-variation-picker"><legend>{product.variation.name}<span>{selectedOption}</span></legend><div>{product.variation.values.map(value => <button type="button" key={value} className={selectedOption === value ? "is-selected" : ""} aria-pressed={selectedOption === value} onClick={() => setSelectedOption(value)}>{value}</button>)}</div></fieldset>}
           <div className="shop-detail-quantity"><strong>Quantidade</strong><div className="shop-quantity-control"><button type="button" onClick={() => setQuantity(current => Math.max(1, current - 1))} disabled={quantity <= 1} aria-label="Diminuir quantidade"><Minus size={15} /></button><span aria-live="polite">{quantity}</span><button type="button" onClick={() => setQuantity(current => current + 1)} aria-label="Aumentar quantidade"><Plus size={15} /></button></div></div>
-          <div className="shop-detail-actions"><button className="button primary" onClick={addToCart}><ShoppingBag size={17} /> Adicionar à sacola</button><button className="button subtle" onClick={onClose}>Continuar explorando</button></div>
-          <div className="shop-detail-notice"><ShoppingBag size={16} /><span><strong>Produto publicado por loja parceira</strong><small>A sacola é apenas uma lista local. Checkout, pedidos e pagamentos ainda não estão habilitados.</small></span></div>
+          <div className="shop-detail-actions"><button className="button primary" onClick={addToCart}><ShoppingBag size={17} /> {product.isDemo ? "Adicionar à sacola de demonstração" : "Adicionar à sacola"}</button><button className="button subtle" onClick={onClose}>Continuar explorando</button></div>
+          <div className="shop-detail-notice"><ShoppingBag size={16} /><span><strong>{product.isDemo ? "Produto de demonstração" : "Produto publicado por loja parceira"}</strong><small>{product.isDemo ? "Vitrine, produto e preço são ilustrativos. Nenhum pedido real será feito." : "A sacola é apenas uma lista local. Checkout, pedidos e pagamentos ainda não estão habilitados."}</small></span></div>
           <div className="shop-detail-description"><h3>Sobre este produto</h3><p>{product.detail}</p><ul>{product.specs.map(spec => <li key={spec}>{spec}</li>)}</ul></div>
         </div>
       </div>
@@ -61,7 +61,7 @@ function ShopCartDialog({ cart, onClose, onQuantityChange, onRemove, onContinue 
           const optionsLabel = getShopCartOptionsLabel(line);
           return <article className="shop-cart-item" key={lineKey}>
             <img src={product.image} alt={product.imageAlt} />
-            <div className="shop-cart-item-copy"><span>{getShopDepartment(product)}</span><strong>{product.name}</strong>{optionsLabel && <small>{product.variation?.name}: {optionsLabel}</small>}<b>{formatPrice(product.price)}</b><div className="shop-quantity-control"><button type="button" disabled={line.quantity <= 1} onClick={() => onQuantityChange(lineKey, line.quantity - 1)} aria-label={`Diminuir quantidade de ${product.name}`}><Minus size={14} /></button><span aria-live="polite">{line.quantity}</span><button type="button" onClick={() => onQuantityChange(lineKey, line.quantity + 1)} aria-label={`Aumentar quantidade de ${product.name}`}><Plus size={14} /></button></div><button type="button" className="shop-remove-item" onClick={() => onRemove(lineKey)}><Trash2 size={14} /> Remover</button></div>
+            <div className="shop-cart-item-copy"><span>{product.isDemo ? "DEMONSTRAÇÃO · PREÇO ILUSTRATIVO" : getShopDepartment(product)}</span><strong>{product.name}</strong>{optionsLabel && <small>{product.variation?.name}: {optionsLabel}</small>}<b>{formatPrice(product.price)}</b><div className="shop-quantity-control"><button type="button" disabled={line.quantity <= 1} onClick={() => onQuantityChange(lineKey, line.quantity - 1)} aria-label={`Diminuir quantidade de ${product.name}`}><Minus size={14} /></button><span aria-live="polite">{line.quantity}</span><button type="button" onClick={() => onQuantityChange(lineKey, line.quantity + 1)} aria-label={`Aumentar quantidade de ${product.name}`}><Plus size={14} /></button></div><button type="button" className="shop-remove-item" onClick={() => onRemove(lineKey)}><Trash2 size={14} /> Remover</button></div>
           </article>;
         })}</div>
         {summary.itemCount > 0
@@ -161,6 +161,14 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
       <section className="shop-editorial" aria-label="Destaque FortalShop">
         <img className="shop-editorial-banner" src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="" />
         <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Suplementos, acessórios e tecnologia para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
+      </section>
+      <section className="shop-demo-stores" aria-label="Lojas demonstrativas FortalShop">
+        <div className="shop-demo-heading"><div><span className="eyebrow">VITRINES PARA DEMONSTRAÇÃO</span><h2>Conheça algumas lojas</h2><p>Exemplos visuais de como os parceiros podem apresentar seus produtos.</p></div><span>3 vitrines demonstrativas</span></div>
+        <div className="shop-demo-store-grid">{demoShopStores.map(store => <article className="shop-demo-store" key={store.name}>
+          <header><span className="shop-demo-store-icon"><ShoppingBag size={17} /></span><div><span>LOJA DE DEMONSTRAÇÃO</span><h3>{store.name.replace("Vitrine demonstrativa · ", "FortalShop · ")}</h3></div></header>
+          <div className="shop-demo-store-products">{store.products.map(product => <button type="button" className="shop-demo-item" key={product.id} onClick={() => setSelectedProduct(product)}><img src={product.image} alt={product.imageAlt} loading="lazy"/><span><strong>{product.name}</strong><small>Preço ilustrativo · {formatPrice(product.price)}</small></span><ChevronRight size={16} /></button>)}</div>
+          <p>Vitrine ilustrativa. Loja e produtos não estão ativos para venda.</p>
+        </article>)}</div>
       </section>
       {marketplaceProducts.length > 0 && <section className="shop-departments" aria-label="Explore por departamento">
         <div className="shop-section-heading"><div><span className="eyebrow">ENCONTRE SEU RITMO</span><h2>Explore por categoria</h2></div><span>{categories.length - 1} departamentos</span></div>

@@ -90,6 +90,26 @@ const suppliedProducts = suppliedCatalog.map(([sku, name, category, price, , ima
 
 shopProducts.push(...suppliedProducts);
 
+const demoStoreDefinitions = [
+  { name: "Vitrine demonstrativa · Nutrição", products: ["FS-WHEY-C900", "FS-CREA-300"] },
+  { name: "Vitrine demonstrativa · Acessórios", products: ["FS-COQ-600", "FS-LUVA-TR"] },
+  { name: "Vitrine demonstrativa · Tecnologia", products: ["FS-WATCH-PRO", "FS-MASS-GUN"] },
+];
+
+export const demoShopStores = demoStoreDefinitions.map(store => ({
+  ...store,
+  products: store.products.map(id => shopProducts.find(product => product.id === id)).filter(Boolean).map(product => ({
+    ...product,
+    id: `demo-${product.id}`,
+    isDemo: true,
+    demoStore: store.name,
+    description: "Item ilustrativo para demonstração da vitrine FortalShop.",
+    detail: "Esta vitrine é demonstrativa. O produto, o preço e a disponibilidade não representam uma oferta de venda ativa.",
+    specs: [...product.specs, "Demonstração: sem vendedor ou disponibilidade confirmados"],
+    tag: "DEMONSTRAÇÃO",
+  })),
+}));
+
 export function getShopDepartment(product) {
   return product.category.split(/[·>]/, 1)[0].trim();
 }
