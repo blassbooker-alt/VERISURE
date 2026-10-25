@@ -44,9 +44,10 @@ function ShopDialog({ product, onClose, onAddToCart }) {
   </div>;
 }
 
-function ShopCartDialog({ cart, onClose, onQuantityChange, onRemove, onContinue }) {
+function ShopCartDialog({ cart, onClose, onQuantityChange, onRemove, onContinue, onCheckout }) {
   const summary = getShopCartSummary(cart);
   const lines = cart.map(line => ({ line, product: getShopCartProduct(line) }));
+  const demoOnlyCart = lines.length > 0 && lines.every(({ product }) => product?.isDemo);
 
   return <div className="modal-scrim shop-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
     <section className="modal-card shop-dialog shop-cart-dialog" role="dialog" aria-modal="true" aria-label="Sacola de compras FortalShop">
@@ -65,9 +66,45 @@ function ShopCartDialog({ cart, onClose, onQuantityChange, onRemove, onContinue 
           </article>;
         })}</div>
         {summary.itemCount > 0
-          ? <aside className="shop-cart-summary"><div><span>Subtotal de referência</span><strong>{formatPrice(summary.subtotal)}</strong></div><p>Frete, disponibilidade e valor final ainda precisam ser confirmados pela loja.</p><button type="button" className="button subtle wide-button shop-checkout-disabled" disabled title="Checkout indisponível até a integração de pedidos e pagamentos"><Check size={16} /> Finalizar pedido indisponível</button><button type="button" className="shop-continue-link" onClick={onContinue}><ArrowLeft size={15} /> Continuar comprando</button></aside>
+          ? <aside className="shop-cart-summary"><div><span>{demoOnlyCart ? "Total ilustrativo" : "Subtotal de referência"}</span><strong>{formatPrice(summary.subtotal)}</strong></div><p>{demoOnlyCart ? "Checkout de teste: nenhum pagamento ou pedido real será criado." : "Checkout real indisponível. Produtos reais não podem ser misturados com itens demonstrativos."}</p>{demoOnlyCart ? <button type="button" className="button primary wide-button shop-demo-checkout-button" onClick={onCheckout}><Check size={16} /> Ir para checkout de teste</button> : <button type="button" className="button subtle wide-button shop-checkout-disabled" disabled title="Checkout real indisponível"><Check size={16} /> Checkout real indisponível</button>}<button type="button" className="shop-continue-link" onClick={onContinue}><ArrowLeft size={15} /> Continuar comprando</button></aside>
           : <p className="shop-cart-legacy-notice">Remova os itens antigos para continuar usando a sacola.</p>}
       </>}
+    </section>
+  </div>;
+}
+
+function ShopDemoCheckout({ cart, onClose, onComplete }) {
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [method, setMethod] = useState("Pix demonstrativo");
+  const summary = getShopCartSummary(cart);
+  const submit = event => {
+    event.preventDefault();
+    onComplete({ code: `DEMO-${Date.now().toString().slice(-8)}`, name: name.trim(), city: city.trim(), method, itemCount: summary.itemCount, total: summary.subtotal, items: cart.map(line => getShopCartProduct(line)?.name).filter(Boolean) });
+  };
+  return <div className="modal-scrim shop-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
+    <section className="modal-card shop-dialog shop-demo-checkout" role="dialog" aria-modal="true" aria-labelledby="shop-demo-checkout-title">
+      <div className="shop-cart-heading"><div><span className="eyebrow">AMBIENTE DE TESTE · SEM COBRANÇA</span><h2 id="shop-demo-checkout-title">Finalizar demonstração</h2></div><button className="icon-button" aria-label="Fechar checkout demonstrativo" onClick={onClose}><X size={18} /></button></div>
+      <form onSubmit={submit}>
+        <label>Nome para o pedido de teste<input required maxLength={80} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: Alex Silva" autoComplete="name" /></label>
+        <label>Cidade para simular a entrega<input required maxLength={80} value={city} onChange={event => setCity(event.target.value)} placeholder="Ex.: Fortaleza" autoComplete="address-level2" /></label>
+        <label>Forma de pagamento demonstrativa<select value={method} onChange={event => setMethod(event.target.value)}><option>Pix demonstrativo</option><option>Cartão demonstrativo</option><option>Retirada demonstrativa</option></select></label>
+        <div className="shop-demo-checkout-total"><span>{summary.itemCount} {summary.itemCount === 1 ? "item" : "itens"} · total ilustrativo</span><strong>{formatPrice(summary.subtotal)}</strong></div>
+        <p>Este fluxo serve para apresentação. Os dados ficam apenas nesta sessão: não são enviados, salvos como pedido nem usados para cobrar.</p>
+        <button className="button primary wide-button" type="submit"><Check size={16} /> Confirmar pedido de teste</button>
+      </form>
+    </section>
+  </div>;
+}
+
+function ShopDemoOrderConfirmation({ order, onClose }) {
+  if (!order) return null;
+  return <div className="modal-scrim shop-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
+    <section className="modal-card shop-dialog shop-order-confirmation" role="dialog" aria-modal="true" aria-labelledby="shop-demo-order-title">
+      <span><Check size={26} /></span><span className="eyebrow">SIMULAÇÃO CONCLUÍDA</span><h3 id="shop-demo-order-title">Pedido de teste confirmado</h3>
+      <p>O fluxo de compra funcionou. Nenhum pagamento foi processado e nenhum pedido real foi enviado à loja.</p>
+      <div className="shop-demo-receipt"><div><span>Referência</span><strong>{order.code}</strong></div><div><span>Cliente de demonstração</span><strong>{order.name}</strong></div><div><span>Entrega simulada</span><strong>{order.city}</strong></div><div><span>Pagamento</span><strong>{order.method}</strong></div><div><span>Itens</span><strong>{order.items.join(", ")}</strong></div><div><span>Total ilustrativo</span><strong>{formatPrice(order.total)}</strong></div></div>
+      <button className="button primary wide-button" onClick={onClose}>Voltar à FortalShop</button>
     </section>
   </div>;
 }
@@ -84,6 +121,8 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
   const [catalogRevision, setCatalogRevision] = useState(0);
+  const [demoCheckoutOpen, setDemoCheckoutOpen] = useState(false);
+  const [demoOrder, setDemoOrder] = useState(null);
   useEffect(() => setDialog(initialDialog), [initialDialog]);
   useEffect(() => {
     let active = true;
@@ -141,6 +180,12 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
     setCart(current => removeShopCartItem(current, lineKey));
     notify("Produto removido da sacola.");
   };
+  const completeDemoOrder = order => {
+    setDemoOrder(order);
+    setDemoCheckoutOpen(false);
+    setDialog("");
+    setCart([]);
+  };
 
   return <div className="app-screen shop-screen">
     <header className="mobile-header shop-header">
@@ -167,7 +212,7 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
         <div className="shop-demo-store-grid">{demoShopStores.map(store => <article className="shop-demo-store" key={store.name}>
           <header><span className="shop-demo-store-icon"><ShoppingBag size={17} /></span><div><span>LOJA DE DEMONSTRAÇÃO</span><h3>{store.name.replace("Vitrine demonstrativa · ", "FortalShop · ")}</h3></div></header>
           <div className="shop-demo-store-products">{store.products.map(product => <button type="button" className="shop-demo-item" key={product.id} onClick={() => setSelectedProduct(product)}><img src={product.image} alt={product.imageAlt} loading="lazy"/><span><strong>{product.name}</strong><small>Preço ilustrativo · {formatPrice(product.price)}</small></span><ChevronRight size={16} /></button>)}</div>
-          <p>Vitrine ilustrativa. Loja e produtos não estão ativos para venda.</p>
+          <p>Loja de teste para apresentação. Explore os itens e conclua uma compra simulada.</p>
         </article>)}</div>
       </section>
       {marketplaceProducts.length > 0 && <section className="shop-departments" aria-label="Explore por departamento">
@@ -198,6 +243,8 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
     </main>
     <BottomNav />
     {selectedProduct && <ShopDialog key={selectedProduct.id} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} />}
-    {dialog === "cart" && <ShopCartDialog cart={cart} onClose={() => setDialog("")} onQuantityChange={updateCartQuantity} onRemove={removeCartItem} onContinue={() => setDialog("")} />}
+    {dialog === "cart" && <ShopCartDialog cart={cart} onClose={() => setDialog("")} onQuantityChange={updateCartQuantity} onRemove={removeCartItem} onContinue={() => setDialog("")} onCheckout={() => { setDialog(""); setDemoCheckoutOpen(true); }} />}
+    {demoCheckoutOpen && <ShopDemoCheckout cart={cart} onClose={() => setDemoCheckoutOpen(false)} onComplete={completeDemoOrder} />}
+    {demoOrder && <ShopDemoOrderConfirmation order={demoOrder} onClose={() => setDemoOrder(null)} />}
   </div>;
 }
