@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronRight, Minus, Plus, Search, ShoppingBag, Sparkles, Trash2, X, ZoomIn } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, Check, ChevronRight, Minus, Plus, Search, ShoppingBag, ShoppingCart, Sparkles, Trash2, X, ZoomIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import Brand from "./Brand.jsx";
 import BottomNav, { NavigationDrawer } from "./MobileNavigation.jsx";
 import { demoShopProducts, filterShopProducts, getShopDepartment } from "./shopData.js";
 import { addShopCartItem, getShopCartLineKey, getShopCartOptionsLabel, getShopCartProduct, getShopCartSummary, removeShopCartItem, updateShopCartQuantity } from "./shopCartService.js";
-import { brandCampaignAsset } from "./assetPath.js";
 import { loadMarketplaceProducts } from "./partnerStoreService.js";
 
 const formatPrice = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -173,6 +172,13 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
     setDialog("cart");
     notify(`${quantity} ${quantity === 1 ? "unidade adicionada" : "unidades adicionadas"} à sacola.`);
   };
+  const addOrChooseProduct = product => {
+    if (product.variation) {
+      setSelectedProduct(product);
+      return;
+    }
+    addToCart(product, {}, 1);
+  };
   const updateCartQuantity = (lineKey, quantity) => {
     setCart(current => updateShopCartQuantity(current, lineKey, quantity));
   };
@@ -203,13 +209,8 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
           {searchFocused && searchSuggestions.length > 0 && <div className="shop-search-suggestions" id="shop-search-suggestions" role="listbox" aria-label="Sugestões de produtos">{searchSuggestions.map((product, index) => <button key={product.id} id={`shop-suggestion-${product.id}`} type="button" role="option" aria-selected={activeSuggestion === index} onMouseDown={event => event.preventDefault()} onClick={() => selectSearchSuggestion(product)}><img src={product.image} alt="" /><span><strong>{product.name}</strong><small>FortalShop · {getShopDepartment(product)}</small></span><ChevronRight size={16} /></button>)}</div>}
         </div>
       </section>
-      <div className="shop-demo-banner"><span><Check size={15} /></span><p><strong>Vitrine de apresentação</strong> · produtos, preços e disponibilidade são demonstrativos. A sacola conclui apenas uma compra simulada.</p><span className="shop-demo-banner-count">30 itens</span></div>
-      <section className="shop-editorial" aria-label="Destaque FortalShop">
-        <img className="shop-editorial-banner" src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="" />
-        <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Vestuário, acessórios e nutrição para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
-      </section>
       <section className="shop-departments" aria-label="Explore por departamento">
-        <div className="shop-section-heading"><div><span className="eyebrow">ENCONTRE SEU RITMO</span><h2>Explore por categoria</h2></div><span>{categories.length - 1} departamentos</span></div>
+        <div className="shop-section-heading"><div><span className="eyebrow">FORTALSHOP</span><h2>Categorias</h2></div><span>{categories.length - 1} departamentos</span></div>
         <div className="shop-department-grid">{categories.slice(1).map(department => {
           const product = demoShopProducts.find(item => getShopDepartment(item) === department);
           const count = demoShopProducts.filter(item => getShopDepartment(item) === department).length;
@@ -217,16 +218,15 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
         })}</div>
       </section>
       <section className="shop-catalog" id="shop-products" aria-label="Catálogo FortalShop">
-        <div className="shop-catalog-heading"><div><span className="eyebrow">CATÁLOGO DE DEMONSTRAÇÃO</span><h2>Produtos para sua rotina</h2><p>Explore a coleção de acessórios, nutrição e vestuário FortalShop.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
+        <div className="shop-catalog-heading"><div><h2>Explore nossos produtos</h2><p>Encontre os itens certos para o seu treino.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
         <div className="shop-catalog-toolbar">
           <div className="shop-categories" role="group" aria-label="Filtrar produtos por categoria">{categories.map(item => <button type="button" key={item} className={`shop-category-chip${category === item ? " is-active" : ""}`} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
           <label className="shop-sort"><ArrowDownUp size={16} aria-hidden="true" /><span>Ordenar:</span><select aria-label="Ordenar produtos" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">Recomendados</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome (A–Z)</option></select></label>
         </div>
-        <p className="shop-catalog-disclaimer"><ShoppingBag size={16} aria-hidden="true" /><span>Catálogo demonstrativo: nomes, valores e disponibilidade são ilustrativos. Use a sacola para experimentar o fluxo de compra de teste; nenhum pedido ou pagamento real será realizado.</span></p>
         <div className="shop-product-grid">
           {visibleProducts.map(product => <article className="shop-product-card" key={product.id}>
             <button className="shop-product-visual" onClick={() => setSelectedProduct(product)} aria-label={`Ver detalhes de ${product.name}`}><img src={product.image} alt={product.imageAlt} loading="lazy" /><span className="shop-product-tag">{getShopDepartment(product)}</span></button>
-            <div className="shop-product-info"><span className="shop-product-category">Coleção FortalShop · {getShopDepartment(product)}</span><button className="shop-product-name" onClick={() => setSelectedProduct(product)}>{product.name}</button><span className="shop-demo-price">Preço ilustrativo</span><div className="shop-price-line"><strong>{formatPrice(product.price)}</strong></div><button className="button subtle shop-add-button" onClick={() => setSelectedProduct(product)}>Ver produto <ChevronRight size={15} /></button></div>
+            <div className="shop-product-info"><button className="shop-product-name" onClick={() => setSelectedProduct(product)}>{product.name}</button><div className="shop-price-line"><strong>{formatPrice(product.price)}</strong></div><button className="button subtle shop-add-button" onClick={() => addOrChooseProduct(product)}><ShoppingCart size={15} /> {product.variation ? "Escolher" : "Adicionar"}</button></div>
           </article>)}
           {!visibleProducts.length && <div className="empty-state shop-empty"><Search size={24} /><h2>Nenhum produto encontrado</h2><p>Tente buscar outro nome ou selecione outra categoria.</p><button className="button subtle" onClick={() => { setSearch(""); setCategory("Todas"); }}>Limpar filtros</button></div>}
         </div>

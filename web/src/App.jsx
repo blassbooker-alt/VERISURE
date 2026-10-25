@@ -1008,41 +1008,102 @@ function WorkoutScreen({ notify, onActivity, activity, client, session, activity
 }
 
 function NutritionScreen({ notify, onActivity, activity, client, session, activityStatus, activityError }) {
-  const [hasPublishedFood, setHasPublishedFood] = useState(false);
   const [addingMeal, setAddingMeal] = useState(false);
+  const [editingMeal, setEditingMeal] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(localDateKey());
   const [mealName, setMealName] = useState("");
   const [mealCalories, setMealCalories] = useState("");
+  const [mealType, setMealType] = useState("breakfast");
+  const [mealTime, setMealTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [mealPortion, setMealPortion] = useState("");
+  const [mealProtein, setMealProtein] = useState("");
+  const [mealCarbs, setMealCarbs] = useState("");
+  const [mealFat, setMealFat] = useState("");
+  const [foodGroup, setFoodGroup] = useState("other");
   const todayKey = localDateKey();
-  const todaysMeals = mealsForDate(activity.mealEntries, todayKey);
+  const todaysMeals = mealsForDate(activity.mealEntries, selectedDate);
   const calories = sumMealCalories(todaysMeals);
-  useEffect(() => { let active = true; if (!session?.user?.id || !client) { setHasPublishedFood(false); return () => { active = false; }; } loadAvailableFoodMenu(client).then(items => { if (active) setHasPublishedFood(items.length > 0); }).catch(() => { if (active) setHasPublishedFood(false); }); return () => { active = false; }; }, [client, session?.user?.id]);
-  const today = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  const selectedDateObj = new Date(`${selectedDate}T12:00:00`);
+  const selectedDateLabel = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" }).format(selectedDateObj);
+  const previousDate = new Date(selectedDateObj); previousDate.setDate(previousDate.getDate() - 1);
+  const nextDate = new Date(selectedDateObj); nextDate.setDate(nextDate.getDate() + 1);
+  const dateOffset = date => localDateKey(date);
+  const previousKey = dateOffset(previousDate);
+  const nextKey = dateOffset(nextDate);
+  const weekStart = new Date(selectedDateObj); weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const weekly = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(weekStart); day.setDate(day.getDate() + index);
+    const key = dateOffset(day);
+    const records = mealsForDate(activity.mealEntries, key);
+    return { key, label: new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(day).replace(".", ""), calories: sumMealCalories(records), count: records.length };
+  });
+  const weekMax = Math.max(1, ...weekly.map(day => day.calories));
+  const macros = [
+    { key: "protein", label: "Proteínas", color: "protein", unit: "g" },
+    { key: "carbs", label: "Carboidratos", color: "carbs", unit: "g" },
+    { key: "fat", label: "Gorduras", color: "fat", unit: "g" },
+  ].map(item => ({ ...item, value: todaysMeals.reduce((sum, meal) => sum + (meal[item.key] ?? 0), 0), known: todaysMeals.some(meal => meal[item.key] != null) }));
+  const macroEnergy = macros.reduce((sum, item) => sum + (item.known ? item.value * (item.key === "fat" ? 9 : 4) : 0), 0);
+  const proteinShare = macroEnergy ? macros[0].value * 4 / macroEnergy * 100 : 0;
+  const carbShare = macroEnergy ? (macros[0].value * 4 + macros[1].value * 4) / macroEnergy * 100 : proteinShare;
+  const distributionStyle = { background: macroEnergy
+    ? `conic-gradient(#c8f52e 0 ${proteinShare}%, #54bd78 ${proteinShare}% ${carbShare}%, #a3c66c ${carbShare}% 100%)`
+    : "#203629" };
+  const mealGroups = [
+    { key: "breakfast", title: "Café da manhã", icon: "☼" },
+    { key: "lunch", title: "Almoço", icon: "◒" },
+    { key: "snack", title: "Lanche", icon: "✳" },
+    { key: "dinner", title: "Jantar", icon: "☾" },
+    ...(todaysMeals.some(meal => meal.mealType === "other") ? [{ key: "other", title: "Outros registros", icon: "•" }] : []),
+  ];
+  const resetMealForm = () => { setMealName(""); setMealCalories(""); setMealPortion(""); setMealProtein(""); setMealCarbs(""); setMealFat(""); setFoodGroup("other"); setEditingMeal(null); };
+  const openMealForm = (type = "breakfast", meal = null) => {
+    setMealType(meal?.mealType && meal.mealType !== "other" ? meal.mealType : type);
+    setMealName(meal?.name || ""); setMealCalories(meal ? String(meal.calories) : "");
+    setMealTime(meal?.time || new Date().toTimeString().slice(0, 5)); setMealPortion(meal?.portion || "");
+    setMealProtein(meal?.protein == null ? "" : String(meal.protein)); setMealCarbs(meal?.carbs == null ? "" : String(meal.carbs));
+    setMealFat(meal?.fat == null ? "" : String(meal.fat)); setFoodGroup(meal?.foodGroup || "other");
+    setEditingMeal(meal); setAddingMeal(true);
+  };
   const registerMeal = async event => {
     event.preventDefault();
     const name = mealName.trim();
     const parsedCalories = Number(mealCalories);
     if (!name || mealCalories === "" || !Number.isInteger(parsedCalories) || parsedCalories < 0 || parsedCalories > 10000) return;
-    const saved = await onActivity("meal", { id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, calories: parsedCalories, date: todayKey });
+    const optionalMacro = value => value === "" ? null : Number(value);
+    const detail = { id: editingMeal?.id || window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`, name, calories: parsedCalories, date: selectedDate, mealType, time: mealTime, portion: mealPortion.trim(), protein: optionalMacro(mealProtein), carbs: optionalMacro(mealCarbs), fat: optionalMacro(mealFat), foodGroup };
+    if ([detail.protein, detail.carbs, detail.fat].some(value => value != null && (!Number.isFinite(value) || value < 0 || value > 1000))) return;
+    const saved = await onActivity(editingMeal ? "updateMeal" : "meal", detail);
     if (!saved) return;
-    setMealName("");
-    setMealCalories("");
+    resetMealForm();
     setAddingMeal(false);
-    notify("Refeição adicionada ao diário.");
+    notify(editingMeal ? "Alimento atualizado no diário." : "Alimento adicionado ao diário.");
   };
-  return <Screen title="Diário alimentar" subtitle={`${today.toLocaleUpperCase()} · ROTINA E REGISTROS`} className="nutrition-screen">
-    <PartnerDiscoverySection client={client} session={session} kind="nutricionista" notify={notify} />
-    <WeeklyClientPlan client={client} session={session} kind="nutrition" notify={notify} />
-    <div className="nutrition-summary"><div className="nutrition-donut"><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>kcal informadas</span><small>hoje</small></div></div><div className="macro-details"><span className="eyebrow">METAS NUTRICIONAIS</span><p className="nutrition-unset">Nenhuma meta ou macro foi configurado. Dados nutricionais só aparecerão quando forem informados por você ou por um profissional.</p><Link to="/progress" className="text-link">Ver registros de evolução <ArrowRight size={15} /></Link></div></div>
-    <p className="reference-disclosure">O total soma apenas as calorias digitadas por você; o app não estima calorias nem recomenda metas clínicas.</p>
-    <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
-    <div className="nutrition-note"><span className="quick-icon mint"><Sparkles size={18} /></span><span><strong>Consistência, não perfeição.</strong><small>Os registros ficam associados à sua conta quando você entra; sem login, permanecem neste navegador.</small></span></div>
-    <SectionTitle title="Seu diário" />
-    <div className="meal-list">{todaysMeals.length ? todaysMeals.map((meal, index) => <div className="meal-row" key={meal.id}><span className={`meal-icon meal-${index % 4}`}>{["☀", "◒", "✳", "☾"][index % 4]}</span><div><strong>{meal.name}</strong><small>{meal.calories.toLocaleString("pt-BR")} kcal · {activityStatus}</small></div><button className="meal-remove-button" aria-label={`Remover ${meal.name} do diário`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={16} /></button></div>) : <div className="empty-state"><Utensils size={24} /><h3>Nenhuma refeição registrada</h3><p>Adicione o que você consumiu para acompanhar suas calorias.</p></div>}</div>
-    {hasPublishedFood && <SponsoredCreative image="09-nutrition-food.png" alt="Parceiro em destaque FortalFood com opções para acompanhar a rotina." label="Parceiro em destaque" to="/food" className="fortalfood-creative" />}
-    <Link to="/food" className="nutrition-curation"><span className="quick-icon mint"><Utensils size={18} /></span><span><small>FORTALFOOD</small><strong>Consulte cardápios publicados por restaurantes aprovados.</strong><small>Informações e disponibilidade são cadastradas pelos parceiros.</small></span><ArrowRight size={18} /></Link>
-    <button className="button primary wide-button mt-5" onClick={() => setAddingMeal(value => !value)}><Plus size={18} /> {addingMeal ? "Cancelar registro" : "Registrar refeição"}</button>
-    {addingMeal && <form className="meal-entry-form" onSubmit={registerMeal}><label>Nome da refeição<input required maxLength={60} value={mealName} onChange={event => setMealName(event.target.value)} placeholder="Ex.: almoço" /></label><label>Calorias (kcal)<input required type="number" min="0" max="10000" step="1" value={mealCalories} onChange={event => setMealCalories(event.target.value)} placeholder="Ex.: 520" /></label><button className="button primary wide-button" type="submit">Salvar refeição</button></form>}
-    <p className="sr-only" aria-live="polite">{todaysMeals.length} {todaysMeals.length === 1 ? "refeição registrada hoje" : "refeições registradas hoje"}; {calories} quilocalorias no diário.</p>
+  return <Screen title="Diário alimentar" subtitle="SUA ROTINA, COM DADOS REAIS" className="nutrition-screen">
+    <section className="nutrition-toolbar"><div className="nutrition-date-picker"><button type="button" aria-label="Dia anterior" disabled={previousKey < localDateKey(new Date(Date.now() - 29 * 86400000))} onClick={() => setSelectedDate(previousKey)}><ArrowLeft size={16} /></button><CalendarDays size={17} /><input aria-label="Selecionar data do diário" type="date" min={localDateKey(new Date(Date.now() - 29 * 86400000))} max={todayKey} value={selectedDate} onChange={event => event.target.value && setSelectedDate(event.target.value)} /><button type="button" aria-label="Próximo dia" disabled={selectedDate >= todayKey} onClick={() => setSelectedDate(nextKey)}><ArrowRight size={16} /></button></div><button className="button primary nutrition-add-main" onClick={() => addingMeal ? (setAddingMeal(false), resetMealForm()) : openMealForm()}><Plus size={17} /> Adicionar alimento</button></section>
+    <section className="nutrition-dashboard-grid">
+      <div className="nutrition-primary-column">
+        <div className="nutrition-date-heading"><div><span className="eyebrow">RESUMO DO DIA</span><h2>{selectedDateLabel}</h2></div><span className="nutrition-record-count">{todaysMeals.length} {todaysMeals.length === 1 ? "registro" : "registros"}</span></div>
+        <div className="nutrition-overview-card"><div className="nutrition-calorie-ring"><div><strong>{calories.toLocaleString("pt-BR")}</strong><span>kcal</span><small>registradas</small></div></div><div className="nutrition-overview-copy"><span className="eyebrow">ENERGIA REGISTRADA</span><strong>{calories.toLocaleString("pt-BR")} kcal</strong><p>Soma dos valores informados nos alimentos deste dia.</p><span className="nutrition-no-goal"><Target size={14} /> Meta diária não configurada</span></div><div className="nutrition-macro-cards">{macros.map(item => <article className="nutrition-macro-card" key={item.key}><span className={`nutrition-macro-dot ${item.color}`} /><span>{item.label}</span><strong>{item.known ? `${Number(item.value.toFixed(1)).toLocaleString("pt-BR")} ${item.unit}` : "—"}</strong><small>{item.known ? "informadas nos registros" : "sem dados informados"}</small></article>)}</div></div>
+        <div className="nutrition-meals-heading"><div><span className="eyebrow">ACOMPANHAMENTO</span><h2>Suas refeições do dia</h2></div><span>{todaysMeals.length} alimentos</span></div>
+        <div className="nutrition-meal-grid">{mealGroups.map((group, index) => {
+          const entries = todaysMeals.filter(meal => meal.mealType === group.key).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+          const groupCalories = sumMealCalories(entries);
+          return <section className="nutrition-meal-card" key={group.key}><header><span className={`nutrition-meal-icon nutrition-meal-${index}`}>{group.icon}</span><div><h3>{group.title}</h3><small>{entries.length ? entries.map(meal => meal.time).filter(Boolean).join(" · ") || "Horário não informado" : "Sem registros"}</small></div><strong>{groupCalories ? `${groupCalories.toLocaleString("pt-BR")} kcal` : "—"}</strong></header>{entries.length ? <div className="nutrition-food-list">{entries.map(meal => <article className="nutrition-food-row" key={meal.id}><div className="nutrition-food-copy"><strong>{meal.name}</strong><small>{meal.portion || "Porção não informada"}{meal.time ? ` · ${meal.time}` : ""}</small><span>{meal.calories.toLocaleString("pt-BR")} kcal{meal.protein != null ? ` · ${meal.protein} g proteína` : ""}</span></div><button type="button" className="nutrition-edit-action" aria-label={`Editar ${meal.name}`} onClick={() => openMealForm(group.key, meal)}><PencilLine size={15} /></button><button type="button" className="nutrition-delete-action" aria-label={`Remover ${meal.name}`} onClick={() => onActivity("removeMeal", meal.id)}><Trash2 size={15} /></button></article>)}</div> : <div className="nutrition-meal-empty"><span>{group.title === "Café da manhã" ? "Registre sua primeira refeição" : "Adicione alimentos consumidos"}</span></div>}<button type="button" className="nutrition-add-food" onClick={() => openMealForm(group.key)}><Plus size={14} /> Adicionar alimento</button></section>;
+        })}</div>
+        {addingMeal && <form className="meal-entry-form nutrition-entry-form" onSubmit={registerMeal}><div className="nutrition-form-heading"><div><span className="eyebrow">REGISTRO DO DIA</span><h2>{editingMeal ? "Editar alimento" : "Adicionar alimento"}</h2></div><button type="button" aria-label="Fechar formulário" onClick={() => { setAddingMeal(false); resetMealForm(); }}><X size={18} /></button></div><div className="nutrition-form-fields"><label>Alimento<input required maxLength={60} value={mealName} onChange={event => setMealName(event.target.value)} placeholder="Ex.: arroz integral" /></label><label>Refeição<select value={mealType} onChange={event => setMealType(event.target.value)}><option value="breakfast">Café da manhã</option><option value="lunch">Almoço</option><option value="snack">Lanche</option><option value="dinner">Jantar</option></select></label><label>Porção ou quantidade<input maxLength={40} value={mealPortion} onChange={event => setMealPortion(event.target.value)} placeholder="Ex.: 1 xícara (160 g)" /></label><label>Horário<input type="time" value={mealTime} onChange={event => setMealTime(event.target.value)} /></label><label>Calorias (kcal)<input required type="number" min="0" max="10000" step="1" value={mealCalories} onChange={event => setMealCalories(event.target.value)} placeholder="Informe o rótulo ou fonte" /></label><label>Proteínas (g)<input type="number" min="0" max="1000" step="0.1" value={mealProtein} onChange={event => setMealProtein(event.target.value)} placeholder="Opcional" /></label><label>Carboidratos (g)<input type="number" min="0" max="1000" step="0.1" value={mealCarbs} onChange={event => setMealCarbs(event.target.value)} placeholder="Opcional" /></label><label>Gorduras (g)<input type="number" min="0" max="1000" step="0.1" value={mealFat} onChange={event => setMealFat(event.target.value)} placeholder="Opcional" /></label><label>Grupo alimentar<select value={foodGroup} onChange={event => setFoodGroup(event.target.value)}><option value="other">Outro</option><option value="fruit">Fruta</option><option value="vegetable">Vegetal</option></select></label></div><p className="nutrition-form-note">Use as informações do rótulo ou de uma fonte confiável. Os valores não são estimados pelo aplicativo. <Link to="/food">Consultar cardápios publicados no FortalFood</Link></p><button className="button primary wide-button" type="submit">{editingMeal ? "Salvar alterações" : "Salvar alimento"}</button></form>}
+        <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
+        <section className="nutrition-history-card"><header><div><span className="eyebrow">ÚLTIMOS 30 DIAS</span><h2>Histórico de refeições</h2></div><span>{activity.mealEntries.length} registros</span></header><div className="nutrition-history-list">{[...activity.mealEntries].filter(meal => meal.date !== selectedDate).sort((a, b) => `${b.date}${b.time || ""}`.localeCompare(`${a.date}${a.time || ""}`)).slice(0, 5).map(meal => <article key={meal.id}><span className="nutrition-history-date">{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(`${meal.date}T12:00:00`))}</span><div><strong>{meal.name}</strong><small>{meal.time || meal.mealType || "Registro alimentar"}</small></div><b>{meal.calories.toLocaleString("pt-BR")} kcal</b><button type="button" aria-label={`Ver registros de ${meal.date}`} onClick={() => setSelectedDate(meal.date)}><ArrowRight size={15} /></button></article>)}{activity.mealEntries.filter(meal => meal.date !== selectedDate).length === 0 && <p className="nutrition-history-empty">Registros de outros dias aparecerão aqui.</p>}</div></section>
+      </div>
+      <aside className="nutrition-side-column"><section className="nutrition-side-card nutrition-distribution-card"><span className="eyebrow">DISTRIBUIÇÃO</span><h3>Resumo nutricional</h3>{macros.some(item => item.known) ? <><div className="nutrition-distribution"><div className="nutrition-distribution-ring" style={distributionStyle}><span>{calories.toLocaleString("pt-BR")}<small>kcal</small></span></div><div className="nutrition-legend">{macros.map(item => <span key={item.key}><i className={item.color} />{item.label}<b>{item.known ? `${Number(item.value.toFixed(1)).toLocaleString("pt-BR")} g` : "—"}</b></span>)}</div></div><p>Totais conforme os dados preenchidos por você.</p></> : <div className="nutrition-side-empty">Adicione macronutrientes a um registro para ver a distribuição.</div>}</section>
+        <section className="nutrition-side-card"><span className="eyebrow">DADOS DO DIA</span><h3>Registros por grupo</h3><div className="nutrition-goal-row"><span><Apple size={16} /> Frutas</span><strong>{todaysMeals.filter(meal => meal.foodGroup === "fruit").length} registradas</strong></div><div className="nutrition-goal-row"><span><Activity size={16} /> Vegetais</span><strong>{todaysMeals.filter(meal => meal.foodGroup === "vegetable").length} registrados</strong></div><div className="nutrition-goal-row"><span><Flame size={16} /> Proteína</span><strong>{macros[0].known ? `${Number(macros[0].value.toFixed(1)).toLocaleString("pt-BR")} g` : "Sem dados"}</strong></div><div className="nutrition-goal-row"><span><Sparkles size={16} /> Água</span><strong>Registro diário indisponível</strong></div><p>Metas pessoais ainda não configuradas.</p></section>
+        <section className="nutrition-side-card nutrition-tip-card"><span className="nutrition-tip-icon"><Sparkles size={16} /></span><div><span className="eyebrow">LEMBRETE</span><h3>Registre com precisão</h3><p>Confira a porção e os dados nutricionais na embalagem ou na fonte consultada.</p></div></section>
+        <section className="nutrition-side-card nutrition-week-card"><header><div><span className="eyebrow">SEUS REGISTROS</span><h3>Consumo semanal</h3></div><small>kcal</small></header><div className="nutrition-week-chart">{weekly.map(day => <div className={`nutrition-week-day${day.count ? " has-records" : ""}`} key={day.key} title={day.count ? `${day.calories.toLocaleString("pt-BR")} kcal · ${day.count} registros` : "Sem registros"}><div className="nutrition-week-bar-track"><i style={{ height: day.count ? `${Math.max(5, day.calories / weekMax * 100)}%` : "0%" }} /></div><strong>{day.count ? day.calories.toLocaleString("pt-BR") : "—"}</strong><small>{day.label}</small></div>)}</div><p>Sem registro não significa consumo zero.</p></section>
+        <Link to="/food" className="nutrition-curation"><span className="quick-icon mint"><Utensils size={18} /></span><span><small>FORTALFOOD</small><strong>Cardápios de restaurantes aprovados</strong><small>Consulte porções e dados declarados.</small></span><ArrowRight size={18} /></Link>
+      </aside>
+    </section>
+    <p className="sr-only" aria-live="polite">{todaysMeals.length} registros em {selectedDateLabel}; {calories} quilocalorias informadas.</p>
+    <details className="nutrition-related-features"><summary><span><strong>Acompanhamento profissional</strong><small>Nutricionistas e planos vinculados à sua conta</small></span><ChevronDown size={17} /></summary><PartnerDiscoverySection client={client} session={session} kind="nutricionista" notify={notify} /><WeeklyClientPlan client={client} session={session} kind="nutrition" notify={notify} /></details>
   </Screen>;
 }
 
@@ -2072,6 +2133,7 @@ function AppContent() {
       workoutEntries: [...current.workoutEntries, detail],
     });
     if (kind === "meal") return normalizeActivity({ ...current, mealEntries: [...current.mealEntries, detail] });
+    if (kind === "updateMeal") return normalizeActivity({ ...current, mealEntries: current.mealEntries.map(meal => meal.id === detail.id ? detail : meal) });
     if (kind === "removeMeal") return normalizeActivity({ ...current, mealEntries: current.mealEntries.filter(meal => meal.id !== detail) });
     return current;
   };
@@ -2086,9 +2148,21 @@ function AppContent() {
       try {
         const updated = await recordAccountActivity(supabase, kind, detail ?? null);
         setActivity(normalizeActivity(updated));
-        setActivityError("");
+        const savedMeal = kind === "meal" ? updated.mealEntries?.find(entry => entry.id === detail?.id) : null;
+        const nutritionFieldsMissing = savedMeal && (savedMeal.mealType !== detail.mealType
+          || savedMeal.time !== detail.time || savedMeal.portion !== detail.portion
+          || savedMeal.foodGroup !== detail.foodGroup || ["protein", "carbs", "fat"].some(key => detail[key] != null && savedMeal[key] == null));
+        setActivityError(nutritionFieldsMissing
+          ? "O registro básico foi salvo, mas o Supabase ainda não conserva porções e nutrientes. Aplique FORTALFY_ACTIVITY_NUTRITION_V2.sql para ativar esses campos."
+          : "");
         return true;
       } catch (error) {
+        if (kind === 'updateMeal' && /unsupported activity type/i.test(String(error?.message || ''))) {
+          const message = 'A edi\u00e7\u00e3o de alimentos ainda n\u00e3o est\u00e1 ativada no Supabase. Aplique FORTALFY_ACTIVITY_NUTRITION_V2.sql.';
+          setActivityError(message);
+          notify(message);
+          return false;
+        }
         console.error("Não foi possível sincronizar os registros com a conta.", error);
         const message = getErrorMessage(error, "Não foi possível salvar na sua conta. Tente novamente.");
         setActivityError(message);
