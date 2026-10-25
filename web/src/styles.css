@@ -13048,3 +13048,47 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
           transform: none !important;
     }
 }
+
+
+              /* Restore full-bleed photography and contrast on FortalShop department tiles. */
+.shop-screen .shop-department-card {
+    min-height: 136px !important;
+    position: relative !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    background: #101a13 !important;
+    border-color: #2a3d2d !important;
+}
+.shop-screen .shop-department-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, #06100808 12%, #06100830 42%, #061008e8 100%);
+    pointer-events: none;
+}
+.shop-screen .shop-department-card > img {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    opacity: .76 !important;
+    border-radius: 0 !important;
+}
+.shop-screen .shop-department-card:hover > img { transform: scale(1.04); }
+.shop-screen .shop-department-card > span,
+.shop-screen .shop-department-card > svg { position: relative; z-index: 2; }
+.shop-screen .shop-department-card > span { display: flex; flex-direction: column; gap: 2px; }
+.shop-screen .shop-department-card strong { color: #f5f7f3; font-size: .82rem; text-shadow: 0 1px 5px #0009; }
+.shop-screen .shop-department-card small { color: #d1d9d0; font-size: .68rem; }
+.shop-screen .shop-department-card > svg { flex: 0 0 auto; margin: 0 0 2px auto; color: #b8f432; }
+@media (max-width: 699px) {
+    .shop-screen .shop-department-card { min-height: 92px !important; padding: 9px !important; }
+    .shop-screen .shop-department-card strong { font-size: .67rem; }
+    .shop-screen .shop-department-card small { font-size: .55rem; }
+    .shop-screen .shop-department-card > svg { width: 13px; height: 13px; }
+}
