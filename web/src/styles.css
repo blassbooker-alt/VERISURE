@@ -12941,3 +12941,8 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
                      
 /* Remove the storefront demo notice; keep item-level sample pricing labels. */
 .shop-screen .shop-catalog-disclaimer { display: none !important; }
+
+                     
+/* Brand-colored primary action on product cards. */
+.shop-screen .shop-add-button { color: #14200f !important; background: #b8f432 !important; border-color: #b8f432 !important; }
+.shop-screen .shop-add-button:hover { color: #14200f !important; background: #c9f85c !important; border-color: #c9f85c !important; }
