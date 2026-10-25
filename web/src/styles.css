@@ -12696,3 +12696,37 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .shop-screen .shop-product-name { font-size: .78rem; }
   .shop-screen .shop-add-button { min-height: 36px; font-size: .72rem; }
 }
+/* FortalShopee marketplace styling: warm offer accents, familiar shopping flow. */
+.shop-screen { --shop-offer: #ee4d2d; --shop-offer-dark: #d83d21; }
+.shop-screen .shop-search-panel { margin-top: 6px; padding: 14px 16px 16px; border-color: #f4d7cf; box-shadow: 0 8px 24px #ee4d2d10; }
+.shop-screen .shop-search { background: #fff; border: 1.5px solid #ee4d2d; border-radius: 9px; }
+.shop-screen .shop-search > svg { color: #ee4d2d; }
+.shop-screen .shop-search-panel .shop-search:focus-within { border-color: #d83d21; box-shadow: 0 0 0 3px #ee4d2d19; }
+.shop-screen .shop-editorial { min-height: 252px; border: 0; border-radius: 16px; background: linear-gradient(112deg, #d83d21 0%, #ee4d2d 54%, #ff7545 100%); box-shadow: 0 12px 30px #ee4d2d25; }
+.shop-screen .shop-editorial::after { background: linear-gradient(90deg, #c9321ff5 0%, #ee4d2dda 44%, #ee4d2d25 100%); }
+.shop-screen .shop-editorial-label { color: #fff4c9; }
+.shop-screen .shop-editorial-copy .lime-button { color: #d83d21; background: #fff; border-color: #fff; box-shadow: 0 5px 14px #77220f30; }
+.shop-screen .shop-editorial-copy .lime-button:hover { color: #b82f19; background: #fff8f4; }
+.shop-screen .shop-department-card { border-radius: 12px; }
+.shop-screen .shop-department-card:hover, .shop-screen .shop-department-card.is-active { border-color: #ee4d2d; box-shadow: 0 6px 18px #ee4d2d12; }
+.shop-screen .shop-category-chip.is-active { color: #fff; background: #ee4d2d; border-color: #ee4d2d; }
+.shop-screen .shop-category-chip:hover { border-color: #ee4d2d; color: #d83d21; }
+.shop-screen .shop-catalog-heading .eyebrow { color: #ee4d2d; }
+.shop-screen .shop-catalog-count { color: #d83d21; background: #fff0eb; border: 1px solid #ffddd2; }
+.shop-screen .shop-product-card { border-color: #eee5e1; border-radius: 12px; box-shadow: 0 3px 12px #31170c0a; }
+.shop-screen .shop-product-card:hover { border-color: #ee4d2d66; box-shadow: 0 10px 22px #ee4d2d18; }
+.shop-screen .shop-product-tag { color: #fff; background: #ee4d2d; border: 0; border-radius: 3px 8px 8px 3px; }
+.shop-screen .shop-product-category { color: #8b827e; }
+.shop-screen .shop-demo-price { color: #a69b96; font-weight: 600; }
+.shop-screen .shop-price-line strong { color: #ee4d2d; }
+.shop-screen .shop-add-button { color: #ee4d2d; background: #fff7f4; border-color: #ffd4c8; }
+.shop-screen .shop-add-button:hover { color: #fff; background: #ee4d2d; border-color: #ee4d2d; }
+.shop-screen .shop-catalog-disclaimer { color: #746963; background: #fff8f5; border-color: #f5e0d9; }
+@media (max-width: 680px) {
+  .shop-screen .shop-search-panel { padding: 11px; border-radius: 12px; }
+  .shop-screen .shop-editorial { min-height: 202px; border-radius: 13px; }
+  .shop-screen .shop-editorial-copy { width: 78%; }
+  .shop-screen .shop-editorial-copy h1 { font-size: clamp(1.8rem, 8vw, 2.5rem); }
+  .shop-screen .shop-editorial-copy p { max-width: 27ch; }
+  .shop-screen .shop-category-chip { border-radius: 7px; }
+}
