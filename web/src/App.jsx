@@ -1468,7 +1468,7 @@ function PartnerDiscoverySection({ client, session, kind, notify }) {
 
 function LivePassScreen({ client, session, notify }) {
   const [partners, setPartners] = useState([]);
-  const [filter, setFilter] = useState("todos");
+  const [filter, setFilter] = useState("academia");
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
   const [modality, setModality] = useState("");
@@ -1477,6 +1477,9 @@ function LivePassScreen({ client, session, notify }) {
     try { return JSON.parse(localStorage.getItem("fortalfy.pass.favorites.v1") || "[]"); } catch { return []; }
   });
   const [view, setView] = useState("list");
+  const [passTab, setPassTab] = useState("Academias");
+  const [checkins, setCheckins] = useState([]);
+  const [checkinUnits, setCheckinUnits] = useState({});
   const [selectedId, setSelectedId] = useState("");
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1499,6 +1502,30 @@ function LivePassScreen({ client, session, notify }) {
     return () => { active = false; };
   }, [client, retry]);
 
+  useEffect(() => {
+    let active = true;
+    const userId = session?.user?.id;
+    if (!client || !userId) { setCheckins([]); setCheckinUnits({}); return () => { active = false; }; }
+    client.from("fortalfy_gym_checkins")
+      .select("id,unit_id,started_at,status")
+      .eq("user_id", userId)
+      .order("started_at", { ascending: false })
+      .limit(5)
+      .then(async result => {
+        if (result.error) throw result.error;
+        const visits = result.data || [];
+        const ids = [...new Set(visits.map(visit => visit.unit_id))];
+        const units = ids.length ? await client.from("fortalfy_gym_units").select("id,unit_name").in("id", ids) : { data: [], error: null };
+        if (units.error) throw units.error;
+        if (active) {
+          setCheckins(visits);
+          setCheckinUnits(Object.fromEntries((units.data || []).map(unit => [unit.id, unit.unit_name])));
+        }
+      })
+      .catch(failure => console.info("Histórico FortalPass indisponível para esta conta.", failure?.message));
+    return () => { active = false; };
+  }, [client, session?.user?.id]);
+
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
   const cities = [...new Set(partners.map(partner => partner.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const modalities = [...new Set(partners.flatMap(partner => partner.modalities || []).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -1507,6 +1534,7 @@ function LivePassScreen({ client, session, notify }) {
       && (!city || partner.city === city)
       && (!modality || partner.modalities.includes(modality))
       && (!favoritesOnly || favorites.includes(partner.id))
+      && (passTab !== "Favoritos" || favorites.includes(partner.id))
       && [partner.name, partner.city, partner.address, partner.bio, ...partner.modalities]
         .join(" ").toLocaleLowerCase("pt-BR").includes(normalizedQuery)),
     location,
@@ -1539,12 +1567,25 @@ function LivePassScreen({ client, session, notify }) {
 
   return <Screen title="FortalPass" subtitle="MOVIMENTO E CUIDADO PERTO DE VOCÊ" location className="pass-screen">
     <section className="pass-hero"><div><span className="eyebrow">FORTALPASS · REDE PARCEIRA</span><h2>Sua rede de academias</h2><p>Encontre espaços parceiros e profissionais, treine perto de você e consulte informações cadastradas.</p><div className="pass-hero-stats"><span><strong>{partners.filter(item => item.kind === "academia").length}</strong> academias parceiras</span><span><MapPin size={15}/> Busca por proximidade</span><span><ShieldCheck size={15}/> Cadastros aprovados</span></div></div><Brand /></section>
-    <div className="pass-marketplace-shell"><section className="partner-discovery pass-discovery">
+    <div className="pass-marketplace-shell"><aside className="pass-filters-panel">
+      <label className="pass-filter-label"><Search size={14}/><span>Buscar academias</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nome, cidade, bairro..." /></label>
+      <button type="button" className="pass-location-button" onClick={requestLocation}><MapPin size={15}/>{location ? "Localização ativada" : "Usar minha localização"}</button>
+      {locationError && <p className="social-inline-error" role="alert">{locationError}</p>}
+      <label className="pass-filter-label">Cidade<select value={city} onChange={event => setCity(event.target.value)}><option value="">Todas as cidades</option>{cities.map(item => <option key={item}>{item}</option>)}</select></label>
+      <fieldset className="pass-checkbox-filters"><legend>Tipo de academia</legend>{[["academia", "Academias"], ["personal", "Personal trainers"], ["nutricionista", "Nutricionistas"], ["todos", "Todos os perfis"]].map(([value, label]) => <label key={value}><input type="radio" name="pass-kind" checked={filter === value} onChange={() => setFilter(value)}/>{label}</label>)}</fieldset>
+      <label className="pass-filter-label">Modalidade<select value={modality} onChange={event => setModality(event.target.value)}><option value="">Todas as modalidades</option>{modalities.map(item => <option key={item}>{item}</option>)}</select></label>
+      <div className="pass-sidebar-map"><strong>Mapa de parceiros</strong>{selected?.latitude != null && selected?.longitude != null ? <iframe title={`Localização de ${selected.name}`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - 0.012}%2C${selected.latitude - 0.008}%2C${selected.longitude + 0.012}%2C${selected.latitude + 0.008}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`} loading="lazy" referrerPolicy="no-referrer" /> : <p>O mapa será exibido para parceiros com coordenadas cadastradas.</p>}<button type="button" onClick={() => setView("map")}>Ver mapa <ArrowRight size={13}/></button></div>
+      <fieldset className="pass-checkbox-filters"><legend>Horário de funcionamento</legend><span>Filtro de horários disponível quando informado pelo parceiro.</span></fieldset>
+      <button type="button" className={`pass-favorite-filter ${favoritesOnly || passTab === "Favoritos" ? "active" : ""}`} aria-pressed={favoritesOnly} onClick={() => { setFavoritesOnly(value => !value); setPassTab("Academias"); }}><Heart size={15}/> Favoritos <span>{favorites.length}</span></button>
+      <button type="button" className="button primary pass-apply-filters" onClick={() => setPassTab("Academias")}>Aplicar filtros</button>
+    </aside><section className="partner-discovery pass-discovery">
       <header className="partner-discovery-heading">
-        <span className="eyebrow">DESCUBRA A REDE FORTALFY</span>
-        <h2>Encontre o próximo passo da sua jornada.</h2>
-        <p>Explore academias e profissionais com cadastro aprovado. Distância, serviços e endereço vêm dos dados publicados pelos parceiros.</p>
+        <span className="eyebrow">REDE FORTALPASS</span>
+        <h2>{passTab === "Planos" ? "Seu plano FortalPass" : passTab === "Check-ins" ? "Check-ins recentes" : passTab === "Favoritos" ? "Seus parceiros favoritos" : location ? "Academias próximas a você" : "Academias parceiras FortalPass"}</h2>
+        <p>Encontre parceiros aprovados e consulte as informações publicadas por cada cadastro.</p>
       </header>
+      <nav className="pass-tabs" aria-label="FortalPass">{["Academias", "Planos", "Check-ins", "Favoritos"].map(tab => <button type="button" key={tab} className={passTab === tab ? "active" : ""} onClick={() => { setPassTab(tab); if (tab === "Favoritos") { setFavoritesOnly(false); setFilter("todos"); } }}>{tab}{tab === "Favoritos" && favorites.length > 0 && <span>{favorites.length}</span>}</button>)}<button type="button" className="pass-map-toggle" onClick={() => setView(view === "map" ? "list" : "map")}><MapPin size={14}/>{view === "map" ? "Lista" : "Mapa"}</button></nav>
+      {passTab === "Academias" && <section className="pass-investor-preview pass-investor-inline" aria-labelledby="pass-investor-title"><div className="pass-investor-heading"><div><span className="eyebrow">PRÉVIA PARA APRESENTAÇÃO</span><h2 id="pass-investor-title">Redes que poderiam fazer parte</h2><p>Referências visuais com marcas reais. Parcerias e unidades FortalPass não confirmadas.</p></div><span className="pass-preview-notice"><Info size={15}/> Sem vínculo confirmado</span></div><div className="pass-investor-grid">{[{ name: "Smart Fit", url: "https://www.smartfit.com.br/academias", image: "/assets/visual-pack/fortalfy-pack-gym-interior.jpg" }, { name: "Bluefit", url: "https://www.bluefit.com.br/unidades", image: "/assets/visual-pack/fortalfy-pack-gym-group.jpg" }, { name: "Bodytech", url: "https://bodytech.com.br/pt/academias/", image: "/assets/brand-campaign/fortalfy_gym_17_musculacao.jpg" }].map(network => <article className="pass-investor-card" key={network.name}><img src={network.image} alt="" loading="lazy"/><div><span>REFERÊNCIA DE REDE</span><h3>{network.name}</h3><p>Exemplo visual. Sem parceria ou unidade confirmada.</p><a href={network.url} target="_blank" rel="noreferrer">Site oficial <ArrowUpRight size={14}/></a></div></article>)}</div></section>}
       <div className="partner-discovery-controls">
         <label className="partner-search"><Search size={17} /><span className="sr-only">Buscar academia ou profissional</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar nome, cidade ou modalidade" /></label>
         <button type="button" className="button subtle small-button" onClick={requestLocation}><MapPin size={15} /> Usar minha localização</button>
@@ -1558,28 +1599,20 @@ function LivePassScreen({ client, session, notify }) {
       {locationError && <p className="social-inline-error" role="alert">{locationError}</p>}
       {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
       {loading && <p className="social-inline-status" role="status">Carregando parceiros aprovados…</p>}
-      {!loading && !error && !shown.length && <div className="empty-state"><MapPin size={24} /><h3>{query ? "Nenhum parceiro encontrado" : "Nenhum parceiro aprovado nesta categoria"}</h3><p>{query ? "Tente outro termo ou categoria." : "Parceiros reais aparecerão aqui após concluírem o cadastro e serem aprovados."}</p></div>}
-      {view === "map" && <div className="pass-map-view">{selected?.latitude != null && selected?.longitude != null ? <iframe title={`Mapa de ${selected.name}`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - 0.012}%2C${selected.latitude - 0.008}%2C${selected.longitude + 0.012}%2C${selected.latitude + 0.008}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`} loading="lazy" referrerPolicy="no-referrer" /> : <div><MapPin size={22}/><strong>Mapa indisponível para este parceiro</strong><p>O cadastro ainda não tem coordenadas.</p></div>}{selected && <div className="pass-map-selection"><strong>{selected.name}</strong><span>{[selected.address, selected.city].filter(Boolean).join(" · ") || "Endereço não informado"}</span>{openStreetMapUrl(selected) && <a href={openStreetMapUrl(selected)} target="_blank" rel="noreferrer">Como chegar <ArrowUpRight size={14}/></a>}</div>}<div className="pass-map-partners">{shown.filter(partner => partner.latitude != null && partner.longitude != null).map(partner => <button type="button" key={partner.id} className={selected?.id === partner.id ? "active" : ""} onClick={() => setSelectedId(partner.id)}>{partner.name}</button>)}</div></div>}
-      {shown.length > 0 && <SponsoredCreative image="05-fortalpass-partner.png" alt="Parceiro em destaque no FortalPass: encontre seu próximo passo perto de você." label="Parceiro aprovado em destaque" to={`/profile/${shown[0].profileId}`} className="fortalpass-partner-creative" />}
-      {shown.length > 0 && view === "list" && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <div className="pass-listing-wrap" key={partner.id}><button type="button" className={`pass-listing-favorite ${favorites.includes(partner.id) ? "active" : ""}`} aria-label={favorites.includes(partner.id) ? `Remover ${partner.name} dos favoritos` : `Adicionar ${partner.name} aos favoritos`} aria-pressed={favorites.includes(partner.id)} onClick={() => toggleFavorite(partner.id)}><Heart size={16}/></button><LivePartnerCard partner={partner} appointment={partner.kind !== "academia"} session={session} /></div>)}</div>}
+      {!loading && !error && !shown.length && (passTab === "Academias" || passTab === "Favoritos") && <div className="empty-state"><MapPin size={24} /><h3>{query || passTab === "Favoritos" ? "Nenhum parceiro encontrado" : "Nenhum parceiro aprovado nesta categoria"}</h3><p>{query || passTab === "Favoritos" ? "Ajuste sua busca ou salve um parceiro para adicioná-lo aos favoritos." : "Parceiros reais aparecerão aqui após concluírem o cadastro e serem aprovados."}</p></div>}
+      {passTab === "Planos" && <div className="pass-tab-empty"><Ticket size={23}/><strong>Planos FortalPass</strong><p>Planos e benefícios serão exibidos quando a oferta e a integração de assinatura estiverem configuradas.</p></div>}
+      {passTab === "Check-ins" && <div className="pass-checkin-list">{checkins.length ? checkins.map(visit => <article key={visit.id}><span className="pass-checkin-icon"><Check size={15}/></span><div><strong>{checkinUnits[visit.unit_id] || "Unidade FortalPass"}</strong><small>{new Date(visit.started_at).toLocaleString("pt-BR")}</small></div><span>{visit.status === "completed" ? "Concluído" : "Em andamento"}</span></article>) : <div className="pass-tab-empty"><Clock3 size={23}/><strong>Nenhum check-in registrado</strong><p>Quando sua conta registrar acessos em unidades habilitadas, eles aparecerão aqui.</p></div>}</div>}
+      {view === "map" && (passTab === "Academias" || passTab === "Favoritos") && <div className="pass-map-view">{selected?.latitude != null && selected?.longitude != null ? <iframe title={`Mapa de ${selected.name}`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - 0.012}%2C${selected.latitude - 0.008}%2C${selected.longitude + 0.012}%2C${selected.latitude + 0.008}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`} loading="lazy" referrerPolicy="no-referrer" /> : <div><MapPin size={22}/><strong>Mapa indisponível para este parceiro</strong><p>O cadastro ainda não tem coordenadas.</p></div>}{selected && <div className="pass-map-selection"><strong>{selected.name}</strong><span>{[selected.address, selected.city].filter(Boolean).join(" · ") || "Endereço não informado"}</span>{openStreetMapUrl(selected) && <a href={openStreetMapUrl(selected)} target="_blank" rel="noreferrer">Como chegar <ArrowUpRight size={14}/></a>}</div>}<div className="pass-map-partners">{shown.filter(partner => partner.latitude != null && partner.longitude != null).map(partner => <button type="button" key={partner.id} className={selected?.id === partner.id ? "active" : ""} onClick={() => setSelectedId(partner.id)}>{partner.name}</button>)}</div></div>}
+      {shown.length > 0 && passTab === "Academias" && <SponsoredCreative image="05-fortalpass-partner.png" alt="Parceiro em destaque no FortalPass: encontre seu próximo passo perto de você." label="Parceiro aprovado em destaque" to={`/profile/${shown[0].profileId}`} className="fortalpass-partner-creative" />}
+      {shown.length > 0 && view === "list" && (passTab === "Academias" || passTab === "Favoritos") && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <div className="pass-listing-wrap" key={partner.id}><button type="button" className={`pass-listing-favorite ${favorites.includes(partner.id) ? "active" : ""}`} aria-label={favorites.includes(partner.id) ? `Remover ${partner.name} dos favoritos` : `Adicionar ${partner.name} aos favoritos`} aria-pressed={favorites.includes(partner.id)} onClick={() => toggleFavorite(partner.id)}><Heart size={16}/></button><LivePartnerCard partner={partner} appointment={partner.kind !== "academia"} session={session} /></div>)}</div>}
       <div className="partner-discovery-footnote"><ShieldCheck size={15} /> Não exibimos preços, avaliações ou disponibilidade que não tenham sido informados pelo parceiro.</div>
     </section>
-    <aside className="pass-account-panel"><section><span className="eyebrow">MEU FORTALPASS</span><h3>{session?.user ? "Sua conta Fortalfy" : "Entre na sua conta"}</h3><p>{session?.user ? "Acompanhe os recursos associados à sua conta." : "Entre para acompanhar sua conta."}</p>{!session?.user && <Link className="button primary" to="/profile">Entrar na Fortalfy <ArrowRight size={14}/></Link>}<div className="pass-account-status"><ShieldCheck size={17}/><span><strong>Plano de acesso</strong><small>Nenhuma assinatura FortalPass vinculada.</small></span></div><div className="pass-account-status"><Heart size={17}/><span><strong>{favorites.length} favoritos</strong><small>Salvos neste dispositivo.</small></span></div></section><section className="pass-account-help"><h3>É uma academia parceira?</h3><p>Cadastre sua unidade para análise da equipe Fortalfy.</p><Link to="/professional">Acessar cadastro <ArrowRight size={14}/></Link></section></aside></div>
+    <aside className="pass-account-panel"><section><div className="pass-account-panel-title"><span className="eyebrow">MEU FORTALPASS</span><button type="button" aria-label="Ver detalhes do plano" onClick={() => setPassTab("Planos")}><ArrowUpRight size={15}/></button></div><h3>Plano FortalPass</h3><div className="pass-account-status"><ShieldCheck size={17}/><span><strong>{session?.user ? "Nenhum plano ativo" : "Entre na sua conta"}</strong><small>{session?.user ? "Assinaturas ainda não estão configuradas." : "Acesse sua conta para consultar seus dados."}</small></span></div>{!session?.user && <Link className="button primary pass-login-link" to="/profile">Entrar <ArrowRight size={14}/></Link>}<div className="pass-account-meter"><span>Check-ins no histórico</span><strong>{session?.user ? checkins.length : "—"}</strong></div><button type="button" className="pass-see-history" onClick={() => setPassTab("Check-ins")}>Ver check-ins <ArrowRight size={13}/></button></section><section className="pass-account-recent"><div className="pass-account-panel-title"><h3>Check-ins recentes</h3><button type="button" onClick={() => setPassTab("Check-ins")}>Ver todos <ArrowRight size={13}/></button></div>{!session?.user ? <p>Entre para consultar seu histórico.</p> : checkins.length ? checkins.slice(0, 3).map(visit => <div className="pass-recent-checkin" key={visit.id}><span className="pass-recent-thumb"><Dumbbell size={16}/></span><span><strong>{checkinUnits[visit.unit_id] || "Unidade FortalPass"}</strong><small>{new Date(visit.started_at).toLocaleDateString("pt-BR")}</small><em>{visit.status === "completed" ? "Finalizado" : "Em andamento"}</em></span></div>) : <p>Nenhum check-in registrado nesta conta.</p>}</section><section className="pass-account-help"><h3>Benefícios FortalPass</h3><p>Os benefícios aparecerão quando houver uma oferta ativa e aprovada.</p><button type="button" onClick={() => setPassTab("Planos")}>Consultar planos <ArrowRight size={14}/></button></section></aside></div>
     <nav className="partner-discovery-shortcuts" aria-label="Atalhos de cuidado">
       <Link to="/nutrition"><Utensils size={17} /><span><strong>Nutricionista</strong><small>Perfis e planos alimentares</small></span><ArrowRight size={16} /></Link>
       <Link to="/workout"><Dumbbell size={17} /><span><strong>Personal</strong><small>Profissionais e seus treinos</small></span><ArrowRight size={16} /></Link>
       <Link to="/messages"><MessageCircle size={17} /><span><strong>Mensagens</strong><small>Conversas da sua conta</small></span><ArrowRight size={16} /></Link>
     </nav>
-    <section className="pass-investor-preview" aria-labelledby="pass-investor-title">
-      <div className="pass-investor-heading"><div><span className="eyebrow">PRÉVIA PARA APRESENTAÇÃO</span><h2 id="pass-investor-title">Veja como grandes redes poderiam aparecer</h2><p>Marcas reais usadas apenas para demonstrar o formato. A Fortalfy não confirma parceria, integração ou disponibilidade de unidades.</p></div><span className="pass-preview-notice"><Info size={15}/> Exemplo visual · sem vínculo confirmado</span></div>
-      <div className="pass-investor-grid">
-        {[
-          { name: "Smart Fit", url: "https://www.smartfit.com.br/academias", image: "/assets/visual-pack/fortalfy-pack-gym-interior.jpg" },
-          { name: "Bluefit", url: "https://www.bluefit.com.br/unidades", image: "/assets/visual-pack/fortalfy-pack-gym-group.jpg" },
-          { name: "Bodytech", url: "https://bodytech.com.br/pt/academias/", image: "/assets/brand-campaign/fortalfy_gym_17_musculacao.jpg" },
-        ].map(network => <article className="pass-investor-card" key={network.name}><img src={network.image} alt="" loading="lazy"/><div><span>REDE DE ACADEMIAS · REFERÊNCIA</span><h3>{network.name}</h3><p>Prévia de apresentação. Unidade e parceria com a Fortalfy ainda não confirmadas.</p><a href={network.url} target="_blank" rel="noreferrer">Consultar site oficial <ArrowUpRight size={14}/></a></div></article>)}
-      </div>
-    </section>
     <section className="partner-cta"><div><span className="eyebrow">VOCÊ É UM PARCEIRO?</span><h2>Cadastre seu perfil real</h2><p>Seu cadastro ficará oculto ao público até a aprovação da equipe.</p></div><Link to="/professional" className="button lime-button">Acessar área profissional <ArrowRight size={17} /></Link></section>
     {session?.user?.app_metadata?.role === "admin" && <section className="partner-cta"><div><span className="eyebrow">OPERAÇÃO FORTALFY</span><h2>Placas oficiais das unidades</h2><p>Cadastre unidades, gere QR fixo e acompanhe instalação e tentativas no servidor.</p></div><Link to="/admin/gym-plates" className="button lime-button">Administrar placas <ArrowRight size={17} /></Link></section>}
   </Screen>;
