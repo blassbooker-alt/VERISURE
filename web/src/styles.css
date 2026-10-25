@@ -13849,3 +13849,7 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .live-feature > img { min-height: 150px; }
   .live-event-cover, .live-discovery-cover { height: clamp(145px,13vw,190px); }
 }
+@media (max-width: 620px) {
+  .screen-content.live-screen .live-feature > img { height: 155px !important; min-height: 0 !important; }
+  .screen-content.live-screen .live-discovery-cover { height: 150px !important; }
+}
