@@ -13853,3 +13853,9 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .screen-content.live-screen .live-feature > img { height: 155px !important; min-height: 0 !important; }
   .screen-content.live-screen .live-discovery-cover { height: 150px !important; }
 }
+.live-feature:not(.has-event) { display: block; height: auto; min-height: 0; aspect-ratio: 1365 / 768; }
+.live-feature:not(.has-event) > img { display: block; width: 100%; height: 100%; min-height: 0; max-height: none; object-fit: contain; }
+.live-feature:not(.has-event)::after, .live-feature:not(.has-event) .live-feature-copy { display: none; }
+@media (max-width: 620px) {
+  .screen-content.live-screen .live-feature:not(.has-event) > img { height: 100% !important; max-height: none !important; }
+}
