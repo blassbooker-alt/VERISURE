@@ -51,7 +51,7 @@ function ShopCartDialog({ cart, onClose, onQuantityChange, onRemove, onContinue,
 
   return <div className="modal-scrim shop-scrim" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
     <section className="modal-card shop-dialog shop-cart-dialog" role="dialog" aria-modal="true" aria-label="Sacola de compras FortalShop">
-      <div className="shop-cart-heading"><div><span className="eyebrow">FORTALFY SHOP</span><h2>Sacola de compras <span>{summary.itemCount}</span></h2></div><button className="icon-button" aria-label="Fechar sacola" onClick={onClose}><X size={18} /></button></div>
+      <div className="shop-cart-heading"><div><span className="eyebrow">FORTALSHOPEE · FORTALFY</span><h2>Sacola de compras <span>{summary.itemCount}</span></h2></div><button className="icon-button" aria-label="Fechar sacola" onClick={onClose}><X size={18} /></button></div>
       {cart.length === 0 && <div className="shop-cart-empty"><span><ShoppingBag size={25} /></span><h3>Sua sacola está vazia</h3><p>Encontre produtos para acompanhar sua rotina de treino.</p><button className="button primary" onClick={onContinue}>Explorar produtos <ArrowRight size={16} /></button></div>}
       {cart.length > 0 && <>
         <div className="shop-cart-items">{lines.map(({ line, product }) => {
@@ -203,10 +203,10 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
           {searchFocused && searchSuggestions.length > 0 && <div className="shop-search-suggestions" id="shop-search-suggestions" role="listbox" aria-label="Sugestões de produtos">{searchSuggestions.map((product, index) => <button key={product.id} id={`shop-suggestion-${product.id}`} type="button" role="option" aria-selected={activeSuggestion === index} onMouseDown={event => event.preventDefault()} onClick={() => selectSearchSuggestion(product)}><img src={product.image} alt="" /><span><strong>{product.name}</strong><small>FortalShop · {getShopDepartment(product)}</small></span><ChevronRight size={16} /></button>)}</div>}
         </div>
       </section>
-      <div className="shop-demo-banner"><span><Check size={15} /></span><p><strong>Vitrine de apresentação</strong> · produtos, preços e disponibilidade são demonstrativos. A sacola conclui apenas uma compra simulada.</p><span className="shop-demo-banner-count">30 itens</span></div>
+
       <section className="shop-editorial" aria-label="Destaque FortalShop">
         <img className="shop-editorial-banner" src={brandCampaignAsset("fortalfy_gym_15_whey_bancada.jpg")} alt="" />
-        <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALFY SHOP</span><h1>Seu próximo treino começa aqui.</h1><p>Vestuário, acessórios e nutrição para acompanhar seu ritmo.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
+        <div className="shop-editorial-copy"><span className="shop-editorial-label"><Sparkles size={13} /> FORTALSHOPEE · FORTALFY</span><h1>Seu próximo treino começa aqui.</h1><p>Achados para treinar, vestir e cuidar de você.</p><button className="button lime-button" onClick={() => selectCategory("Todas")}>Explorar produtos <ArrowRight size={15} /></button></div>
       </section>
       <section className="shop-departments" aria-label="Explore por departamento">
         <div className="shop-section-heading"><div><span className="eyebrow">ENCONTRE SEU RITMO</span><h2>Explore por categoria</h2></div><span>{categories.length - 1} departamentos</span></div>
@@ -217,7 +217,7 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
         })}</div>
       </section>
       <section className="shop-catalog" id="shop-products" aria-label="Catálogo FortalShop">
-        <div className="shop-catalog-heading"><div><span className="eyebrow">CATÁLOGO DE DEMONSTRAÇÃO</span><h2>Produtos para sua rotina</h2><p>Explore a coleção de acessórios, nutrição e vestuário FortalShop.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
+        <div className="shop-catalog-heading"><div><span className="eyebrow">ENCONTRE SEU PRÓXIMO FAVORITO</span><h2>Ofertas para sua rotina</h2><p>Explore a coleção de acessórios, nutrição e vestuário FortalShop.</p></div><span className="shop-catalog-count">{visibleProducts.length} {visibleProducts.length === 1 ? "produto" : "produtos"}</span></div>
         <div className="shop-catalog-toolbar">
           <div className="shop-categories" role="group" aria-label="Filtrar produtos por categoria">{categories.map(item => <button type="button" key={item} className={`shop-category-chip${category === item ? " is-active" : ""}`} aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}</div>
           <label className="shop-sort"><ArrowDownUp size={16} aria-hidden="true" /><span>Ordenar:</span><select aria-label="Ordenar produtos" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">Recomendados</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome (A–Z)</option></select></label>
