@@ -1468,8 +1468,16 @@ function PartnerDiscoverySection({ client, session, kind, notify }) {
 
 function LivePassScreen({ client, session, notify }) {
   const [partners, setPartners] = useState([]);
-  const [filter, setFilter] = useState("academia");
+  const [filter, setFilter] = useState("todos");
   const [query, setQuery] = useState("");
+  const [city, setCity] = useState("");
+  const [modality, setModality] = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("fortalfy.pass.favorites.v1") || "[]"); } catch { return []; }
+  });
+  const [view, setView] = useState("list");
+  const [selectedId, setSelectedId] = useState("");
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1492,12 +1500,23 @@ function LivePassScreen({ client, session, notify }) {
   }, [client, retry]);
 
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
+  const cities = [...new Set(partners.map(partner => partner.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const modalities = [...new Set(partners.flatMap(partner => partner.modalities || []).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const shown = orderPartnersByDistance(
     partners.filter(partner => (filter === "todos" || partner.kind === filter)
+      && (!city || partner.city === city)
+      && (!modality || partner.modalities.includes(modality))
+      && (!favoritesOnly || favorites.includes(partner.id))
       && [partner.name, partner.city, partner.address, partner.bio, ...partner.modalities]
         .join(" ").toLocaleLowerCase("pt-BR").includes(normalizedQuery)),
     location,
   );
+  const selected = shown.find(partner => partner.id === selectedId) || shown[0] || null;
+  const toggleFavorite = partnerId => setFavorites(current => {
+    const next = current.includes(partnerId) ? current.filter(id => id !== partnerId) : [...current, partnerId];
+    try { localStorage.setItem("fortalfy.pass.favorites.v1", JSON.stringify(next)); } catch { /* Favoritos ficam disponíveis nesta sessão. */ }
+    return next;
+  });
   const requestLocation = () => {
     if (!navigator.geolocation) {
       setLocationError("Este navegador não oferece localização.");
@@ -1519,7 +1538,8 @@ function LivePassScreen({ client, session, notify }) {
   };
 
   return <Screen title="FortalPass" subtitle="MOVIMENTO E CUIDADO PERTO DE VOCÊ" location className="pass-screen">
-    <section className="partner-discovery pass-discovery">
+    <section className="pass-hero"><div><span className="eyebrow">FORTALPASS · REDE PARCEIRA</span><h2>Sua rede de academias</h2><p>Encontre espaços parceiros e profissionais, treine perto de você e consulte informações cadastradas.</p><div className="pass-hero-stats"><span><strong>{partners.filter(item => item.kind === "academia").length}</strong> academias parceiras</span><span><MapPin size={15}/> Busca por proximidade</span><span><ShieldCheck size={15}/> Cadastros aprovados</span></div></div><Brand /></section>
+    <div className="pass-marketplace-shell"><section className="partner-discovery pass-discovery">
       <header className="partner-discovery-heading">
         <span className="eyebrow">DESCUBRA A REDE FORTALFY</span>
         <h2>Encontre o próximo passo da sua jornada.</h2>
@@ -1529,6 +1549,7 @@ function LivePassScreen({ client, session, notify }) {
         <label className="partner-search"><Search size={17} /><span className="sr-only">Buscar academia ou profissional</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar nome, cidade ou modalidade" /></label>
         <button type="button" className="button subtle small-button" onClick={requestLocation}><MapPin size={15} /> Usar minha localização</button>
       </div>
+      <div className="pass-filter-row"><select aria-label="Cidade" value={city} onChange={event => setCity(event.target.value)}><option value="">Todas as cidades</option>{[...new Set(partners.map(partner => partner.city).filter(Boolean))].sort().map(item => <option key={item}>{item}</option>)}</select><select aria-label="Modalidade" value={modality} onChange={event => setModality(event.target.value)}><option value="">Todas as modalidades</option>{[...new Set(partners.flatMap(partner => partner.modalities || []).filter(Boolean))].sort().map(item => <option key={item}>{item}</option>)}</select><button type="button" className={favoritesOnly ? "active" : ""} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(value => !value)}><Heart size={15}/> Favoritos ({favorites.length})</button><button type="button" className={view === "map" ? "active" : ""} onClick={() => setView(view === "map" ? "list" : "map")}>{view === "map" ? "Ver lista" : "Ver mapa"}</button></div>
       <div className="social-feed-toolbar">
       <div className="social-filter-tabs">
         {[["academia", "Academias"], ["personal", "Personal"], ["nutricionista", "Nutricionistas"], ["todos", "Todos"]].map(([value, label]) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>)}
@@ -1538,10 +1559,12 @@ function LivePassScreen({ client, session, notify }) {
       {error && <div className="social-feed-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
       {loading && <p className="social-inline-status" role="status">Carregando parceiros aprovados…</p>}
       {!loading && !error && !shown.length && <div className="empty-state"><MapPin size={24} /><h3>{query ? "Nenhum parceiro encontrado" : "Nenhum parceiro aprovado nesta categoria"}</h3><p>{query ? "Tente outro termo ou categoria." : "Parceiros reais aparecerão aqui após concluírem o cadastro e serem aprovados."}</p></div>}
+      {view === "map" && <div className="pass-map-view">{selected?.latitude != null && selected?.longitude != null ? <iframe title={`Mapa de ${selected.name}`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - 0.012}%2C${selected.latitude - 0.008}%2C${selected.longitude + 0.012}%2C${selected.latitude + 0.008}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`} loading="lazy" referrerPolicy="no-referrer" /> : <div><MapPin size={22}/><strong>Mapa indisponível para este parceiro</strong><p>O cadastro ainda não tem coordenadas.</p></div>}{selected && <div className="pass-map-selection"><strong>{selected.name}</strong><span>{[selected.address, selected.city].filter(Boolean).join(" · ") || "Endereço não informado"}</span>{openStreetMapUrl(selected) && <a href={openStreetMapUrl(selected)} target="_blank" rel="noreferrer">Como chegar <ArrowUpRight size={14}/></a>}</div>}<div className="pass-map-partners">{shown.filter(partner => partner.latitude != null && partner.longitude != null).map(partner => <button type="button" key={partner.id} className={selected?.id === partner.id ? "active" : ""} onClick={() => setSelectedId(partner.id)}>{partner.name}</button>)}</div></div>}
       {shown.length > 0 && <SponsoredCreative image="05-fortalpass-partner.png" alt="Parceiro em destaque no FortalPass: encontre seu próximo passo perto de você." label="Parceiro aprovado em destaque" to={`/profile/${shown[0].profileId}`} className="fortalpass-partner-creative" />}
-      {shown.length > 0 && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <LivePartnerCard key={partner.id} partner={partner} appointment session={session} />)}</div>}
+      {shown.length > 0 && view === "list" && <div className="gym-cards partner-discovery-grid">{shown.map(partner => <div className="pass-listing-wrap" key={partner.id}><button type="button" className={`pass-listing-favorite ${favorites.includes(partner.id) ? "active" : ""}`} aria-label={favorites.includes(partner.id) ? `Remover ${partner.name} dos favoritos` : `Adicionar ${partner.name} aos favoritos`} aria-pressed={favorites.includes(partner.id)} onClick={() => toggleFavorite(partner.id)}><Heart size={16}/></button><LivePartnerCard partner={partner} appointment={partner.kind !== "academia"} session={session} /></div>)}</div>}
       <div className="partner-discovery-footnote"><ShieldCheck size={15} /> Não exibimos preços, avaliações ou disponibilidade que não tenham sido informados pelo parceiro.</div>
     </section>
+    <aside className="pass-account-panel"><section><span className="eyebrow">MEU FORTALPASS</span><h3>{session?.user ? "Sua conta Fortalfy" : "Entre na sua conta"}</h3><p>{session?.user ? "Acompanhe os recursos associados à sua conta." : "Entre para acompanhar sua conta."}</p>{!session?.user && <Link className="button primary" to="/profile">Entrar na Fortalfy <ArrowRight size={14}/></Link>}<div className="pass-account-status"><ShieldCheck size={17}/><span><strong>Plano de acesso</strong><small>Nenhuma assinatura FortalPass vinculada.</small></span></div><div className="pass-account-status"><Heart size={17}/><span><strong>{favorites.length} favoritos</strong><small>Salvos neste dispositivo.</small></span></div></section><section className="pass-account-help"><h3>É uma academia parceira?</h3><p>Cadastre sua unidade para análise da equipe Fortalfy.</p><Link to="/professional">Acessar cadastro <ArrowRight size={14}/></Link></section></aside></div>
     <nav className="partner-discovery-shortcuts" aria-label="Atalhos de cuidado">
       <Link to="/nutrition"><Utensils size={17} /><span><strong>Nutricionista</strong><small>Perfis e planos alimentares</small></span><ArrowRight size={16} /></Link>
       <Link to="/workout"><Dumbbell size={17} /><span><strong>Personal</strong><small>Profissionais e seus treinos</small></span><ArrowRight size={16} /></Link>
