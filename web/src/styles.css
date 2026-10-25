@@ -13035,3 +13035,16 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
 @media (min-width: 700px) {
     .shop-screen > .bottom-nav { transform: none !important; }
 }
+
+
+/* Correct the narrow-screen nav width and centering. */
+@media (max-width: 699px) {
+    .shop-screen > .bottom-nav {
+          left: 12px !important;
+          right: 12px !important;
+          width: auto !important;
+          max-width: 460px !important;
+          margin-inline: auto !important;
+          transform: none !important;
+    }
+}
