@@ -1570,6 +1570,16 @@ function LivePassScreen({ client, session, notify }) {
       <Link to="/workout"><Dumbbell size={17} /><span><strong>Personal</strong><small>Profissionais e seus treinos</small></span><ArrowRight size={16} /></Link>
       <Link to="/messages"><MessageCircle size={17} /><span><strong>Mensagens</strong><small>Conversas da sua conta</small></span><ArrowRight size={16} /></Link>
     </nav>
+    <section className="pass-investor-preview" aria-labelledby="pass-investor-title">
+      <div className="pass-investor-heading"><div><span className="eyebrow">PRÉVIA PARA APRESENTAÇÃO</span><h2 id="pass-investor-title">Veja como grandes redes poderiam aparecer</h2><p>Marcas reais usadas apenas para demonstrar o formato. A Fortalfy não confirma parceria, integração ou disponibilidade de unidades.</p></div><span className="pass-preview-notice"><Info size={15}/> Exemplo visual · sem vínculo confirmado</span></div>
+      <div className="pass-investor-grid">
+        {[
+          { name: "Smart Fit", url: "https://www.smartfit.com.br/academias", image: "/assets/visual-pack/fortalfy-pack-gym-interior.jpg" },
+          { name: "Bluefit", url: "https://www.bluefit.com.br/unidades", image: "/assets/visual-pack/fortalfy-pack-gym-group.jpg" },
+          { name: "Bodytech", url: "https://bodytech.com.br/pt/academias/", image: "/assets/brand-campaign/fortalfy_gym_17_musculacao.jpg" },
+        ].map(network => <article className="pass-investor-card" key={network.name}><img src={network.image} alt="" loading="lazy"/><div><span>REDE DE ACADEMIAS · REFERÊNCIA</span><h3>{network.name}</h3><p>Prévia de apresentação. Unidade e parceria com a Fortalfy ainda não confirmadas.</p><a href={network.url} target="_blank" rel="noreferrer">Consultar site oficial <ArrowUpRight size={14}/></a></div></article>)}
+      </div>
+    </section>
     <section className="partner-cta"><div><span className="eyebrow">VOCÊ É UM PARCEIRO?</span><h2>Cadastre seu perfil real</h2><p>Seu cadastro ficará oculto ao público até a aprovação da equipe.</p></div><Link to="/professional" className="button lime-button">Acessar área profissional <ArrowRight size={17} /></Link></section>
     {session?.user?.app_metadata?.role === "admin" && <section className="partner-cta"><div><span className="eyebrow">OPERAÇÃO FORTALFY</span><h2>Placas oficiais das unidades</h2><p>Cadastre unidades, gere QR fixo e acompanhe instalação e tentativas no servidor.</p></div><Link to="/admin/gym-plates" className="button lime-button">Administrar placas <ArrowRight size={17} /></Link></section>}
   </Screen>;
