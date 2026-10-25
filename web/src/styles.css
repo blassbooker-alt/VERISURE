@@ -5388,6 +5388,22 @@ html { color-scheme: dark; }
 .pass-tabs button.active { color:#17200c; background:#c5e642; font-weight:700; }
 .pass-tabs button span { font-size:.58rem; }
 .pass-tabs .pass-map-toggle { margin-left:auto; color:#c5e642; }
+.pass-catalog-switch { display:flex; flex-wrap:wrap; gap:7px; margin:0 0 10px; }
+.pass-catalog-switch button { min-height:34px; padding:7px 11px; color:#c3d0c3; background:#101b13; border:1px solid #304232; border-radius:9px; font-size:.7rem; cursor:pointer; }
+.pass-catalog-switch button.active { color:#17200c; background:#c5e642; border-color:#c5e642; font-weight:750; }
+.pass-demo-disclosure { display:flex; align-items:flex-start; gap:8px; margin:0 0 12px; padding:10px 12px; color:#d9e6a4; background:#202918; border:1px solid #414c2b; border-radius:9px; font-size:.7rem; line-height:1.45; }
+.pass-demo-disclosure svg { flex:0 0 auto; margin-top:1px; color:#c5e642; }
+.pass-demo-network-list { display:grid; gap:10px; }
+.pass-demo-network-card { position:relative; display:grid; grid-template-columns:132px minmax(0,1fr) 36px; gap:13px; align-items:center; min-width:0; padding:10px; color:#e7eee7; background:#0b170f; border:1px solid #253a2a; border-radius:11px; }
+.pass-demo-network-card > img { display:block; width:132px; height:94px; object-fit:cover; border-radius:8px; background:#17231a; }
+.pass-demo-network-card > div { display:grid; gap:4px; min-width:0; }
+.pass-demo-network-card > div > span { width:max-content; max-width:100%; padding:3px 6px; color:#d9e6a4; background:#263019; border:1px solid #46552a; border-radius:20px; font-size:.53rem; font-weight:750; letter-spacing:.025em; }
+.pass-demo-network-card h3 { margin:1px 0; color:#f0f5ef; font-size:.9rem; }
+.pass-demo-network-card p { margin:0; color:#a6b2a7; font-size:.68rem; line-height:1.4; }
+.pass-demo-network-card small { color:#89978c; font-size:.63rem; }
+.pass-demo-network-card a { display:inline-flex; align-items:center; gap:5px; width:max-content; color:#c5e642; font-size:.67rem; text-decoration:none; }
+.pass-demo-network-card a:hover { text-decoration:underline; }
+.pass-demo-network-card .pass-listing-favorite { position:static; }
 .pass-tab-empty { display:grid; justify-items:start; gap:8px; padding:18px; color:#dbe6db; background:#0b170f; border:1px solid #26392a; border-radius:11px; }
 .pass-tab-empty svg { color:#c5e642; }
 .pass-tab-empty p { margin:0; color:#a6b2a7; font-size:.78rem; }
@@ -5456,7 +5472,7 @@ html { color-scheme: dark; }
 .pass-investor-card a { display:inline-flex; align-items:center; gap:5px; color:#c5e642; font-size:.75rem; text-decoration:none; }
 @media (max-width: 1100px) { .pass-marketplace-shell { grid-template-columns:190px minmax(0,1fr); } .pass-account-panel { grid-column:1/-1; grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media (max-width: 760px) { .pass-marketplace-shell { grid-template-columns:1fr; } .pass-filters-panel { grid-template-columns:repeat(2,minmax(0,1fr)); } .pass-checkbox-filters { grid-column:1/-1; } .pass-filters-panel .pass-apply-filters { grid-column:1/-1; } .pass-account-panel { grid-template-columns:1fr; } }
-@media (max-width: 600px) { .pass-hero { align-items:flex-start; } .pass-hero > .logo-mark { display:none; } .pass-search-row,.pass-marketplace-heading,.pass-investor-heading { align-items:stretch; flex-direction:column; } .pass-search-row .button { justify-content:center; } .pass-account-panel { grid-template-columns:1fr; } .pass-filter-row > * { flex:1 1 140px; } .pass-map-view iframe { height:260px; } .pass-investor-grid { grid-template-columns:1fr; } }
+@media (max-width: 600px) { .pass-hero { align-items:flex-start; } .pass-hero > .logo-mark { display:none; } .pass-search-row,.pass-marketplace-heading,.pass-investor-heading { align-items:stretch; flex-direction:column; } .pass-search-row .button { justify-content:center; } .pass-account-panel { grid-template-columns:1fr; } .pass-filter-row > * { flex:1 1 140px; } .pass-map-view iframe { height:260px; } .pass-investor-grid { grid-template-columns:1fr; } .pass-demo-network-card { grid-template-columns:78px minmax(0,1fr) 32px; gap:9px; padding:8px; } .pass-demo-network-card > img { width:78px; height:82px; } .pass-demo-network-card p { font-size:.64rem; } .pass-demo-network-card > div > span { font-size:.46rem; } }
 .workout-screen .partner-discovery, .nutrition-screen .partner-discovery {
   color: #e8eee8;
   background: linear-gradient(145deg, #141c15, #101711 72%);
