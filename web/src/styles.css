@@ -13019,3 +13019,19 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
  .shop-screen .shop-price-line strong { font-size:.86rem; }
  .shop-screen .shop-add-button { min-height:30px; font-size:.66rem; }
 }
+
+
+/* Keep the FortalShop fixed mobile navigation centered inside the scrolling app shell. */
+@media (max-width: 699px) {
+    .shop-screen > .bottom-nav {
+          left: 50vw !important;
+          right: auto !important;
+          position: fixed !important;
+          bottom: 10px !important;
+          width: min(calc(100vw - 24px), 460px) !important;
+          transform: translateX(-50%) !important;
+    }
+}
+@media (min-width: 700px) {
+    .shop-screen > .bottom-nav { transform: none !important; }
+}
