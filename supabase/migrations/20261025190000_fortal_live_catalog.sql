@@ -94,8 +94,8 @@ create policy "Guests read public Creator live schedule" on public.creator_live_
 drop policy if exists "Authorized instructors manage Creator lives" on public.creator_live_events;
 create policy "Authorized instructors manage Creator lives" on public.creator_live_events
   for all to authenticated
-  using (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin' or (instructor_id = auth.uid() and exists (select 1 from public.creator_course_instructors i where i.profile_id = auth.uid())))
-  with check (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin' or (instructor_id = auth.uid() and exists (select 1 from public.creator_course_instructors i where i.profile_id = auth.uid())));
+  using (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin' or (instructor_id = auth.uid() and exists (select 1 from public.professional_applications a where a.profile_id = auth.uid() and a.kind = 'influenciador' and a.status = 'approved')))
+  with check (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin' or (instructor_id = auth.uid() and exists (select 1 from public.professional_applications a where a.profile_id = auth.uid() and a.kind = 'influenciador' and a.status = 'approved')));
 
 create table if not exists public.creator_live_registrations (
   id uuid primary key default gen_random_uuid(),
@@ -195,23 +195,23 @@ create policy "Authorized instructors upload live covers" on storage.objects
     bucket_id = 'creator-live-covers'
     and (storage.foldername(name))[1] = auth.uid()::text
     and (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin'
-      or exists (select 1 from public.creator_course_instructors i where i.profile_id = auth.uid()))
+      or exists (select 1 from public.professional_applications a where a.profile_id = auth.uid() and a.kind = 'influenciador' and a.status = 'approved'))
   );
 drop policy if exists "Authorized instructors update live covers" on storage.objects;
 create policy "Authorized instructors update live covers" on storage.objects
   for update to authenticated using (
     bucket_id = 'creator-live-covers' and (storage.foldername(name))[1] = auth.uid()::text
     and (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin'
-      or exists (select 1 from public.creator_course_instructors i where i.profile_id = auth.uid()))
+      or exists (select 1 from public.professional_applications a where a.profile_id = auth.uid() and a.kind = 'influenciador' and a.status = 'approved'))
   ) with check (
     bucket_id = 'creator-live-covers' and (storage.foldername(name))[1] = auth.uid()::text
     and (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin'
-      or exists (select 1 from public.creator_course_instructors i where i.profile_id = auth.uid()))
+      or exists (select 1 from public.professional_applications a where a.profile_id = auth.uid() and a.kind = 'influenciador' and a.status = 'approved'))
   );
 drop policy if exists "Authorized instructors delete live covers" on storage.objects;
 create policy "Authorized instructors delete live covers" on storage.objects
   for delete to authenticated using (
     bucket_id = 'creator-live-covers' and (storage.foldername(name))[1] = auth.uid()::text
     and (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin'
-      or exists (select 1 from public.creator_course_instructors i where i.profile_id = auth.uid()))
+      or exists (select 1 from public.professional_applications a where a.profile_id = auth.uid() and a.kind = 'influenciador' and a.status = 'approved'))
   );
