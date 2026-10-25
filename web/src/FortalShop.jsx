@@ -241,3 +241,4 @@ export default function FortalShop({ client, cart, setCart, initialDialog = "", 
     {demoOrder && <ShopDemoOrderConfirmation order={demoOrder} onClose={() => setDemoOrder(null)} />}
   </div>;
 }
+
