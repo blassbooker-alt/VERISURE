@@ -5630,16 +5630,24 @@ html { color-scheme: dark; }
   .pass-marketplace-shell { grid-template-columns:minmax(0,1fr); gap:12px; }
   .pass-filters-panel { display:none; }
   .pass-account-panel { grid-template-columns:1fr; }
-  .pass-screen .screen-heading { margin-bottom:12px; }
-  .pass-hero { min-height:160px; padding:17px; box-shadow:0 10px 28px #0003; }
+  .pass-screen > .screen-heading { display:none; }
+  .pass-hero { min-height:145px; padding:15px; margin-bottom:10px; box-shadow:0 10px 28px #0003; }
   .pass-hero::before { background:linear-gradient(90deg,#06130ef2 0%,#06130ed9 56%,#06130e78 100%); }
   .pass-hero .eyebrow { font-size:.53rem; }
-  .pass-hero h2 { margin:6px 0; font-size:1.4rem; }
-  .pass-hero p { max-width:390px; font-size:.69rem; }
-  .pass-hero-stats { gap:5px 7px; margin-top:10px; font-size:.58rem; }
-  .pass-hero-stats span { padding:4px 6px; }
-  .pass-discovery { padding:13px; }
+  .pass-hero h2 { margin:6px 0; font-size:1.32rem; }
+  .pass-hero p { max-width:390px; margin:0; font-size:.66rem; }
+  .pass-hero-stats { gap:5px 7px; margin-top:8px; font-size:.57rem; }
+  .pass-hero-stats span { padding:3px 6px; }
+  .pass-hero-stats span:nth-child(n+2) { display:none; }
+  .pass-discovery { padding:12px; }
   .pass-discovery .partner-discovery-heading h2 { font-size:1.17rem; }
+  .pass-discovery.is-demo .social-feed-toolbar { display:none!important; }
+  .pass-tabs { scrollbar-width:none; }
+  .pass-tabs::-webkit-scrollbar { display:none; }
+  .pass-demo-disclosure { gap:6px; margin-bottom:7px; padding:7px 9px; font-size:.59rem; }
+  .pass-demo-disclosure svg { width:13px; height:13px; }
+  .pass-catalog-switch { gap:5px; margin-bottom:7px; }
+  .pass-catalog-switch button { min-height:31px; padding:5px 7px; font-size:.56rem; }
   .pass-demo-network-card { grid-template-columns:76px minmax(0,1fr) 32px; min-height:98px; padding:8px; }
   .pass-demo-network-card:hover { transform:none; }
   .pass-demo-network-card > img { width:76px; height:78px; }

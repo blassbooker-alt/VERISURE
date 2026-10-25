@@ -1586,7 +1586,7 @@ function LivePassScreen({ client, session, notify }) {
       <fieldset className="pass-checkbox-filters"><legend>Horário de funcionamento</legend><span>Filtro de horários disponível quando informado pelo parceiro.</span></fieldset>
       <button type="button" className={`pass-favorite-filter ${favoritesOnly || passTab === "Favoritos" ? "active" : ""}`} aria-pressed={favoritesOnly} onClick={() => { setFavoritesOnly(value => !value); setPassTab("Academias"); }}><Heart size={15}/> Favoritos <span>{favorites.length}</span></button>
       <button type="button" className="button primary pass-apply-filters" onClick={() => setPassTab("Academias")}>Aplicar filtros</button>
-    </aside><section className="partner-discovery pass-discovery">
+    </aside><section className={`partner-discovery pass-discovery ${catalogMode === "demo" ? "is-demo" : ""}`}>
       <header className="partner-discovery-heading">
         <span className="eyebrow">REDE FORTALPASS</span>
         <h2>{passTab === "Planos" ? "Seu plano FortalPass" : passTab === "Check-ins" ? "Check-ins recentes" : passTab === "Favoritos" ? "Seus parceiros favoritos" : location ? "Academias próximas a você" : catalogMode === "demo" ? "Academias para conhecer o FortalPass" : "Academias parceiras FortalPass"}</h2>
@@ -1594,7 +1594,7 @@ function LivePassScreen({ client, session, notify }) {
       </header>
       <nav className="pass-tabs" aria-label="FortalPass">{["Academias", "Planos", "Check-ins", "Favoritos"].map(tab => <button type="button" key={tab} className={passTab === tab ? "active" : ""} onClick={() => { setPassTab(tab); if (tab === "Favoritos") { setFavoritesOnly(false); setFilter("todos"); } }}>{tab}{tab === "Favoritos" && favorites.length > 0 && <span>{favorites.length}</span>}</button>)}<button type="button" className="pass-map-toggle" onClick={() => setView(view === "map" ? "list" : "map")}><MapPin size={14}/>{view === "map" ? "Lista" : "Mapa"}</button></nav>
       <div className="pass-catalog-switch" role="group" aria-label="Tipo de catálogo"><button type="button" className={catalogMode === "demo" ? "active" : ""} aria-pressed={catalogMode === "demo"} onClick={() => { setCatalogMode("demo"); setDetailPartner(null); setCity(""); setModality(""); setSelectedId(""); }}>Prévia para o cliente</button><button type="button" className={catalogMode === "real" ? "active" : ""} aria-pressed={catalogMode === "real"} onClick={() => { setCatalogMode("real"); setDetailPartner(null); setCity(""); setModality(""); setSelectedId(""); }}>Parceiros cadastrados ({partners.length})</button></div>
-      {catalogMode === "demo" && passTab === "Academias" && <div className="pass-demo-disclosure"><Info size={15}/><span>Marcas para demonstrar o fluxo. Não representam unidades cadastradas, parceria ou liberação de check-in.</span></div>}
+      {catalogMode === "demo" && passTab === "Academias" && <div className="pass-demo-disclosure"><Info size={15}/><span>Marcas ilustrativas; sem parceria ou check-in ativo.</span></div>}
       <div className="partner-discovery-controls">
         <label className="partner-search"><Search size={17} /><span className="sr-only">Buscar academia ou profissional</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar nome, cidade ou modalidade" /></label>
         <button type="button" className="button subtle small-button" onClick={requestLocation}><MapPin size={15} /> Usar minha localização</button>
