@@ -1143,19 +1143,20 @@ function AcademyScreen({ client }) {
 }
 
 const LIVE_TOPICS = [
-  { label: "Treino", category: "treino", image: "fortalfy-pack-training-card.jpg", terms: ["treino", "exercício", "musculação", "corrida", "pilates", "yoga"] },
-  { label: "Nutrição", category: "nutricao", image: "fortalfy-pack-food-breakfast.jpg", terms: ["nutrição", "nutri", "alimentação", "dieta"] },
-  { label: "Emagrecimento", category: "emagrecimento", image: "fortalfy-pack-training-running.jpg", terms: ["emagrecimento", "emagrecer", "peso"] },
-  { label: "Hipertrofia", category: "hipertrofia", image: "fortalfy-pack-training-card.jpg", terms: ["hipertrofia", "massa", "muscular", "força"] },
-  { label: "Saúde e bem-estar", category: "saude_bem_estar", image: "fortalfy-pack-training-yoga.jpg", terms: ["saúde", "bem-estar", "mobilidade", "recuperação"] },
-  { label: "Marketing fitness", category: "marketing_fitness", image: "fortalfy-pack-reels-training.jpg", terms: ["marketing", "negócio", "conteúdo", "creator"] },
+  { label: "Treino", category: "treino", image: "fortalfy_live_online_04_functional_training.jpg", imageAlt: "Treinadora demonstra um exercício com kettlebell em uma aula transmitida", terms: ["treino", "exercício", "musculação", "corrida", "pilates", "yoga"] },
+  { label: "Nutrição", category: "nutricao", image: "fortalfy_live_online_03_sports_nutrition.jpg", imageAlt: "Nutricionista apresenta uma refeição saudável durante uma transmissão", terms: ["nutrição", "nutri", "alimentação", "dieta"] },
+  { label: "Emagrecimento", category: "emagrecimento", image: "fortalfy_live_09_interactive_class.jpg", imageAlt: "Instrutora conduz uma aula interativa com participantes da academia", terms: ["emagrecimento", "emagrecer", "peso"] },
+  { label: "Hipertrofia", category: "hipertrofia", image: "fortalfy_live_03_coach_teaching_lift.jpg", imageAlt: "Treinador orienta uma aluna durante um levantamento com barra", terms: ["hipertrofia", "massa", "muscular", "força"] },
+  { label: "Saúde e bem-estar", category: "saude_bem_estar", image: "fortalfy_live_05_athlete_interview.jpg", imageAlt: "Atleta conversa com uma entrevistadora após o treino", terms: ["saúde", "bem-estar", "mobilidade", "recuperação"] },
+  { label: "Marketing fitness", category: "marketing_fitness", image: "fortalfy_live_online_05_academy_business.jpg", imageAlt: "Personal trainer grava conteúdo sobre gestão de academia", terms: ["marketing", "negócio", "conteúdo", "creator"] },
 ];
 const LIVE_FILTERS = ["Todas", "Ao vivo agora", "Gratuitas", "Pagas", "Agendadas", "Minhas inscrições"];
 const LIVE_DISCOVERY_CARDS = [
-  { label: "NUTRIÇÃO", topic: "Nutrição", title: "Nutrição para sua rotina", image: "fortalfy-pack-food-prep.jpg" },
-  { label: "TREINO", topic: "Treino", title: "Treino com orientação", image: "fortalfy-pack-training-card.jpg" },
-  { label: "MARKETING", topic: "Marketing fitness", title: "Marketing fitness", image: "fortalfy-pack-professional-card.jpg" },
+  { label: "NUTRIÇÃO", topic: "Nutrição", title: "Nutrição para sua rotina", image: "fortalfy_live_02_podcast_nutrition.jpg", imageAlt: "Podcast sobre nutrição com uma nutricionista e alimentos frescos" },
+  { label: "TREINO", topic: "Treino", title: "Treino com orientação", image: "fortalfy_live_03_coach_teaching_lift.jpg", imageAlt: "Treinador orienta uma aluna durante um exercício com barra" },
+  { label: "MARKETING", topic: "Marketing fitness", title: "Marketing fitness", image: "fortalfy_live_08_fitness_marketing.jpg", imageAlt: "Profissional grava uma conversa sobre marketing fitness" },
 ];
+const liveCatalogAsset = filename => `${import.meta.env.BASE_URL}assets/live/catalog/${filename}`;
 function liveTopicFor(event) {
   if (event?.category) {
     const exact = LIVE_TOPICS.find(topic => topic.category === event.category);
@@ -1229,7 +1230,7 @@ function LiveScreen({ client, session, notify }) {
 
   function liveImage(event) {
     const topic = event ? liveTopicFor(event) : LIVE_TOPICS[0];
-    return event?.cover_url || visualPackAsset(topic.image);
+    return event?.cover_url || liveCatalogAsset(topic.image);
   }
   function instructorName(event) {
     return event?.instructor?.display_name || (event?.instructor?.username ? `@${event.instructor.username}` : "Profissional Fortalfy");
@@ -1275,10 +1276,10 @@ function LiveScreen({ client, session, notify }) {
         {!loadError && loading && <div className="live-loading-grid" aria-label="Carregando transmissões">{[0, 1, 2].map(item => <div className="live-skeleton-card" key={item}/>)}</div>}
         {!loadError && !loading && visibleLives.length > 0 && <div className="live-event-grid">{visibleLives.map(eventCard)}</div>}
         {!loadError && !loading && !visibleLives.length && !(filter === "Todas" && !normalizedSearch) && <div className="live-empty-state"><div className="live-empty-icon">{filter === "Pagas" ? <Lock size={22}/> : filter === "Minhas inscrições" ? <Ticket size={22}/> : <CalendarDays size={22}/>}</div><h3>{filter === "Pagas" ? "Compras ainda não disponíveis" : filter === "Minhas inscrições" ? "Sua agenda começa com uma inscrição" : filter === "Ao vivo agora" ? "Nenhuma transmissão ao vivo confirmada" : "Nenhuma transmissão publicada para este filtro"}</h3><p>{filter === "Pagas" ? "A Fortalfy ainda não possui checkout integrado para lives. Nenhuma cobrança será iniciada até que o pagamento seja configurado e confirmado no servidor." : filter === "Minhas inscrições" ? "Quando você se inscrever em um encontro gratuito, ele ficará disponível aqui." : filter === "Ao vivo agora" ? "O catálogo atual não recebe confirmação de início de transmissão. A Fortalfy não exibirá um player ou status ao vivo sem essa integração." : normalizedSearch ? "Tente outro termo ou limpe a busca para ver a agenda publicada." : "Novos encontros aparecerão aqui depois que um profissional autorizado publicar a agenda."}</p>{filter === "Minhas inscrições" && <button type="button" className="button primary" onClick={() => setFilter("Todas")}>Explorar transmissões <ArrowRight size={15}/></button>}{filter === "Pagas" && <Link to="/pass" className="button subtle">Descobrir profissionais <ArrowRight size={15}/></Link>}</div>}
-        {!loadError && !loading && !visibleLives.length && filter === "Todas" && !normalizedSearch && <div className="live-discovery-grid" aria-label="Descubra temas da Fortalfy Live">{LIVE_DISCOVERY_CARDS.map(card => <article className="live-discovery-card" key={card.label}><button type="button" className="live-discovery-card-link" onClick={() => { setSearch(card.topic); document.getElementById("live-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} aria-label={`Explorar tema ${card.topic}`}><div className="live-discovery-cover"><img src={visualPackAsset(card.image)} alt={`Conteúdo de ${card.topic}`} loading="lazy"/><span>{card.label}</span></div><div className="live-discovery-copy"><h3>{card.title}</h3><p>Sem transmissões publicadas neste tema.</p></div><span className="live-discovery-cta">Explorar tema <ArrowRight size={14}/></span></button></article>)}</div>}
+        {!loadError && !loading && !visibleLives.length && filter === "Todas" && !normalizedSearch && <div className="live-discovery-grid" aria-label="Descubra temas da Fortalfy Live">{LIVE_DISCOVERY_CARDS.map(card => <article className="live-discovery-card" key={card.label}><button type="button" className="live-discovery-card-link" onClick={() => { setSearch(card.topic); document.getElementById("live-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} aria-label={`Explorar tema ${card.topic}`}><div className="live-discovery-cover"><img src={liveCatalogAsset(card.image)} alt={card.imageAlt} loading="lazy"/><span>{card.label}</span></div><div className="live-discovery-copy"><h3>{card.title}</h3><p>Sem transmissões publicadas neste tema.</p></div><span className="live-discovery-cta">Explorar tema <ArrowRight size={14}/></span></button></article>)}</div>}
       </section>
 
-      <section className="live-topics-section"><div className="live-section-heading"><div><span className="eyebrow">CONTEÚDO PARA SUA JORNADA</span><h2>Explore por tema</h2><p>Escolha um assunto para filtrar as transmissões publicadas.</p></div></div><div className="live-topic-grid">{LIVE_TOPICS.map(topic => <button key={topic.label} type="button" className="live-topic-card" onClick={() => { setSearch(topic.label); setFilter("Todas"); document.getElementById("live-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><img src={visualPackAsset(topic.image)} alt="" loading="lazy"/><span className="live-topic-overlay"/><span className="live-topic-title">{topic.label}<ArrowRight size={15}/></span></button>)}</div></section>
+      <section className="live-topics-section"><div className="live-section-heading"><div><span className="eyebrow">CONTEÚDO PARA SUA JORNADA</span><h2>Explore por tema</h2><p>Escolha um assunto para filtrar as transmissões publicadas.</p></div></div><div className="live-topic-grid">{LIVE_TOPICS.map(topic => <button key={topic.label} type="button" className="live-topic-card" onClick={() => { setSearch(topic.label); setFilter("Todas"); document.getElementById("live-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><img src={liveCatalogAsset(topic.image)} alt={topic.imageAlt} loading="lazy"/><span className="live-topic-overlay"/><span className="live-topic-title">{topic.label}<ArrowRight size={15}/></span></button>)}</div></section>
       <aside className="live-platform-note"><ShieldCheck size={18}/><p><strong>Participação segura.</strong> Inscrições são registradas pela conta Fortalfy. Pagamentos, acesso a players, chat e lembretes só serão habilitados após integrações e validações próprias.</p></aside>
     </>}
   </Screen>;
