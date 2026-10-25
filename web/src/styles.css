@@ -12678,3 +12678,21 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .shop-screen .shop-catalog-heading { align-items: start; }
   .shop-screen .shop-gallery-thumbnails button { width: 58px; height: 58px; }
 }
+/* Keep catalog cards readable at desktop and mobile widths. */
+.shop-screen .shop-product-card { display: flex; flex-direction: column; height: auto; }
+.shop-screen .shop-product-visual { flex: 0 0 auto; width: 100%; aspect-ratio: 1.14 / 1; }
+.shop-screen .shop-product-visual > img { width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; }
+.shop-screen .shop-product-info { display: flex; flex: 1 0 auto; flex-direction: column; gap: 7px; min-height: 0; padding: 14px; }
+.shop-screen .shop-product-category { line-height: 1.35; }
+.shop-screen .shop-product-name { min-height: 2.7em; margin: 0; overflow: visible; font-size: .9rem; line-height: 1.35; }
+.shop-screen .shop-demo-price { line-height: 1.3; }
+.shop-screen .shop-price-line { min-height: 1.5em; }
+.shop-screen .shop-price-line strong { font-size: 1.06rem; line-height: 1.3; }
+.shop-screen .shop-add-button { position: static; width: 100%; min-height: 38px; display: flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; margin: auto 0 0; padding: 0 12px; color: #f0f5ed; background: #252b26; border: 1px solid #3a423b; border-radius: 9px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.shop-screen .shop-add-button svg { width: 15px; height: 15px; flex: 0 0 auto; }
+@media (max-width: 680px) {
+  .shop-screen .shop-product-grid { gap: 12px; }
+  .shop-screen .shop-product-info { gap: 6px; padding: 10px; }
+  .shop-screen .shop-product-name { font-size: .78rem; }
+  .shop-screen .shop-add-button { min-height: 36px; font-size: .72rem; }
+}
