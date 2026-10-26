@@ -31,6 +31,7 @@ const OnboardingGate = lazy(() => import("./SocialScreens.jsx").then(module => (
 const SocialFeed = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialFeed })));
 const SocialMessages = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialMessages })));
 const ProfessionalsDirectory = lazy(() => import("./ProfessionalsDirectory.jsx"));
+const NutritionistDirectory = lazy(() => import("./NutritionistDirectory.jsx"));
 const SocialProfile = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialProfile })));
 import {
   cancelFollowRequest, getErrorMessage, isDemoUser, loadFollowStates, loadProfile,
@@ -2449,7 +2450,7 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/creator", "/partner/gym", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/creator", "/partner/gym", "/partner/nutritionist", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id);
   return <Suspense fallback={<div className="app-loading" role="status">Carregando Fortalfy…</div>}><div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
@@ -2496,6 +2497,7 @@ function AppContent() {
       <Route path="/partner/manage" element={<PartnerListingManager client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
       <Route path="/professional/manage" element={<ProfessionalPortal client={supabase} session={authSession} profile={socialProfile} notify={notify} />} />
+      <Route path="/partner/nutritionist" element={<Screen title="Encontre seu nutricionista" subtitle="PROFISSIONAIS E CADASTROS APROVADOS" className="nutritionist-discovery-screen"><NutritionistDirectory client={supabase} /></Screen>} />
       <Route path="/partner/:type" element={<LivePartnerScreen client={supabase} />} />
       <Route path="/hire/:role" element={<LiveHiringScreen key={location.pathname} client={supabase} session={authSession} notify={notify} />} />
       <Route path="/shop" element={<FortalShop client={supabase} cart={shopCart} setCart={setShopCart} notify={notify} />} />
