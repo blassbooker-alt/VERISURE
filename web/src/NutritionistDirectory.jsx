@@ -21,7 +21,7 @@ const SPECIALTIES = ["Nutrição esportiva", "Nutrição clínica", "Saúde da m
 
 function DemoProfileCard({ person, onOpen }) {
   return <article className="nutritionist-card nutritionist-card-demo">
-    <div className="nutritionist-card-photo"><img src={`./assets/nutritionists/${person.image}`} alt={`Foto ilustrativa do perfil de ${person.name}`} loading="lazy" decoding="async" /><span>DEMONSTRAÇÃO</span></div>
+    <div className="nutritionist-card-photo"><img src={`./assets/nutritionists/${person.image}`} alt={`Foto ilustrativa do perfil de ${person.name}`} loading="lazy" decoding="async" /></div>
     <div className="nutritionist-card-main">
       <div className="nutritionist-card-name"><h3>{person.name}</h3><span className="nutritionist-demo-pill">Perfil de exemplo</span></div>
       <p className="nutritionist-specialty"><Apple size={14} /> {person.specialty}</p>
