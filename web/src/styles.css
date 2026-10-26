@@ -14480,3 +14480,7 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .nutritionist-dialog-content { gap: 11px; padding: 13px 16px; }
   .nutritionist-dialog > footer { display: grid; grid-template-columns: 1fr 1fr; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
 }
+.nutritionist-demo-detail { display: -webkit-box; overflow: hidden; margin: 0; color: #aebdaf; font-size: .54rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.nutritionist-demo-detail strong { color: #dce8d9; }
+.nutritionist-dialog-content > section { padding-bottom: 11px; border-bottom: 1px solid #1b3523; }
+@media (max-width: 720px) { .nutritionist-demo-detail { font-size: .47rem; -webkit-line-clamp: 1; } }
