@@ -5510,10 +5510,10 @@ html { color-scheme: dark; }
   .pass-catalog-switch { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:8px; }
   .pass-catalog-switch button { min-width:0; min-height:34px; padding:6px 7px; font-size:.61rem; }
   .pass-demo-disclosure { margin-bottom:9px; padding:8px 9px; font-size:.62rem; }
-  .pass-discovery .partner-discovery-controls { display:flex; align-items:stretch; flex-direction:column; gap:7px; margin:9px 0; }
-  .pass-discovery .partner-search { min-width:0; min-height:42px; flex-basis:auto; }
-  .pass-discovery .partner-discovery-controls > .button { justify-content:center; min-height:37px; }
-  .pass-mobile-quickbar { display:flex; gap:7px; margin:8px 0; overflow-x:auto; scrollbar-width:none; }
+  .pass-discovery .partner-discovery-controls { display:flex; align-items:stretch; flex-direction:row; gap:7px; margin:8px 0; }
+  .pass-discovery .partner-search { flex:1 1 0; min-width:0; min-height:40px; }
+  .pass-discovery .partner-discovery-controls > .button { flex:0 0 auto; justify-content:center; min-height:40px; padding:7px 9px; font-size:.61rem; white-space:nowrap; }
+  .pass-mobile-quickbar { display:none; }
   .pass-mobile-quickbar::-webkit-scrollbar { display:none; }
   .pass-mobile-quickbar button { display:inline-flex; flex:0 0 auto; align-items:center; gap:5px; min-height:33px; padding:6px 11px; color:#c4d0c5; background:#101b13; border:1px solid #304232; border-radius:20px; font-size:.64rem; cursor:pointer; }
   .pass-mobile-quickbar button.active { color:#17200c; background:#c5e642; border-color:#c5e642; font-weight:750; }
@@ -10696,9 +10696,17 @@ html[data-theme="dark"] .mobile-app {
   letter-spacing: -.045em;
 }
 
+.logo-mark .logo-word-main { color: inherit; }
+
 .logo-mark .logo-accent {
-  color: inherit;
+  color: var(--brand-lime, #c5e642);
 }
+
+.pass-hero .logo-word-main,.mobile-app[data-theme="dark"] .logo-word-main { color:#fff; }
+.pass-hero .logo-accent,.mobile-app[data-theme="dark"] .logo-accent { color:#c5e642; }
+:root[data-theme="dark"] .logo-mark .logo-word-main { color:#fff; }
+:root[data-theme="dark"] .logo-mark .logo-accent { color:#c5e642; }
+:root[data-theme="light"] .logo-mark .logo-word-main { color:#0d5138; }
 
 .mobile-app :is(.quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
   .delivery-card, .food-card, .empty-state, .gym-card, .professional-care, .profile-identity-card,
