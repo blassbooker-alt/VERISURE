@@ -1,4 +1,4 @@
-const CACHE = "fortalfy-pwa-v36";
+const CACHE = "fortalfy-pwa-v37";
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const response = await fetch("./precache-manifest.json", { cache: "reload" });
