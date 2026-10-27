@@ -1,0 +1,179 @@
+.screen-content.gym-partnership-screen { width: 100%; max-width: none; padding: 0; }
+.gym-partnership-page {
+  --gp-lime: #b8ff35; --gp-green: #76d81d; --gp-ink: #06100e; --gp-panel: #0b1916;
+  --gp-line: rgba(82, 218, 157, .2); --gp-muted: #a2b4ac;
+  width: min(1460px, 100%); margin: 0 auto; padding: 8px clamp(12px, 2vw, 26px) 40px; color: #f5faf7;
+}
+.gym-partnership-hero { min-height: 255px; position: relative; display: flex; align-items: center; overflow: hidden; isolation: isolate; border: 1px solid var(--gp-line); border-radius: 18px; background: #06130f; box-shadow: 0 18px 55px #0005; }
+.gym-partnership-hero > img { position: absolute; z-index: -2; inset: 0 0 0 auto; width: 72%; height: 100%; object-fit: cover; object-position: center 43%; }
+.gym-partnership-hero-shade { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg,#04110ef7 0%,#061510e8 39%,#06151085 67%,#06151028 100%),linear-gradient(0deg,#04110e70,transparent 60%); }
+.gym-partnership-hero-copy { width: min(740px, 74%); padding: clamp(24px, 4vw, 48px); }
+.gym-partnership-page .eyebrow { display: inline-block; color: var(--gp-lime); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
+.gym-partnership-hero h2 { margin: 10px 0 8px; max-width: 690px; font-size: clamp(28px, 3.3vw, 46px); line-height: 1.05; letter-spacing: -.04em; }
+.gym-partnership-hero h2 em { color: var(--gp-lime); font-style: normal; }
+.gym-partnership-hero-copy > p { max-width: 570px; margin: 0; color: #d0dcd6; font-size: 14px; line-height: 1.55; }
+.gym-partnership-hero nav { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+.gym-partnership-hero nav .button { min-height: 40px; font-size: 11px; }
+.gym-partnership-hero-tag { position: absolute; right: 4.5%; top: 25%; max-width: 200px; text-shadow: 0 2px 12px #000; }
+.gym-partnership-hero-tag span,.gym-partnership-hero-tag strong { display: block; }
+.gym-partnership-hero-tag span { color: var(--gp-lime); font-weight: 800; font-size: 15px; }
+.gym-partnership-hero-tag strong { margin-top: 5px; font-size: 23px; line-height: 1.03; }
+.gym-partnership-hero-tag i { display: block; width: 32px; height: 3px; margin-top: 11px; border-radius: 4px; background: var(--gp-lime); }
+.gym-partnership-page .button.lime-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 15px; border: 1px solid transparent; border-radius: 10px; background: linear-gradient(120deg,#c4ff46,#8ee62b); color: #102008; font-weight: 800; text-decoration: none; box-shadow: 0 6px 22px #aaff3522; transition: transform .18s ease,filter .18s ease; }
+.gym-partnership-page .button.lime-button:hover { transform: translateY(-1px); filter: brightness(1.07); }
+.gym-partnership-page .button.subtle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid rgba(101,224,172,.4); border-radius: 10px; background: #071713a8; color: #ecf8f1; text-decoration: none; }
+.gym-partnership-page .button:focus-visible,.gym-partnership-page a:focus-visible,.gym-partnership-page input:focus-visible { outline: 2px solid var(--gp-lime); outline-offset: 3px; }
+.gym-partnership-page a { color: inherit; }
+.gym-admin-shortcut { display: inline-flex; align-items: center; gap: 7px; margin: 13px 0 0; color: var(--gp-lime)!important; font-size: 12px; text-decoration: none; }
+.gym-partnership-section { margin-top: 30px; }
+.gym-partnership-section-title { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
+.gym-partnership-section-title h2 { margin: 4px 0 3px; font-size: clamp(20px,2vw,27px); letter-spacing: -.025em; }
+.gym-partnership-section-title p { margin: 0; color: var(--gp-muted); font-size: 12px; }
+.gym-partnership-section-title > span { color: var(--gp-muted); font-size: 11px; }
+.gym-partnership-search input { width: min(350px,32vw); min-height: 42px; padding: 0 14px; border: 1px solid var(--gp-line); border-radius: 11px; outline: 0; background: #071714; color: #fff; }
+.gym-partnership-search input::placeholder { color: #84968e; }
+.gym-partnership-trust { display: flex; align-items: center; gap: 7px; margin: 10px 0 14px; color: #8fa59b; font-size: 10px; }
+.gym-partnership-trust svg { flex: none; color: var(--gp-lime); }
+.gym-partnership-card-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 15px; }
+.gym-partnership-card,.gym-partnership-event-card,.gym-partnership-campaign-card,.gym-detail-panel { overflow: hidden; border: 1px solid var(--gp-line); border-radius: 14px; background: linear-gradient(155deg,#0d1d19,#07110f); box-shadow: 0 10px 28px #0002; }
+.gym-partnership-card { transition: transform .2s ease,border-color .2s ease; }
+.gym-partnership-card:hover { transform: translateY(-3px); border-color: #9def48a8; }
+.gym-partnership-card-image { position: relative; display: block; height: 164px; overflow: hidden; background: #13231e; }
+.gym-partnership-card-image > img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+.gym-partnership-card:hover .gym-partnership-card-image > img { transform: scale(1.035); }
+.gym-partnership-card-image:after { position: absolute; inset: 45% 0 0; background: linear-gradient(transparent,#04100dcc); content: ""; }
+.gym-active-pill { position: absolute; right: 10px; top: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border: 1px solid #bdff6780; border-radius: 20px; background: #0d2414ed; color: var(--gp-lime); font-size: 9px; font-weight: 800; }
+.gym-partnership-image-placeholder,.gym-partnership-event-placeholder,.gym-partnership-campaign-placeholder { display: grid; place-items: center; height: 100%; min-height: 140px; color: var(--gp-lime); background: radial-gradient(circle at 70% 20%,#1e442b,#0a1713 66%); }
+.gym-partnership-card-body { padding: 13px 14px 14px; }
+.gym-partnership-card-heading { display: flex; align-items: center; gap: 6px; }
+.gym-partnership-card-heading h3 { margin: 0; font-size: 16px; }
+.gym-partnership-card-heading svg { flex: none; color: #46b6ff; fill: #46b6ff20; }
+.gym-partnership-location { margin: 5px 0 9px; color: var(--gp-muted); font-size: 11px; }
+.gym-partnership-type { display: inline-flex; padding: 4px 8px; border: 1px solid #78d83d38; border-radius: 20px; color: #c5edaa; background: #8bd83c0e; font-size: 10px; font-weight: 700; }
+.gym-partnership-description { display: -webkit-box; min-height: 40px; margin: 10px 0; overflow: hidden; color: #c5d2cb; font-size: 11px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.gym-partnership-tags { display: flex; flex-wrap: wrap; gap: 5px; min-height: 23px; }
+.gym-partnership-tags span { padding: 4px 7px; border-radius: 20px; background: #13251f; color: #b9cac1; font-size: 9px; }
+.gym-partnership-card-actions { margin-top: 11px; }
+.gym-partnership-card-actions .button { width: 100%; min-height: 38px!important; font-size: 11px; }
+.gym-events-grid,.gym-campaigns-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.gym-partnership-event-image,.gym-partnership-campaign-card > img { display: block; width: 100%; height: 145px; object-fit: cover; }
+.gym-partnership-event-body { padding: 13px; }
+.gym-partnership-event-body h3,.gym-partnership-campaign-card h3 { margin: 8px 0; font-size: 15px; }
+.gym-partnership-event-body > p { display: flex; align-items: flex-start; gap: 7px; margin: 6px 0; color: #c2d0c8; font-size: 10px; line-height: 1.45; }
+.gym-partnership-event-body > p svg { flex: none; color: var(--gp-lime); }
+.gym-event-status { display: inline-flex; padding: 4px 7px; border-radius: 16px; background: #9ce8411c; color: var(--gp-lime); font-size: 9px; font-weight: 800; }
+.gym-event-status.realized { background: #47a9ff1c; color: #75c7ff; }
+.gym-event-host { color: var(--gp-lime)!important; }
+.gym-partnership-event-body .button { margin-top: 7px; font-size: 10px; }
+.gym-partnership-campaign-card > div { padding: 13px; }
+.gym-partnership-campaign-card p,.gym-partnership-campaign-card small { display: block; margin: 7px 0; color: #becdc4; font-size: 10px; line-height: 1.5; }
+.gym-campaign-dates { display: block; margin-top: 9px; color: var(--gp-lime); font-size: 10px; }
+.gym-partnership-empty { display: flex; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; border: 1px dashed #5fc68a57; border-radius: 15px; background: radial-gradient(ellipse at 50% 0%,#19321d,#091410 70%); text-align: center; }
+.gym-partnership-empty > span,.gym-partnership-empty > svg { display: grid; place-items: center; color: var(--gp-lime); }
+.gym-partnership-empty h3 { max-width: 650px; margin: 12px 0 7px; font-size: 20px; }
+.gym-partnership-empty p { max-width: 620px; margin: 0 0 16px; color: var(--gp-muted); font-size: 12px; line-height: 1.55; }
+.gym-partnership-loading,.gym-partnership-filter-empty,.gym-partnership-campaign-empty,.gym-partnership-load-error { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 90px; color: var(--gp-muted); font-size: 12px; }
+.gym-partnership-load-error { justify-content: flex-start; padding: 14px; border: 1px solid #e2aa4355; border-radius: 12px; color: #f0d4a2; }
+.gym-partnership-load-error .small-button { margin-left: auto; }
+.gym-partnership-join { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 32px; padding: 22px clamp(17px,3vw,32px); border: 1px solid #a2eb454c; border-radius: 15px; background: linear-gradient(110deg,#16291a,#091512); }
+.gym-partnership-join h2 { margin: 5px 0; font-size: clamp(17px,2vw,23px); }
+.gym-partnership-join p { margin: 0; color: var(--gp-muted); font-size: 11px; }
+.gym-partnership-campaign-empty { justify-content: flex-start; min-height: 70px; padding: 12px 16px; border: 1px solid var(--gp-line); border-radius: 12px; background: #091512; }
+.gym-partnership-campaign-empty svg { color: var(--gp-lime); }
+.gym-partnership-detail { margin-top: 22px; }
+.gym-partnership-back { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 15px; color: #c2d1c8!important; font-size: 11px; text-decoration: none; }
+.gym-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
+.gym-detail-heading h2 { margin: 4px 0; font-size: clamp(24px,3vw,36px); }
+.gym-detail-heading p { margin: 0; color: var(--gp-muted); font-size: 12px; }
+.gym-partnership-gallery { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); grid-auto-rows: 145px; gap: 9px; overflow: hidden; border-radius: 14px; }
+.gym-partnership-gallery img { width: 100%; height: 100%; object-fit: cover; }
+.gym-partnership-gallery img:first-child { grid-column: span 2; grid-row: span 2; }
+.gym-partnership-gallery.single { grid-template-columns: 1fr; grid-auto-rows: minmax(180px,300px); }
+.gym-partnership-gallery.single img:first-child { grid-column: auto; grid-row: auto; }
+.gym-detail-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.gym-detail-panel { padding: 18px; }
+.gym-detail-panel > p,.gym-detail-panel li { color: #c8d6ce; font-size: 12px; line-height: 1.6; }
+.gym-detail-panel ul { display: grid; gap: 7px; padding: 0; list-style: none; }
+.gym-detail-panel li { display: flex; gap: 8px; }
+.gym-detail-panel li svg { flex: none; color: var(--gp-lime); }
+.gym-detail-external-link { display: inline-flex; align-items: center; gap: 7px; color: var(--gp-lime)!important; font-size: 11px; }
+.gym-admin-no-access { padding: 30px; text-align: center; }
+.gym-admin-no-access svg { color: var(--gp-lime); }
+.gym-admin-no-access p { color: var(--gp-muted); }
+.gym-partnership-admin { --gp-lime:#b8ff35; }
+.gym-partnership-admin .gym-admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+.gym-partnership-admin .gym-admin-tabs button,.gym-partnership-admin .gym-admin-record-list button { border: 1px solid var(--gp-line); border-radius: 9px; background: #0b1916; color: #eaf4ed; }
+.gym-partnership-admin .gym-admin-tabs button { padding: 10px 14px; cursor: pointer; }
+.gym-partnership-admin .gym-admin-tabs button[aria-selected="true"] { border-color: #b8ff35; color: #b8ff35; }
+.gym-partnership-admin .gym-admin-form,.gym-partnership-admin .gym-admin-record-list { padding: 17px; border: 1px solid var(--gp-line); border-radius: 13px; background: #091612; }
+.gym-partnership-admin .gym-admin-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.gym-partnership-admin .gym-admin-grid { display: grid; grid-template-columns: minmax(220px,.65fr) minmax(0,1.5fr); gap: 14px; }
+.gym-partnership-admin .gym-admin-list { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--gp-line); border-radius: 12px; background: #091612; }
+.gym-partnership-admin .gym-admin-list-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gym-partnership-admin .gym-admin-record { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--gp-line); border-radius: 9px; background: #0b1916; color: #edf6ef; text-align: left; cursor: pointer; }
+.gym-partnership-admin .gym-admin-record.active { border-color: var(--gp-lime); }
+.gym-partnership-admin .gym-admin-record span,.gym-partnership-admin .gym-admin-help,.gym-partnership-admin .gym-admin-form-heading > span { color: var(--gp-muted); font-size: 10px; }
+.gym-partnership-admin .gym-admin-form-heading { display: flex; align-items: center; justify-content: space-between; grid-column: 1/-1; }
+.gym-partnership-admin .gym-admin-form-heading h3 { margin: 0; }
+.gym-partnership-admin .gym-admin-consents { display: flex; flex-wrap: wrap; gap: 10px 16px; grid-column: 1/-1; border: 1px solid var(--gp-line); border-radius: 9px; }
+.gym-partnership-admin .gym-admin-consents legend { color: var(--gp-lime); font-size: 11px; }
+.gym-partnership-admin .gym-admin-consents label { display: flex; align-items: center; gap: 6px; }
+.gym-partnership-admin .gym-admin-history { grid-column: 1/-1; color: var(--gp-muted); font-size: 10px; }
+.gym-partnership-admin .gym-admin-loading { display: flex; align-items: center; gap: 8px; color: var(--gp-muted); }
+.gym-partnership-admin button.button.lime-button { min-height: 40px; border: 0; border-radius: 9px; background: var(--gp-lime); color: #102008; font-weight: 800; cursor: pointer; }
+.gym-partnership-admin button.button.subtle { min-height: 38px; border: 1px solid var(--gp-line); border-radius: 9px; background: #0a1915; color: #edf6ef; cursor: pointer; }
+.gym-partnership-admin .gym-admin-form h3,.gym-partnership-admin .gym-admin-form > button { grid-column: 1 / -1; }
+.gym-partnership-admin .gym-admin-form label { display: grid; gap: 6px; color: #bacbc1; font-size: 11px; }
+.gym-partnership-admin .gym-admin-form input,.gym-partnership-admin .gym-admin-form select,.gym-partnership-admin .gym-admin-form textarea { width: 100%; min-height: 39px; padding: 9px 10px; border: 1px solid #28463a; border-radius: 8px; background: #06110e; color: #fff; }
+.gym-partnership-admin .gym-admin-form textarea { resize: vertical; }
+.gym-partnership-admin .gym-admin-row,.gym-partnership-admin .gym-admin-secondary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.gym-partnership-admin .gym-admin-secondary { grid-template-columns: minmax(220px,.7fr) minmax(0,1.5fr); }
+.gym-partnership-admin .gym-admin-record-list { display: flex; flex-direction: column; gap: 8px; }
+.gym-partnership-admin .gym-admin-record-list button { display: grid; gap: 4px; padding: 10px; text-align: left; cursor: pointer; }
+.gym-partnership-admin .gym-admin-record-list span { color: var(--gp-muted); font-size: 10px; }
+.gym-partnership-admin .gym-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.gym-partnership-admin .gym-admin-status { color: var(--gp-lime); font-size: 11px; }
+.gym-partnership-admin .gym-admin-checks { display: flex; flex-wrap: wrap; gap: 13px; grid-column: 1/-1; }
+.gym-partnership-admin .gym-admin-checks label { display: flex; align-items: center; gap: 7px; }
+.gym-partnership-admin .gym-admin-history { margin-top: 20px; }
+.gym-partnership-admin .gym-admin-error { padding: 12px; border: 1px solid #dc8b5877; border-radius: 10px; color: #ffd3be; }
+.spin { animation: gp-spin 1s linear infinite; }
+@keyframes gp-spin { to { transform: rotate(360deg); } }
+@media (max-width: 900px) {
+  .gym-partnership-card-grid,.gym-events-grid,.gym-campaigns-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .gym-partnership-hero-tag { right: 3%; }
+}
+@media (max-width: 620px) {
+  .gym-partnership-page { padding: 0 12px 26px; }
+  .gym-partnership-hero { min-height: 385px; align-items: flex-end; border-radius: 14px; }
+  .gym-partnership-hero > img { inset: 0 0 auto; width: 100%; height: 58%; object-position: 60% 36%; }
+  .gym-partnership-hero-shade { background: linear-gradient(0deg,#04110e 24%,#04110edb 48%,#04110e12 100%); }
+  .gym-partnership-hero-copy { width: 100%; padding: 20px 17px 18px; }
+  .gym-partnership-hero h2 { max-width: 380px; font-size: clamp(27px,8vw,37px); }
+  .gym-partnership-hero-copy > p { font-size: 12px; }
+  .gym-partnership-hero nav { display: grid; grid-template-columns: 1fr 1fr; margin-top: 14px; }
+  .gym-partnership-hero nav .button { min-height: 42px; padding: 5px 7px; font-size: 10px; }
+  .gym-partnership-hero nav .button:first-child { grid-column: 1/-1; }
+  .gym-partnership-hero-tag { top: 20px; right: 16px; max-width: 120px; }
+  .gym-partnership-hero-tag span { font-size: 11px; }
+  .gym-partnership-hero-tag strong { font-size: 17px; }
+  .gym-partnership-section { margin-top: 24px; }
+  .gym-partnership-section-title { align-items: stretch; flex-direction: column; gap: 10px; }
+  .gym-partnership-search input { width: 100%; }
+  .gym-partnership-card-grid,.gym-events-grid,.gym-campaigns-grid { grid-template-columns: 1fr; gap: 11px; }
+  .gym-partnership-card-image { height: 190px; }
+  .gym-partnership-card-body { padding: 14px; }
+  .gym-partnership-description { min-height: auto; }
+  .gym-partnership-join { align-items: stretch; flex-direction: column; padding: 18px; }
+  .gym-partnership-join .button { width: 100%; }
+  .gym-detail-heading { align-items: flex-start; flex-direction: column; }
+  .gym-partnership-gallery { grid-template-columns: repeat(2,minmax(0,1fr)); grid-auto-rows: 125px; }
+  .gym-partnership-gallery img:first-child { grid-column: span 2; grid-row: span 2; }
+  .gym-detail-columns { grid-template-columns: 1fr; }
+  .gym-partnership-admin .gym-admin-form,.gym-partnership-admin .gym-admin-row,.gym-partnership-admin .gym-admin-secondary { grid-template-columns: 1fr; }
+  .gym-partnership-admin .gym-admin-grid { grid-template-columns: 1fr; }
+  .gym-partnership-admin .gym-admin-heading { align-items: flex-start; flex-direction: column; }
+  .gym-partnership-admin .gym-admin-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .gym-partnership-load-error { align-items: flex-start; flex-wrap: wrap; }
+  .gym-partnership-load-error .small-button { margin-left: 0; }
+}

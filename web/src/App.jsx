@@ -33,6 +33,9 @@ const SocialMessages = lazy(() => import("./SocialScreens.jsx").then(module => (
 const ProfessionalsDirectory = lazy(() => import("./ProfessionalsDirectory.jsx"));
 const NutritionistDirectory = lazy(() => import("./NutritionistDirectory.jsx"));
 const PersonalDirectory = lazy(() => import("./PersonalDirectory.jsx"));
+const GymPartnershipsPage = lazy(() => import("./GymPartnerships.jsx"));
+const GymPartnershipDetailPage = lazy(() => import("./GymPartnerships.jsx").then(module => ({ default: module.GymPartnershipDetailPage })));
+const GymPartnershipAdminPage = lazy(() => import("./GymPartnerships.jsx").then(module => ({ default: module.GymPartnershipAdminPage })));
 const SocialProfile = lazy(() => import("./SocialScreens.jsx").then(module => ({ default: module.SocialProfile })));
 import {
   cancelFollowRequest, getErrorMessage, isDemoUser, loadFollowStates, loadProfile,
@@ -1904,7 +1907,7 @@ function AppContent() {
     const publicDescription = "Descubra academias e profissionais aprovados, explore conteúdos de bem-estar e acompanhe sua rotina com a Fortalfy.";
     const routeTitles = [
       ["/home", "Início"], ["/feed", "Feed"], ["/reels", "FortalReels"], ["/people", "Pessoas"],
-      ["/messages", "Mensagens"], ["/food", "FortalFood"], ["/pass", "FortalPass"], ["/profile", "Perfil"],
+      ["/messages", "Mensagens"], ["/food", "FortalFood"], ["/pass", "FortalPass"], ["/partner/gym", "Academias parceiras"], ["/profile", "Perfil"],
       ["/workout", "Treinos"], ["/nutrition", "Diário alimentar"], ["/progress", "Meu desempenho"],
       ["/earnings", "Rendimentos"], ["/academy", "Fortalfy Academy"], ["/live", "Fortalfy Live"],
       ["/shop", "FortalShop"], ["/professional", "Área profissional"], ["/partner", "Parceiros"],
@@ -2463,7 +2466,7 @@ function AppContent() {
       setToast("A sacola está visível, mas não pôde ser salva neste navegador.");
     }
   }, [shopCart]);
-  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/creator", "/partner/gym", "/partner/nutritionist", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/settings", "/settings/notifications", "/notifications"];
+  const mobilePaths = ["/home", "/feed", "/reels", "/people", "/messages", "/food", "/pass", "/profile", "/workout", "/nutrition", "/curated", "/progress", "/earnings", "/academy", "/live", "/creator", "/partner/gym", "/partner/nutritionist", "/partner/checkins", "/shop", "/cart", "/studio", "/admin/gym-plates", "/admin/gym-partnerships", "/settings", "/settings/notifications", "/notifications"];
   const mobile = mobilePaths.includes(location.pathname) || location.pathname.startsWith("/hire/") || location.pathname.startsWith("/checkin/");
   const immersiveReels = location.pathname === "/reels" && Boolean(authSession?.user?.id);
   return <Suspense fallback={<div className="app-loading" role="status">Carregando Fortalfy…</div>}><div className={`${mobile ? "mobile-app" : "professional-root"}${immersiveReels ? " reels-app" : ""}`}>
@@ -2481,7 +2484,9 @@ function AppContent() {
       <Route path="/creator" element={<Screen title="FortalCreator" subtitle="PROGRAMA DE CRIADORES" className="creator-screen"><FortalCreator session={authSession} client={supabase} notify={notify} /></Screen>} />
       <Route path="/cre" element={<Navigate to="/creator" replace />} />
       <Route path="/food" element={<FoodScreen client={supabase} configured={isSupabaseConfigured} session={authSession} />} />
-      <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
+      <Route path="/partner/gym" element={<Screen className="gym-partnership-screen"><GymPartnershipsPage client={supabase} session={authSession} notify={notify} /></Screen>} />
+      <Route path="/partner/gym/:partnershipId" element={<Screen className="gym-partnership-screen"><GymPartnershipDetailPage client={supabase} session={authSession} notify={notify} /></Screen>} />
+      <Route path="/admin/gym-partnerships" element={<Screen title="Academias parceiras" subtitle="GESTÃO DE PARCERIAS FORTALFY" className="gym-admin-screen"><GymPartnershipAdminPage client={supabase} session={authSession} notify={notify} admin /></Screen>} />
       <Route path="/checkin/:publicId" element={<Screen title="Validar presença" subtitle="FORTALPASS · ACESSO SEGURO" className="gym-access-screen"><GymCheckInPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/partner/checkins" element={<Screen title="Acessos FortalPass" subtitle="PAINEL DA ACADEMIA" className="gym-admin-screen"><GymPartnerCheckinsPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/admin/gym-plates" element={<Screen title="Placas oficiais" subtitle="ADMINISTRAÇÃO FORTALFY" className="gym-admin-screen"><GymPlateAdminPage client={supabase} session={authSession} /></Screen>} />
