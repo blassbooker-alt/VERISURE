@@ -2,7 +2,7 @@ import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useR
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Activity, Apple, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Camera,
-  Bell, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, CircleAlert, Download,
+  Bell, Bookmark, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, CircleAlert, Download,
   CircleHelp, Clock3, Dumbbell, Flame, Heart, Home, Info, Lock, MapPin, MessageCircle,
   ImagePlus, PencilLine, Play, Plus, Search, Send, Share2, ShieldCheck,
   Globe2, Phone, ShoppingBag, SlidersHorizontal, Sparkles, Star, Target, Ticket, Timer, Trash2, UserMinus, UserPlus, Users, Utensils, Wallet, X,
@@ -997,15 +997,27 @@ function WorkoutScreen({ notify, onActivity, activity, client, session, activity
     setError("");
     notify("Treino registrado.");
   };
-  return <Screen title="Treinos" subtitle="PLANOS E REGISTROS DE TREINO" className="workout-screen">
-    <Link to="/home" className="back-link"><ArrowLeft size={17} /> Voltar</Link>
-    <PartnerDiscoverySection client={client} session={session} kind="personal" notify={notify} />
-    <WeeklyClientPlan client={client} session={session} kind="personal" notify={notify} />
-    <section className="workout-progress-card"><div><span className="eyebrow">SEUS REGISTROS</span><h2>{activity.workoutsLogged} {activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</h2><p>O Fortalfy não prescreve treinos nem lê sensores nesta tela.</p></div></section>
+  return <Screen title="Treino" subtitle="MOVIMENTO COM ACOMPANHAMENTO" className="workout-screen">
+    <header className="workout-hero">
+      <img src="/assets/visual-pack/fortalfy-pack-hero-training.jpg" alt="Atleta treinando em uma academia" />
+      <div className="workout-hero-shade" />
+      <div className="workout-hero-content"><span className="eyebrow"><Dumbbell size={14} /> SEU ESPAÇO DE TREINO</span><h2>Seu plano de treino<br />está te esperando.</h2><p>Acompanhe suas sessões e evolua com orientação profissional.</p><Link to="/partner/personal" className="workout-coach-link"><span className="workout-coach-avatar"><Users size={18} /></span><span><strong>Encontre seu personal</strong><small>Profissionais cadastrados no Fortalfy</small></span><ArrowRight size={16} /></Link></div>
+    </header>
+    <div className="workout-dashboard">
+      <aside className="workout-rail workout-summary-rail">
+        <section className="workout-panel workout-summary-panel"><span className="eyebrow">RESUMO DA ROTINA</span><h2>{activity.workoutsLogged}</h2><p>{activity.workoutsLogged === 1 ? "treino registrado" : "treinos registrados"}</p><div className="workout-summary-foot"><CheckCircle2 size={15} /><span>Registros salvos na sua conta</span></div></section>
+        <section className="workout-panel workout-guidance"><span className="eyebrow">SEU ACOMPANHAMENTO</span><h3>Treine com orientação.</h3><p>Receba um plano semanal preparado por um personal vinculado à sua conta.</p><Link className="button lime-button small-button" to="/partner/personal">Encontrar personal <ArrowRight size={14} /></Link></section>
+        <details className="workout-panel workout-history-panel"><summary><span><Activity size={16} /> Registros recentes</span><ChevronDown size={15} /></summary>{activity.workoutEntries.length ? <div className="workout-history-list">{[...activity.workoutEntries].reverse().slice(0, 5).map(entry => <article key={entry.id}><Dumbbell size={15} /><span><strong>{entry.name}</strong><small>{entry.minutes} min · {entry.date}</small></span></article>)}</div> : <p className="workout-history-empty">Seus registros aparecerão aqui.</p>}</details>
+      </aside>
+      <section className="workout-plan-column" aria-label="Plano semanal de treino"><div className="workout-section-heading"><div><span className="eyebrow">ACOMPANHAMENTO SEMANAL</span><h2>Seu plano de treino</h2></div><span className="workout-live-badge"><span /> Dados da sua conta</span></div><WeeklyClientPlan client={client} session={session} kind="personal" notify={notify} /></section>
+      <aside className="workout-rail workout-side-rail">
+        <section className="workout-panel workout-progress-panel"><div className="workout-panel-title"><CalendarDays size={17} /><h3>Seu progresso</h3></div><div className="workout-progress-ring"><strong>{activity.workoutsLogged}</strong><span>{activity.workoutsLogged === 1 ? "treino" : "treinos"}</span></div><p>Treinos registrados nesta conta</p><Link to="/progress" className="workout-panel-link">Ver evolução <ArrowRight size={14} /></Link></section>
+        <details className="workout-panel workout-discovery-panel"><summary><span><Users size={16} /> Personal trainers</span><ChevronDown size={15} /></summary><p>Encontre profissionais para acompanhar seus objetivos.</p><Link className="button lime-button small-button" to="/partner/personal">Explorar profissionais <ArrowRight size={14} /></Link></details>
+        <section className="workout-panel workout-safety"><ShieldCheck size={18} /><div><strong>Orientação responsável</strong><p>Os planos publicados pelo seu profissional aparecem aqui após o vínculo com sua conta.</p></div></section>
+      </aside>
+    </div>
+    <details className="workout-log-details"><summary><Plus size={16} /> Registrar uma atividade concluída</summary><form className="meal-entry-form" onSubmit={saveWorkout}><h2>Registrar treino realizado</h2><label>Tipo ou nome do treino<input required maxLength={60} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: musculação, caminhada" /></label><label>Duração em minutos<input required type="number" min="1" max="600" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} placeholder="Ex.: 45" /></label>{error && <p className="social-inline-error" role="alert">{error}</p>}<button className="button primary wide-button" type="submit">Salvar registro</button></form></details>
     <p className={`activity-sync-notice${activityError ? " has-error" : ""}`} role={activityError ? "alert" : undefined}>{activityError || activityStatus}</p>
-    <form className="meal-entry-form" onSubmit={saveWorkout}><h2>Registrar treino realizado</h2><label>Tipo ou nome do treino<input required maxLength={60} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: musculação, caminhada" /></label><label>Duração em minutos<input required type="number" min="1" max="600" step="1" value={minutes} onChange={event => setMinutes(event.target.value)} placeholder="Ex.: 45" /></label>{error && <p className="social-inline-error" role="alert">{error}</p>}<button className="button primary wide-button" type="submit">Salvar registro</button></form>
-    <SectionTitle title="Histórico registrado" />
-    {activity.workoutEntries.length ? <div className="exercise-list">{[...activity.workoutEntries].reverse().map(entry => <article className="exercise-card" key={entry.id}><span className="exercise-thumb"><Dumbbell size={22} /></span><div className="exercise-details"><h3>{entry.name}</h3><p>{entry.minutes} min · {entry.date}</p></div></article>)}</div> : <div className="empty-state"><Dumbbell size={24} /><h3>Nenhum treino registrado</h3><p>Seus treinos aparecerão aqui depois que você os registrar.</p></div>}
   </Screen>;
 }
 
