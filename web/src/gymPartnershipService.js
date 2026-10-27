@@ -10,8 +10,11 @@ export async function loadPublicGymPartnerships(client) {
     client.from(PUBLIC_CAMPAIGNS).select("*").order("starts_on", { ascending: true }).limit(24),
   ]);
   const failure = partnerships.error || events.error || campaigns.error;
+  if (failure?.code === "PGRST205" || failure?.code === "42P01") {
+    return { partnerships: [], events: [], campaigns: [], setupRequired: true };
+  }
   if (failure) throw failure;
-  return { partnerships: partnerships.data || [], events: events.data || [], campaigns: campaigns.data || [] };
+  return { partnerships: partnerships.data || [], events: events.data || [], campaigns: campaigns.data || [], setupRequired: false };
 }
 
 export async function loadGymPartnershipAdmin(client) {
@@ -24,6 +27,9 @@ export async function loadGymPartnershipAdmin(client) {
     client.from("gym_partnership_history").select("*").order("created_at", { ascending: false }).limit(500),
   ]);
   const failure = [partnerships, events, campaigns, notes, history].find(result => result.error)?.error;
+  if (failure?.code === "PGRST205" || failure?.code === "42P01") {
+    throw new Error("A estrutura da vitrine ainda não foi instalada no Supabase. Aplique supabase/migrations/20261027150000_gym_partnerships.sql e tente novamente.");
+  }
   if (failure) throw failure;
   return {
     partnerships: partnerships.data || [], events: events.data || [], campaigns: campaigns.data || [],
