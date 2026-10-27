@@ -14366,6 +14366,8 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
 .nutritionist-card-demo .nutritionist-credential-note svg { color: #e8ca69; }
 .nutritionist-card-actions { display: grid; gap: 6px; }
 .nutritionist-card-actions .button { min-height: 32px; justify-content: center; gap: 4px; padding: 5px 7px; font-size: .56rem; text-align: center; }
+.nutritionist-card-demo .nutritionist-card-actions .button:first-child { color: #10200a; background: #c5f247; border-color: #c5f247; font-weight: 800; }
+.nutritionist-card-demo .nutritionist-card-actions .button:first-child:hover { background: #d5ff5a; border-color: #d5ff5a; box-shadow: 0 0 14px rgb(197 242 71 / 28%); }
 .nutritionist-card-actions .button:disabled { color: #b5c0b6; background: #17251b; border-color: #304335; opacity: 1; cursor: not-allowed; }
 .nutritionist-empty-approved { display: flex; align-items: flex-start; gap: 9px; margin: 8px 0 13px; padding: 11px; color: #c7d4c8; background: #0b1811; border: 1px solid #263b2b; border-radius: 9px; }
 .nutritionist-empty-approved > svg { flex: 0 0 auto; color: var(--nutritionist-lime); }
