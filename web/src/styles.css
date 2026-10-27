@@ -14353,6 +14353,8 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
 .nutritionist-card-name { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .nutritionist-card-name h3 { overflow: hidden; margin: 0; color: #edf5ee; font-size: .77rem; text-overflow: ellipsis; white-space: nowrap; }
 .nutritionist-demo-pill { padding: 3px 6px; color: #fff1bd; background: #3a321a; border: 1px solid #655527; border-radius: 999px; font-size: .47rem; font-weight: 700; white-space: nowrap; }
+.nutritionist-demo-verification-mark { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #b9e760; }
+.nutritionist-demo-verification-mark svg { filter: drop-shadow(0 0 4px rgb(185 231 96 / 22%)); }
 .nutritionist-verified-label { display: inline-flex; align-items: center; gap: 3px; color: #b9e760; font-size: .54rem; white-space: nowrap; }
 .nutritionist-specialty { display: flex; align-items: center; gap: 5px; margin: 0; color: #bfd1c2; font-size: .61rem; }
 .nutritionist-specialty svg { flex: 0 0 auto; color: var(--nutritionist-lime); }

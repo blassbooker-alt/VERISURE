@@ -23,7 +23,7 @@ function DemoProfileCard({ person, onOpen }) {
   return <article className="nutritionist-card nutritionist-card-demo">
     <div className="nutritionist-card-photo"><img src={`./assets/nutritionists/${person.image}`} alt={`Foto ilustrativa do perfil de ${person.name}`} loading="lazy" decoding="async" /></div>
     <div className="nutritionist-card-main">
-      <div className="nutritionist-card-name"><h3>{person.name}</h3><span className="nutritionist-demo-pill">Perfil de exemplo</span></div>
+      <div className="nutritionist-card-name"><h3>{person.name}</h3><span className="nutritionist-demo-verification-mark" role="img" aria-label="Ícone ilustrativo de verificação; perfil demonstrativo não verificado" title="Ícone ilustrativo. Este perfil de demonstração ainda não foi verificado pela Fortalfy."><BadgeCheck size={16} /></span></div>
       <p className="nutritionist-specialty"><Apple size={14} /> {person.specialty}</p>
       <p className="nutritionist-bio">{person.bio}</p>
       <div className="nutritionist-tags">{person.tags.slice(0, 3).map(tag => <span key={tag}>{tag}</span>)}</div>
