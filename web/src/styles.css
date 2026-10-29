@@ -14633,6 +14633,8 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
 .pro-profile-approved { width: fit-content; padding: 6px 9px; color: #c8e5c8; background: #193624; border: 1px solid #31593b; border-radius: 999px; font-size: .76rem; }
 .pro-profile-actions { display: grid; gap: 9px; }
 .pro-profile-actions .button { white-space: nowrap; }
+.pro-profile-secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pro-profile-feedback { color: #c6ddc8; font-size: .78rem; }
 .pro-profile-grid { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(270px,.8fr); align-items: start; gap: 22px; margin-top: 22px; }
 .pro-profile-main,.pro-profile-aside { display: grid; gap: 16px; }
 .pro-profile-section,.pro-profile-info-card,.pro-profile-booking-card { padding: 22px; background: #0c1810; border: 1px solid #24392a; border-radius: 16px; }
@@ -14671,6 +14673,8 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .pro-profile-approved { padding: 5px 7px; font-size: .67rem; }
   .pro-profile-actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
   .pro-profile-actions .button { min-height: 42px; padding-inline: 8px; font-size: .76rem; }
+  .pro-profile-secondary-actions,.pro-profile-feedback { grid-column: 1 / -1; }
+  .pro-profile-secondary-actions .button { min-height: 40px; }
   .pro-profile-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
   .pro-profile-main,.pro-profile-aside { gap: 12px; }
   .pro-profile-section,.pro-profile-info-card,.pro-profile-booking-card { padding: 17px; border-radius: 14px; }

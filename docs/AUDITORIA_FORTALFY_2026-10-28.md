@@ -145,3 +145,11 @@ Essas práticas devem ser preservadas ao preencher as áreas vazias: conteúdo r
 - `web/src/supabaseClient.js`, `supabase/migrations/` e scripts SQL na raiz — configuração de backend e histórico disponível.
 - `.github/workflows/pages.yml` — build/deploy de GitHub Pages.
 - `RELATORIO_AUDITORIA_V20.md` e `CONFIGURACAO_EMAILS_FORTALFY.md` — auditorias e pendências registradas anteriormente.
+
+## Portfolio scope correction
+
+The premium experience is now limited to `/partner/personal/:profileId` and `/partner/nutritionist/:profileId`, reached only from the Personal and Nutritionist directories. The generic `/profile/:profileId` social route and the Academy, restaurants, stores, and other partner routes retain their previous experience.
+
+The profile lookup requires the expected category, approved status, and a public profile. Existing shared directory privacy filtering remains unchanged. Pages show stored information when available and identify reviews, credentials, methodology, and gallery as unavailable when real records do not exist. Appointment requests do not guarantee availability. Sharing uses the browser API or link copy; favorites are stored only on this device and do not sync.
+
+Validation for this scope correction: 143 tests and the Vite build passed. Both category directories and their demo flows were checked in the local mobile preview. No approved real profile was available for browser validation of the premium page. No menu, remote database, or published site was changed.

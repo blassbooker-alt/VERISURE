@@ -41,3 +41,16 @@ test("every static internal JSX link resolves to a registered route", () => {
   const unresolved = [...targets].filter(target => !routes.some(route => routeMatchesTarget(route, target)));
   assert.deepEqual(unresolved, [], `Internal links without a route: ${unresolved.join(", ")}`);
 });
+
+test("premium professional portfolios use category-specific routes only", () => {
+  assert.match(appSource, /<Route path="\/partner\/personal\/:profileId"/);
+  assert.match(appSource, /<Route path="\/partner\/nutritionist\/:profileId"/);
+  assert.match(appSource, /<ProfessionalPublicProfile client=\{supabase\} kind="personal"/);
+  assert.match(appSource, /<ProfessionalPublicProfile client=\{supabase\} kind="nutricionista"/);
+  const socialProfileRoute = appSource.slice(appSource.indexOf('<Route path="/profile/:profileId"'), appSource.indexOf("</Route>", appSource.indexOf('<Route path="/profile/:profileId"')));
+  assert.ok(socialProfileRoute.includes("<SocialProfile"), "generic profile route remains a social profile");
+  const personal = readFileSync(path.join(sourceDirectory, "PersonalDirectory.jsx"), "utf8");
+  const nutrition = readFileSync(path.join(sourceDirectory, "NutritionistDirectory.jsx"), "utf8");
+  assert.match(personal, /to=\{`\/partner\/personal\/\$\{partner\.profileId\}`\}/);
+  assert.match(nutrition, /to=\{`\/partner\/nutritionist\/\$\{partner\.profileId\}`\}/);
+});

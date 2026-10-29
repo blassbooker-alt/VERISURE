@@ -44,11 +44,13 @@ test("approved discovery filters unapproved and non-partner profiles from backen
   const client = {
     from(table) {
       assert.equal(table, "partner_listings");
+      let kindFilter = "";
       const builder = {
         select() { return this; },
+        eq(column, value) { assert.equal(column, "profile.kind"); kindFilter = value; return this; },
         order() { return this; },
         limit() { return this; },
-        then(resolve, reject) { return Promise.resolve({ data: rows, error: null }).then(resolve, reject); },
+        then(resolve, reject) { return Promise.resolve({ data: rows.filter(row => !kindFilter || row.profile.kind === kindFilter), error: null }).then(resolve, reject); },
       };
       return builder;
     },
@@ -59,6 +61,8 @@ test("approved discovery filters unapproved and non-partner profiles from backen
   assert.equal(result[0].name, "Academia Real");
   assert.equal(result[0].verified, true);
   assert.equal(result.some(item => item.name === "Perfil privado"), false);
+  const personalDirectory = await loadApprovedPartners(client, { kind: "personal" });
+  assert.deepEqual(personalDirectory, [], "private profiles remain hidden in the Personal directory");
 });
 
 test("partners without coordinates do not resolve to the Null Island map location", async () => {
@@ -110,7 +114,7 @@ test("public professional profile resolves only an approved partner listing", as
       return builder;
     },
   };
-  const partner = await loadApprovedPartnerProfile(client, "personal-real");
+  const partner = await loadApprovedPartnerProfile(client, "personal-real", { kind: "personal" });
   assert.equal(requestedId, "personal-real");
   assert.equal(partner.name, "Profissional aprovado");
   assert.equal(partner.kind, "personal");
@@ -122,7 +126,8 @@ test("public professional profile resolves only an approved partner listing", as
       profile_id: "pending", profile: { display_name: "Pendente", kind: "nutricionista", partner_approved_at: null },
     }, error: null }); } }; },
   };
-  assert.equal(await loadApprovedPartnerProfile(unapprovedClient, "pending"), null);
+  assert.equal(await loadApprovedPartnerProfile(unapprovedClient, "pending", { kind: "nutricionista" }), null);
+  assert.equal(await loadApprovedPartnerProfile(client, "personal-real", { kind: "nutricionista" }), null);
 });
 
 test("partner listing validation rejects invented or malformed location input before write", async () => {

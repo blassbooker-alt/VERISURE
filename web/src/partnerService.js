@@ -66,15 +66,16 @@ export async function loadApprovedPartners(client, { kind = "" } = {}) {
   })));
 }
 
-export async function loadApprovedPartnerProfile(client, profileId) {
+export async function loadApprovedPartnerProfile(client, profileId, { kind = "" } = {}) {
   if (!client || !profileId) return null;
+  if (!["personal", "nutricionista"].includes(kind)) return null;
   const { data, error } = await client.from("partner_listings").select(`
     id,profile_id,address,latitude,longitude,modalities,opening_hours,website_url,contact_phone,
     profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,is_private,partner_approved_at)
   `).eq("profile_id", profileId).maybeSingle();
   if (error) throw error;
   const listing = mapListing(data);
-  if (!listing?.verified || listing.isPrivate || !PARTNER_KINDS.has(listing.kind)) return null;
+  if (!listing?.verified || listing.isPrivate || listing.kind !== kind) return null;
   return { ...listing, avatar: await signMedia(client, listing.avatar) };
 }
 

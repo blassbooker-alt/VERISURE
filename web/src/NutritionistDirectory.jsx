@@ -38,7 +38,7 @@ function DemoProfileCard({ person, onOpen }) {
 function ApprovedNutritionistCard({ partner }) {
   const tags = partner.modalities?.filter(Boolean) || [];
   return <article className="nutritionist-card nutritionist-card-approved">
-    <Link className="nutritionist-card-photo" to={`/profile/${partner.profileId}`} aria-label={`Ver perfil de ${partner.name}`}>
+    <Link className="nutritionist-card-photo" to={`/partner/nutritionist/${partner.profileId}`} aria-label={`Ver perfil de ${partner.name}`}>
       {partner.avatar ? <img src={partner.avatar} alt={`Foto de ${partner.name}`} loading="lazy" decoding="async" /> : <span className="nutritionist-avatar-fallback"><UserRound size={26} /></span>}
       <span className="nutritionist-approved-photo-label"><BadgeCheck size={13} /> APROVADO</span>
     </Link>
@@ -49,7 +49,7 @@ function ApprovedNutritionistCard({ partner }) {
       {tags.length > 0 && <div className="nutritionist-tags">{tags.slice(0, 3).map(tag => <span key={tag}>{tag}</span>)}</div>}
       <p className="nutritionist-credential-note"><ShieldCheck size={14} /> Cadastro profissional aprovado pela equipe Fortalfy</p>
     </div>
-    <div className="nutritionist-card-actions"><Link className="button subtle" to={`/profile/${partner.profileId}`}>Ver perfil <ArrowRight size={15} /></Link><Link className="button primary" to={`/hire/nutritionist?partner=${encodeURIComponent(partner.profileId)}`}><CalendarDays size={15} /> Solicitar atendimento</Link></div>
+    <div className="nutritionist-card-actions"><Link className="button subtle" to={`/partner/nutritionist/${partner.profileId}`}>Ver perfil <ArrowRight size={15} /></Link><Link className="button primary" to={`/hire/nutritionist?partner=${encodeURIComponent(partner.profileId)}`}><CalendarDays size={15} /> Solicitar atendimento</Link></div>
   </article>;
 }
 
