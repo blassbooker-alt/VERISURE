@@ -15,6 +15,7 @@ function mapListing(row) {
     city: row.profile.city || "",
     bio: row.profile.bio || "",
     avatar: row.profile.avatar_path || "",
+    coverPath: row.profile.cover_path || "",
     isPrivate: Boolean(row.profile.is_private),
     verified: Boolean(row.profile.partner_approved_at),
     address: row.address,
@@ -71,12 +72,16 @@ export async function loadApprovedPartnerProfile(client, profileId, { kind = "" 
   if (!["personal", "nutricionista"].includes(kind)) return null;
   const { data, error } = await client.from("partner_listings").select(`
     id,profile_id,address,latitude,longitude,modalities,opening_hours,website_url,contact_phone,
-    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,is_private,partner_approved_at)
+    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,cover_path,is_private,partner_approved_at)
   `).eq("profile_id", profileId).maybeSingle();
   if (error) throw error;
   const listing = mapListing(data);
   if (!listing?.verified || listing.isPrivate || listing.kind !== kind) return null;
-  return { ...listing, avatar: await signMedia(client, listing.avatar) };
+  const [avatar, cover] = await Promise.all([
+    signMedia(client, listing.avatar),
+    signMedia(client, listing.coverPath).catch(() => ""),
+  ]);
+  return { ...listing, avatar, cover };
 }
 
 export async function loadOwnPartnerListing(client, userId) {

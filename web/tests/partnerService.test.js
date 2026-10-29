@@ -98,15 +98,17 @@ test("partners without coordinates do not resolve to the Null Island map locatio
 test("public professional profile resolves only an approved partner listing", async () => {
   let requestedId = "";
   const client = {
+    storage: { from() { return { createSignedUrl: async path => ({ data: { signedUrl: `https://media.example/${path}` }, error: null }) }; } },
     from(table) {
       assert.equal(table, "partner_listings");
       const builder = {
-        select() { return this; },
+        select(columns) { assert.match(columns, /cover_path/); return this; },
         eq(column, value) { assert.equal(column, "profile_id"); requestedId = value; return this; },
         maybeSingle() { return Promise.resolve({ data: {
           id: "listing-real", profile_id: "personal-real", address: "Private full address",
           modalities: ["Treino funcional"], opening_hours: {}, profile: {
             display_name: "Profissional aprovado", kind: "personal", city: "Fortaleza", bio: "Apresentação real",
+            cover_path: "covers/personal.webp",
             partner_approved_at: "2026-10-01T12:00:00Z",
           },
         }, error: null }); },
@@ -119,6 +121,7 @@ test("public professional profile resolves only an approved partner listing", as
   assert.equal(partner.name, "Profissional aprovado");
   assert.equal(partner.kind, "personal");
   assert.equal(partner.verified, true);
+  assert.equal(partner.cover, "https://media.example/covers/personal.webp");
   assert.equal(partner.address, "Private full address"); // available to the component for filtering, not rendered on its public page
 
   const unapprovedClient = {
