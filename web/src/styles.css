@@ -1497,6 +1497,9 @@ img { display: block; max-width: 100%; }
 .professional-entry-header h1, .professional-portal-heading h1 { margin: 7px 0; color: #163c29; font-size: clamp(1.6875rem, 5vw, 2.625rem); letter-spacing: -1.4px; }
 .professional-entry-header p, .professional-portal-heading p { color: #718075; font-size: 0.8125rem; line-height: 1.6; }
 .professional-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 225px), 1fr)); gap: 12px; }
+.professional-other-categories { margin-top: 18px; border-top: 1px solid var(--border, rgba(128, 160, 141, .22)); padding-top: 14px; }
+.professional-other-categories > summary { width: fit-content; color: var(--muted, #87928a); cursor: pointer; font-size: .9rem; font-weight: 650; }
+.professional-other-categories[open] .professional-category-grid { margin-top: 14px; }
 .professional-category-card { display: flex; min-height: 200px; flex-direction: column; align-items: flex-start; padding: 17px; background: #fff; border: 1px solid #e5ede6; border-radius: 17px; box-shadow: 0 8px 25px #183b2508; }
 .professional-category-icon { width: 38px; height: 38px; display: grid; place-items: center; color: #286446; background: #eff7e8; border-radius: 12px; }
 .professional-category-card h2 { margin: 12px 0 5px; color: #234831; font-size: 0.9375rem; }
@@ -14599,4 +14602,120 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
 .nutritionist-demo-detail { display: -webkit-box; overflow: hidden; margin: 0; color: #aebdaf; font-size: .54rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .nutritionist-demo-detail strong { color: #dce8d9; }
 .nutritionist-dialog-content > section { padding-bottom: 11px; border-bottom: 1px solid #1b3523; }
+@media (max-width: 720px) {
+  .nutritionist-dialog-hero { min-height: 145px; padding: 18px; }
+  .nutritionist-dialog-hero h2 { font-size: 1.25rem; }
+  .nutritionist-dialog-hero p { font-size: .86rem; }
+  .nutritionist-dialog-content { gap: 15px; padding: 16px 18px; }
+  .nutritionist-dialog-content > section h3 { margin-bottom: 8px; font-size: .94rem; }
+  .nutritionist-dialog-content > section > p { font-size: .86rem; line-height: 1.65; }
+  .nutritionist-dialog-disclosure { gap: 10px; padding: 12px; }
+  .nutritionist-dialog-disclosure p { font-size: .82rem; line-height: 1.55; }
+  .nutritionist-profile-facts > p { align-items: flex-start; padding: 10px 0; }
+  .nutritionist-profile-facts > p strong,.nutritionist-profile-facts > p span { font-size: .76rem; line-height: 1.45; }
+  .nutritionist-dialog > footer { grid-template-columns: 1fr; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .nutritionist-dialog > footer .button { min-height: 44px; font-size: .86rem; }
+}
+
+/* Approved personal and nutritionist public profiles */
+.pro-public-profile { width: min(100%, 1080px); margin: 0 auto; padding: 18px 22px 48px; color: #eaf1eb; }
+.pro-profile-topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 20px; color: #9fb2a1; font-size: .78rem; letter-spacing: .08em; }
+.pro-profile-topbar a { display: inline-flex; align-items: center; gap: 7px; color: #d6e4d8; text-decoration: none; letter-spacing: 0; }
+.pro-profile-topbar a:hover { color: #fff; }
+.pro-profile-hero { display: grid; grid-template-columns: 132px minmax(0,1fr) auto; align-items: center; gap: 24px; padding: 28px; background: linear-gradient(120deg,#102319,#0b1710); border: 1px solid #284431; border-radius: 20px; }
+.pro-profile-avatar { width: 132px; height: 132px; overflow: hidden; display: grid; place-items: center; color: #a8c5ac; background: #1c3423; border: 1px solid #43694b; border-radius: 18px; }
+.pro-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pro-profile-identity { min-width: 0; }
+.pro-profile-type,.pro-profile-identity > p,.pro-profile-approved { display: flex; align-items: center; gap: 7px; }
+.pro-profile-type { color: #bbd2bd; font-size: .77rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+.pro-profile-identity h1 { margin: 9px 0 7px; color: #f5faf5; font-size: clamp(1.7rem,3vw,2.5rem); letter-spacing: -.035em; }
+.pro-profile-identity > p { margin: 0 0 12px; color: #b4c2b5; }
+.pro-profile-approved { width: fit-content; padding: 6px 9px; color: #c8e5c8; background: #193624; border: 1px solid #31593b; border-radius: 999px; font-size: .76rem; }
+.pro-profile-actions { display: grid; gap: 9px; }
+.pro-profile-actions .button { white-space: nowrap; }
+.pro-profile-grid { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(270px,.8fr); align-items: start; gap: 22px; margin-top: 22px; }
+.pro-profile-main,.pro-profile-aside { display: grid; gap: 16px; }
+.pro-profile-section,.pro-profile-info-card,.pro-profile-booking-card { padding: 22px; background: #0c1810; border: 1px solid #24392a; border-radius: 16px; }
+.pro-profile-kicker { color: #9cbd9f; font-size: .7rem; font-weight: 750; letter-spacing: .12em; }
+.pro-profile-section h2,.pro-profile-info-card h2,.pro-profile-booking-card h2 { margin: 8px 0 10px; color: #f1f6f1; font-size: 1.2rem; }
+.pro-profile-section > p,.pro-profile-booking-card > p { margin: 0; color: #b5c1b6; font-size: .94rem; line-height: 1.75; white-space: pre-line; }
+.pro-profile-specialties { display: flex; flex-wrap: wrap; gap: 9px; padding: 0; margin: 14px 0 0; list-style: none; }
+.pro-profile-specialties li { display: inline-flex; align-items: center; gap: 7px; padding: 9px 11px; color: #d3e2d4; background: #14251a; border: 1px solid #2d4733; border-radius: 999px; font-size: .85rem; }
+.pro-profile-specialties svg { color: #90b899; }
+.pro-profile-limits { display: flex; gap: 11px; color: #bed0c0; background: #111e15; }
+.pro-profile-limits svg { flex: 0 0 auto; color: #9fc5a4; }
+.pro-profile-limits p { margin: 0; font-size: .82rem; line-height: 1.6; }
+.pro-profile-info-card { display: grid; gap: 15px; }
+.pro-profile-info-card h2 { margin: 0 0 2px; }
+.pro-profile-fact { display: flex; align-items: flex-start; gap: 11px; color: #9fb6a2; }
+.pro-profile-fact > svg { flex: 0 0 auto; margin-top: 2px; }
+.pro-profile-fact > span { display: grid; gap: 5px; }
+.pro-profile-fact strong { color: #e1eae2; font-size: .86rem; }
+.pro-profile-fact small { color: #b4c2b5; font-size: .82rem; }
+.pro-profile-fact a { display: inline-flex; align-items: center; gap: 4px; color: #c5e5c8; font-size: .84rem; }
+.pro-profile-fact .pro-profile-private-note { color: #809282; font-size: .75rem; }
+.pro-profile-booking-card { color: #add2b2; background: linear-gradient(145deg,#15291b,#0c1810); }
+.pro-profile-booking-card h2 { margin-top: 9px; }
+.pro-profile-booking-card > p { margin-bottom: 16px; font-size: .84rem; }
+.pro-profile-state { width: min(100% - 32px,680px); margin: 48px auto; padding: 28px; text-align: center; color: #d4e2d5; background: #0c1810; border: 1px solid #294331; border-radius: 16px; }
+.pro-profile-state h2 { margin: 12px 0 8px; }
+.pro-profile-state p { color: #aebcaf; }
+@media (max-width: 720px) {
+  .pro-public-profile { padding: 12px 14px 100px; }
+  .pro-profile-topbar { margin-bottom: 13px; font-size: .65rem; }
+  .pro-profile-hero { grid-template-columns: 76px minmax(0,1fr); gap: 13px; padding: 16px; border-radius: 15px; }
+  .pro-profile-avatar { width: 76px; height: 76px; border-radius: 13px; }
+  .pro-profile-identity h1 { margin: 6px 0 4px; font-size: 1.35rem; }
+  .pro-profile-identity > p { margin-bottom: 7px; font-size: .83rem; }
+  .pro-profile-type { font-size: .62rem; }
+  .pro-profile-approved { padding: 5px 7px; font-size: .67rem; }
+  .pro-profile-actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+  .pro-profile-actions .button { min-height: 42px; padding-inline: 8px; font-size: .76rem; }
+  .pro-profile-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+  .pro-profile-main,.pro-profile-aside { gap: 12px; }
+  .pro-profile-section,.pro-profile-info-card,.pro-profile-booking-card { padding: 17px; border-radius: 14px; }
+  .pro-profile-section h2,.pro-profile-info-card h2,.pro-profile-booking-card h2 { font-size: 1.08rem; }
+  .pro-profile-booking-card { position: relative; }
+}
 @media (max-width: 720px) { .nutritionist-demo-detail { font-size: .47rem; -webkit-line-clamp: 1; } }
+
+/* Demo Personal/Nutritionist profiles use the same spacious professional layout. */
+.nutritionist-dialog { width: min(100%, 900px); max-height: min(90vh, 900px); border-radius: 22px; }
+.nutritionist-dialog-hero { min-height: 210px; gap: 24px; padding: 30px 34px; }
+.nutritionist-dialog-hero > img { width: 142px; height: 150px; object-position: center 25%; border-radius: 18px; }
+.nutritionist-dialog-hero > div { gap: 12px; }
+.nutritionist-dialog-hero h2 { font-size: clamp(1.6rem,3vw,2.2rem); }
+.nutritionist-dialog-hero p { font-size: .94rem; }
+.nutritionist-dialog-content { grid-template-columns: repeat(2,minmax(0,1fr)); align-content: start; gap: 14px; padding: 22px 28px; }
+.nutritionist-dialog-disclosure { grid-column: 1 / -1; padding: 14px 16px; border-radius: 12px; }
+.nutritionist-dialog-disclosure p { font-size: .84rem; line-height: 1.55; }
+.nutritionist-dialog-content > section { min-width: 0; padding: 17px; background: #0e1d13; border: 1px solid #25402c; border-radius: 13px; }
+.nutritionist-dialog-content > section h3 { margin: 0 0 9px; color: #e5eee5; font-size: .98rem; }
+.nutritionist-dialog-content > section > p { color: #b8c8b9; font-size: .87rem; line-height: 1.65; }
+.nutritionist-dialog-content > section .nutritionist-tags { gap: 7px; }
+.nutritionist-dialog-content > section .nutritionist-tags span { padding: 7px 10px; font-size: .76rem; }
+.nutritionist-dialog-content > section.nutritionist-profile-facts { grid-column: 1 / -1; }
+.nutritionist-profile-facts > p { align-items: flex-start; padding: 11px 0; border-color: #28422e; }
+.nutritionist-profile-facts > p strong,.nutritionist-profile-facts > p span { font-size: .82rem; line-height: 1.5; }
+.nutritionist-dialog > footer { justify-content: flex-end; gap: 10px; padding: 16px 28px; }
+.nutritionist-dialog > footer .button { min-height: 44px; padding: 0 18px; font-size: .84rem; }
+@media (max-width: 720px) {
+  .nutritionist-dialog-backdrop { place-items: end center; padding: 0; }
+  .nutritionist-dialog { width: 100%; max-height: 94dvh; border-radius: 20px 20px 0 0; }
+  .nutritionist-dialog-hero { min-height: 142px; gap: 14px; padding: 18px; }
+  .nutritionist-dialog-hero > img { width: 82px; height: 100px; border-radius: 12px; }
+  .nutritionist-dialog-hero > div { gap: 7px; }
+  .nutritionist-dialog-hero h2 { font-size: 1.3rem; }
+  .nutritionist-dialog-hero p { font-size: .82rem; }
+  .nutritionist-dialog-content { grid-template-columns: 1fr; gap: 10px; padding: 14px; }
+  .nutritionist-dialog-disclosure { padding: 12px; }
+  .nutritionist-dialog-disclosure p { font-size: .79rem; }
+  .nutritionist-dialog-content > section { padding: 14px; border-radius: 12px; }
+  .nutritionist-dialog-content > section h3 { font-size: .9rem; }
+  .nutritionist-dialog-content > section > p { font-size: .82rem; line-height: 1.6; }
+  .nutritionist-dialog-content > section .nutritionist-tags span { padding: 6px 8px; font-size: .7rem; }
+  .nutritionist-profile-facts > p { display: grid; gap: 3px; }
+  .nutritionist-profile-facts > p span { text-align: left; }
+  .nutritionist-dialog > footer { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .nutritionist-dialog > footer .button { width: 100%; min-height: 44px; font-size: .83rem; }
+}

@@ -2,15 +2,17 @@ import { mapProfile, signMedia } from "./socialService.js";
 import { createSecureId } from "./secureId.js";
 
 export const PROFESSIONAL_CATEGORIES = [
-  { id: "empresa", label: "Empresa", description: "Apresente sua empresa, serviços e portfólio. A equipe revisará seus dados antes de qualquer aprovação." },
-  { id: "marca", label: "Loja ou marca parceira", description: "Mostre produtos, catálogo e canais comerciais para análise." },
-  { id: "vendedor", label: "Vendedor Fortalfy Shop", description: "Solicite análise para habilitar uma operação de vendas." },
-  { id: "restaurante", label: "Restaurante ou negócio de alimentação", description: "Apresente o estabelecimento, cardápio e informações de atendimento." },
+  { id: "empresa", label: "Empresa (outros segmentos)", description: "Apresente sua empresa, serviços e portfólio. A equipe revisará seus dados antes de qualquer aprovação." },
+  { id: "marca", label: "Marca fitness", description: "Mostre produtos, catálogo e canais comerciais para análise." },
+  { id: "vendedor", label: "Loja fitness", description: "Solicite análise para habilitar uma operação de vendas." },
+  { id: "restaurante", label: "Restaurante", description: "Apresente o estabelecimento, cardápio e informações de atendimento." },
   { id: "nutricionista", label: "Nutricionista", description: "Apresente seus dados profissionais e registro para revisão manual." },
-  { id: "personal", label: "Personal trainer", description: "Apresente sua atuação, registro ou certificações para revisão." },
-  { id: "academia", label: "Academia ou estúdio", description: "Cadastre a empresa, endereço, equipe e estrutura para revisão como parceiro Fortalfy." },
-  { id: "influenciador", label: "Fortalfy Creator / Influenciador", description: "Candidate-se ao perfil oficial. A aprovação exige análise manual e o mínimo de audiência definido pela Fortalfy. Se ainda não atingir, você pode continuar como creator da comunidade pela conta comum, sem selo oficial." },
+  { id: "personal", label: "Personal Trainer", description: "Apresente sua atuação, registro ou certificações para revisão." },
+  { id: "academia", label: "Academia", description: "Cadastre a empresa, endereço, equipe e estrutura para revisão como parceiro Fortalfy." },
+  { id: "influenciador", label: "Fortalfy Creator", description: "Candidate-se ao perfil oficial. A aprovação exige análise manual e o mínimo de audiência definido pela Fortalfy. Se ainda não atingir, você pode continuar como creator da comunidade pela conta comum, sem selo oficial." },
 ];
+
+export const CORE_PARTNER_CATEGORY_IDS = Object.freeze(["academia", "restaurante", "personal", "nutricionista", "vendedor", "marca"]);
 
 const COMMON_FIELDS = [
   { id: "displayName", label: "Nome público", required: true, maxLength: 120 },

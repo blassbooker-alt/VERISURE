@@ -1,10 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  loadProfessionalBookings, normalizeExternalUrl, PROFESSIONAL_CATEGORIES,
+  CORE_PARTNER_CATEGORY_IDS, loadProfessionalBookings, normalizeExternalUrl, PROFESSIONAL_CATEGORIES,
   professionalFieldsFor, saveSocialProfile, validateProfessionalApplication,
   validateProfileLinks,
 } from "../src/professionalService.js";
+
+test("the six primary partner categories have distinct profile forms", () => {
+  assert.deepEqual(CORE_PARTNER_CATEGORY_IDS, ["academia", "restaurante", "personal", "nutricionista", "vendedor", "marca"]);
+  for (const categoryId of CORE_PARTNER_CATEGORY_IDS) {
+    assert.ok(PROFESSIONAL_CATEGORIES.some(category => category.id === categoryId), `${categoryId} must be selectable`);
+    assert.ok(professionalFieldsFor(categoryId).length > 0, `${categoryId} must have its own fields`);
+  }
+  assert.equal(PROFESSIONAL_CATEGORIES.find(category => category.id === "vendedor").label, "Loja fitness");
+  assert.equal(PROFESSIONAL_CATEGORIES.find(category => category.id === "marca").label, "Marca fitness");
+});
 
 function query(result) {
   return {

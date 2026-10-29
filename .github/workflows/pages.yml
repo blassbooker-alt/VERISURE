@@ -41,6 +41,7 @@ jobs:
           VITE_WEB_PUSH_PUBLIC_KEY: 'BMQLwJxiJpnV2YHdgvRTVJ52id-nNEt-GU2TPPAIiCkQCLELKOAwbBgI-COlEJ-0_2EQVq5xZxPeEXPz5GUyP_o'
         run: |
           npm ci
+          npm test
           npm run build
       - name: Prepare Pages artifact
         run: |

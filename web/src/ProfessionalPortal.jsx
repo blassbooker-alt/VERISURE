@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import SponsoredCreative from "./SponsoredCreative.jsx";
 import {
-  ArrowRight, BriefcaseBusiness, CheckCircle2, CircleAlert, Dumbbell, ExternalLink, LoaderCircle,
-  Store, Tags, Utensils, UserRound, Users,
+  ArrowRight, BriefcaseBusiness, CheckCircle2, CircleAlert, Dumbbell, ExternalLink, Handshake, LoaderCircle,
+  Send, Store, Tags, Utensils, UserRound, Users,
 } from "lucide-react";
 import {
-  createProfessionalDocumentUrl, loadProfessionalApplicationDocuments, loadProfessionalApplications,
+  CORE_PARTNER_CATEGORY_IDS, createProfessionalDocumentUrl, loadProfessionalApplicationDocuments, loadProfessionalApplications,
   loadProfessionalApplicationsForReview, PROFESSIONAL_CATEGORIES, professionalFieldsFor,
   professionalStatusLabel, recordCreatorReviewEvidence, removeProfessionalApplicationDocument, reviewProfessionalApplication,
   saveProfessionalApplication, submitProfessionalApplication, uploadProfessionalApplicationDocument,
@@ -17,6 +17,10 @@ import {
   reviewCommercialBusiness, reviewCommercialItem, reviewCommercialReport, saveDiscountRule, setDiscountItemEligibility,
   setPartnerDiscountEnrollment,
 } from "./commercialService.js";
+import {
+  loadOwnPartnershipRequest, loadPartnershipRequestsForReview, PARTNERSHIP_REQUEST_STATUSES,
+  reviewPartnershipRequest, savePartnershipRequest, submitPartnershipRequest, validatePartnershipRequest,
+} from "./partnershipRequestService.js";
 
 const CATEGORY_ICONS = {
   empresa: BriefcaseBusiness,
@@ -32,6 +36,11 @@ const CATEGORY_ICONS = {
 function categoryFor(id) {
   return PROFESSIONAL_CATEGORIES.find(category => category.id === id);
 }
+
+const BASIC_APPLICATION_FIELD_IDS = new Set(["displayName", "contactEmail", "phone", "city"]);
+const APPLICATION_STEP_LABELS = ["Informações principais", "Perfil do segmento", "Verificação Fortalfy", "Revisão e envio"];
+const CORE_PARTNER_CATEGORIES = CORE_PARTNER_CATEGORY_IDS.map(id => categoryFor(id)).filter(Boolean);
+const OTHER_PROFESSIONAL_CATEGORIES = PROFESSIONAL_CATEGORIES.filter(category => !CORE_PARTNER_CATEGORY_IDS.includes(category.id));
 
 function ApplicationStatus({ application }) {
   if (!application) return null;
@@ -131,6 +140,122 @@ function ReviewApplication({ client, application, busyId, onReview, note, onNote
         : <><button type="button" className="button primary small-button" disabled={busyId === application.id || note.trim().length < 3 || (application.kind === "influenciador" && (!ownershipConfirmed || !evidenceNote.trim()))} onClick={() => onReview(application, "approved", application.kind === "influenciador" ? { observedFollowers, ownershipConfirmed, validationMethod, evidenceNote } : null)}>Aprovar</button><button type="button" className="button subtle small-button" disabled={busyId === application.id || note.trim().length < 3} onClick={() => onReview(application, "correction_required")}>Solicitar correção</button><button type="button" className="button subtle small-button" disabled={busyId === application.id || note.trim().length < 3} onClick={() => onReview(application, "rejected")}>Reprovar</button></>}
     </div>
   </article>;
+}
+
+function PartnershipRequestForm({ client, application, userId, notify }) {
+  const [request, setRequest] = useState(null);
+  const [form, setForm] = useState({ business_goals: "", products_or_services: "", promotion_interest: false, marketing_interest: false, commercial_interest: false, additional_information: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const locked = ["under_review", "approved"].includes(request?.status);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+    setRequest(null);
+    if (!application?.id || !client) {
+      setForm({ business_goals: "", products_or_services: "", promotion_interest: false, marketing_interest: false, commercial_interest: false, additional_information: "" });
+      setLoading(false);
+      return undefined;
+    }
+    loadOwnPartnershipRequest(client, application.id).then(result => {
+      if (!active) return;
+      setRequest(result);
+      if (result?.request_data) setForm(current => ({ ...current, ...result.request_data }));
+    }).catch(failure => {
+      if (active) setError(failure.message || "Não foi possível carregar sua solicitação de parceria.");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [application?.id, client]);
+
+  const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const submit = async event => {
+    event.preventDefault();
+    const errors = validatePartnershipRequest(form);
+    if (Object.keys(errors).length) {
+      setError(Object.values(errors)[0]);
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const requestId = await savePartnershipRequest(client, userId, application.id, form);
+      await submitPartnershipRequest(client, requestId);
+      const refreshed = await loadOwnPartnershipRequest(client, application.id);
+      setRequest(refreshed);
+      notify("Solicitação de parceria enviada para análise. A verificação do perfil continua sendo um processo separado.");
+    } catch (failure) {
+      console.error("Falha ao enviar solicitação de parceria.", failure);
+      setError(failure.message || "Não foi possível enviar sua solicitação de parceria.");
+      try { setRequest(await loadOwnPartnershipRequest(client, application.id)); } catch { /* Preserve the original submission error. */ }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return <section className="professional-application-editor professional-partnership-request">
+    <header><div><span className="eyebrow"><Handshake size={14} /> SOLICITAÇÃO COMERCIAL</span><h2>Solicite sua parceria com a Fortalfy</h2><p>Queremos conhecer seu negócio e descobrir como podemos crescer juntos dentro do ecossistema Fortalfy.</p></div>{request && <span className={`professional-step-count status-${request.status}`}>{PARTNERSHIP_REQUEST_STATUSES[request.status] || "Status indisponível"}</span>}</header>
+    {request?.reviewer_note && <p className="professional-readonly-note"><strong>Retorno da equipe:</strong> {request.reviewer_note}</p>}
+    {loading ? <p className="professional-inline-status"><LoaderCircle size={16} className="spin" /> Carregando solicitação…</p>
+      : !application?.id ? <p className="professional-readonly-note">Salve o rascunho da verificação do perfil para iniciar uma solicitação de parceria separada.</p>
+        : <form onSubmit={submit}>
+          <div className="professional-fields-grid">
+            <label className="professional-form-field" htmlFor="partnership-goals">Objetivos do negócio<textarea id="partnership-goals" rows={3} maxLength={1200} required disabled={locked || saving} value={form.business_goals} onChange={event => update("business_goals", event.target.value)} placeholder="O que espera alcançar ao participar do ecossistema Fortalfy?" /></label>
+            <label className="professional-form-field" htmlFor="partnership-offer">Produtos ou serviços que deseja divulgar<textarea id="partnership-offer" rows={3} maxLength={1200} required disabled={locked || saving} value={form.products_or_services} onChange={event => update("products_or_services", event.target.value)} placeholder="Descreva a oferta que deseja apresentar, sem informar dados não confirmados." /></label>
+            <label className="social-auth-consent"><input type="checkbox" checked={form.promotion_interest} disabled={locked || saving} onChange={event => update("promotion_interest", event.target.checked)} /><span>Tenho interesse em ações promocionais.</span></label>
+            <label className="social-auth-consent"><input type="checkbox" checked={form.marketing_interest} disabled={locked || saving} onChange={event => update("marketing_interest", event.target.checked)} /><span>Tenho interesse em campanhas de marketing e criação de conteúdo.</span></label>
+            <label className="social-auth-consent"><input type="checkbox" checked={form.commercial_interest} disabled={locked || saving} onChange={event => update("commercial_interest", event.target.checked)} /><span>Tenho interesse em oportunidades comerciais futuras.</span></label>
+            <label className="professional-form-field" htmlFor="partnership-notes">Informações adicionais (opcional)<textarea id="partnership-notes" rows={3} maxLength={2000} disabled={locked || saving} value={form.additional_information} onChange={event => update("additional_information", event.target.value)} /></label>
+          </div>
+          <p className="professional-readonly-note">Enviar esta solicitação não confirma aprovação, publicação, disponibilidade de oferta ou contrato comercial. A análise de parceria é independente da verificação profissional.</p>
+          {error && <p className="professional-error" role="alert">{error}<button type="button" onClick={() => setError("")}>Fechar</button></p>}
+          <footer className="professional-form-actions"><button type="submit" className="button primary" disabled={saving || locked}>{saving ? <><LoaderCircle size={15} className="spin" /> Enviando…</> : <><Send size={15} /> {request?.status === "correction_required" || request?.status === "rejected" ? "Salvar e reenviar" : "Enviar solicitação"}</>}</button></footer>
+        </form>}
+  </section>;
+}
+
+function AdminPartnershipRequests({ client, notify }) {
+  const [requests, setRequests] = useState([]);
+  const [notes, setNotes] = useState({});
+  const [busyId, setBusyId] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const refresh = async () => {
+    setError("");
+    const result = await loadPartnershipRequestsForReview(client);
+    setRequests(result);
+  };
+  useEffect(() => {
+    let active = true;
+    loadPartnershipRequestsForReview(client).then(result => { if (active) setRequests(result); }).catch(failure => { if (active) setError(failure.message || "Não foi possível carregar a fila de parcerias."); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [client]);
+  const decide = async (item, status) => {
+    setBusyId(item.id);
+    setError("");
+    try {
+      await reviewPartnershipRequest(client, item.id, status, notes[item.id] || "");
+      notify("Decisão da solicitação comercial registrada.");
+      await refresh();
+    } catch (failure) {
+      setError(failure.message || "Não foi possível registrar a decisão.");
+    } finally {
+      setBusyId("");
+    }
+  };
+  return <section className="professional-admin-review">
+    <div className="professional-portal-heading"><div><span className="eyebrow">ADMINISTRAÇÃO · PROCESSO SEPARADO</span><h2>Solicitações de parceria</h2><p>Aprovar uma parceria não altera automaticamente o status de verificação profissional.</p></div></div>
+    {error && <p className="professional-error" role="alert">{error}<button type="button" onClick={() => refresh().catch(failure => setError(failure.message))}>Tentar novamente</button></p>}
+    {loading && <p className="professional-inline-status"><LoaderCircle size={16} className="spin" /> Carregando solicitações…</p>}
+    {!loading && requests.filter(item => item.status === "under_review").length === 0 && <p className="professional-empty">Não há solicitações de parceria aguardando análise.</p>}
+    {requests.filter(item => item.status === "under_review").map(item => <article className="professional-review-card" key={item.id}>
+      <div><span className="eyebrow">{categoryFor(item.application?.kind)?.label || item.application?.kind || "Categoria"} · SOLICITAÇÃO DE PARCERIA</span><h3>{item.application?.private_data?.displayName || "Cadastro sem nome público"}</h3><p>{item.application?.private_data?.contactEmail || ""} · enviada em {item.submitted_at ? new Date(item.submitted_at).toLocaleString("pt-BR") : "data indisponível"}</p></div>
+      <dl>{Object.entries(item.request_data || {}).map(([key, value]) => <div key={key}><dt>{key.replaceAll("_", " ")}</dt><dd>{typeof value === "boolean" ? value ? "Sim" : "Não" : String(value || "—")}</dd></div>)}</dl>
+      <label className="professional-form-field">Motivo e resumo da decisão (obrigatório)<textarea rows={2} maxLength={2000} value={notes[item.id] || ""} onChange={event => setNotes(current => ({ ...current, [item.id]: event.target.value }))} /></label>
+      <div className="professional-review-actions"><button type="button" className="button primary small-button" disabled={busyId === item.id || (notes[item.id] || "").trim().length < 3} onClick={() => decide(item, "approved")}>Aprovar parceria</button><button type="button" className="button subtle small-button" disabled={busyId === item.id || (notes[item.id] || "").trim().length < 3} onClick={() => decide(item, "correction_required")}>Solicitar ajustes</button><button type="button" className="button subtle small-button" disabled={busyId === item.id || (notes[item.id] || "").trim().length < 3} onClick={() => decide(item, "rejected")}>Recusar</button></div>
+    </article>)}
+  </section>;
 }
 
 function AdminReview({ client, applications, onRefresh, notify }) {
@@ -545,7 +670,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
     });
     setStep(0);
     setFormError("");
-  }, [applications, profile?.city, profile?.name, profile?.phone, selectedCategory, session?.user?.email, session?.user?.user_metadata?.display_name]);
+  }, [profile?.city, profile?.name, profile?.phone, selectedCategory, session?.user?.email, session?.user?.user_metadata?.display_name]);
 
   useEffect(() => {
     if (!selectedApplication?.id || !client) {
@@ -590,18 +715,26 @@ export default function ProfessionalPortal({ client, session, profile, notify })
       setStep(current => Math.max(0, current - 1));
       return;
     }
-    const currentFields = step === 0
-      ? fields.filter(field => ["displayName", "contactEmail", "phone", "city"].includes(field.id))
-      : fields.filter(field => !["displayName", "contactEmail", "phone", "city"].includes(field.id));
-    const errors = validateProfessionalApplication(selectedCategory, form, { allowIncomplete: true });
-    const invalidCurrentField = currentFields.find(field => errors[field.id]);
-    if (invalidCurrentField) {
-      setFormError(errors[invalidCurrentField.id]);
+    if (step < 2) {
+      const currentFields = step === 0
+        ? fields.filter(field => BASIC_APPLICATION_FIELD_IDS.has(field.id))
+        : fields.filter(field => !BASIC_APPLICATION_FIELD_IDS.has(field.id));
+      const errors = validateProfessionalApplication(selectedCategory, form, { allowIncomplete: true });
+      const invalidCurrentField = currentFields.find(field => errors[field.id]);
+      const missingRequiredField = currentFields.find(field => field.required && !String(form[field.id] || "").trim());
+      if (invalidCurrentField || missingRequiredField) {
+        const field = invalidCurrentField || missingRequiredField;
+        setFormError(errors[field.id] || `Preencha o campo “${field.label}”.`);
+        return;
+      }
+    }
+    if (step === 2 && !documents.length) {
+      setFormError("Anexe ao menos um documento de identidade, registro profissional ou comprovação empresarial antes de continuar.");
       return;
     }
-    if (step < 2) {
+    if (step < 3) {
       const saved = await saveDraft();
-      if (saved) setStep(current => Math.min(2, current + 1));
+      if (saved) setStep(current => Math.min(3, current + 1));
     }
   };
 
@@ -686,12 +819,12 @@ export default function ProfessionalPortal({ client, session, profile, notify })
       <header className="professional-entry-header">
         <Link to="/home" className="text-link">← Voltar à Fortalfy</Link>
         <span className="eyebrow">FORTALFY PROFISSIONAIS</span>
-        <h1>Sua conta profissional começa aqui.</h1>
-        <p>Conecte seu negócio, apresente seu trabalho e cresça dentro do ecossistema Fortalfy.</p>
+        <h1>Faça parte do ecossistema Fortalfy</h1>
+        <p>Conecte seu negócio ou sua carreira ao universo fitness e alcance novas oportunidades.</p>
       </header>
       <SponsoredCreative image="11-professional-b2b.png" alt="Fortalfy para negócios: anuncie sua marca na Fortalfy." label="Oportunidades para negócios" to="/professional" className="professional-b2b-creative" />
       <div className="professional-category-grid">
-        {PROFESSIONAL_CATEGORIES.map(item => {
+        {CORE_PARTNER_CATEGORIES.map(item => {
           const Icon = CATEGORY_ICONS[item.id] || BriefcaseBusiness;
           return <article className="professional-category-card" key={item.id}>
             <span className="professional-category-icon"><Icon size={22} /></span>
@@ -700,6 +833,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
           </article>;
         })}
       </div>
+      {OTHER_PROFESSIONAL_CATEGORIES.length > 0 && <details className="professional-other-categories"><summary>Outras categorias profissionais</summary><div className="professional-category-grid">{OTHER_PROFESSIONAL_CATEGORIES.map(item => { const Icon = CATEGORY_ICONS[item.id] || BriefcaseBusiness; return <article className="professional-category-card" key={item.id}><span className="professional-category-icon"><Icon size={22} /></span><h2>{item.label}</h2><p>{item.description}</p><Link className="button primary small-button" to={`/profile?professionalKind=${item.id}`}>Criar perfil <ArrowRight size={15} /></Link></article>; })}</div></details>}
       <footer className="professional-entry-footer"><Link to="/profile" className="button subtle">Entrar na minha conta</Link><Link to="/home" className="text-link">Voltar à Fortalfy</Link></footer>
     </main>;
   }
@@ -709,7 +843,7 @@ export default function ProfessionalPortal({ client, session, profile, notify })
       <div><span className="eyebrow">FORTALFY PROFISSIONAIS</span><h1>Seu espaço profissional</h1><p>Use sua conta Fortalfy atual; cadastros profissionais não criam uma identidade de login duplicada.</p></div>
       <Link className="button subtle small-button" to="/profile">Meu perfil <ArrowRight size={15} /></Link>
     </header>
-    {admin && <>{reviewError && <div className="professional-error" role="alert">{reviewError}</div>}<AdminReview client={client} applications={reviewApplications} onRefresh={refreshReviewApplications} notify={notify} /><CommercialAdmin client={client} notify={notify} /></>}
+    {admin && <>{reviewError && <div className="professional-error" role="alert">{reviewError}</div>}<AdminReview client={client} applications={reviewApplications} onRefresh={refreshReviewApplications} notify={notify} /><AdminPartnershipRequests client={client} notify={notify} /><CommercialAdmin client={client} notify={notify} /></>}
     {loading && <p className="professional-inline-status"><LoaderCircle size={17} className="spin" /> Carregando seus cadastros…</p>}
     {loadError && <div className="professional-error" role="alert">{loadError}<button type="button" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div>}
     {!loading && !loadError && <>
@@ -718,39 +852,40 @@ export default function ProfessionalPortal({ client, session, profile, notify })
         <div className="professional-category-chips">{PROFESSIONAL_CATEGORIES.map(item => <button type="button" key={item.id} className={selectedCategory === item.id ? "active" : ""} onClick={() => chooseCategory(item.id)}>{item.label}{applications.some(app => app.kind === item.id) && <small>{professionalStatusLabel(applications.find(app => app.kind === item.id).status)}</small>}</button>)}</div>
       </section>
       {category && <section className="professional-application-editor">
-        <header><div><span className="eyebrow">CADASTRO {category.label.toUpperCase()}</span><h2>{category.label}</h2><p>{category.description}</p></div><span className="professional-step-count">Etapa {step + 1} de 3</span></header>
-        <div className="professional-progress"><span style={{ width: `${((step + 1) / 3) * 100}%` }} /></div>
+        <header><div><span className="eyebrow">VERIFICAÇÃO FORTALFY · {category.label.toUpperCase()}</span><h2>{category.label}</h2><p>{category.description}</p></div><span className="professional-step-count">Etapa {step + 1} de 4 · {APPLICATION_STEP_LABELS[step]}</span></header>
+        <div className="professional-progress"><span style={{ width: `${((step + 1) / 4) * 100}%` }} /></div>
         <ApplicationStatus application={selectedApplication} />
         {selectedApplication?.status === "under_review" && <p className="professional-readonly-note">Este cadastro está em análise e não pode ser editado agora.</p>}
         <form onSubmit={submit}>
           {step < 2
             ? <div className="professional-fields-grid">{fields
               .filter(field => step === 0
-                ? ["displayName", "contactEmail", "phone", "city"].includes(field.id)
-                : !["displayName", "contactEmail", "phone", "city"].includes(field.id))
+                ? BASIC_APPLICATION_FIELD_IDS.has(field.id)
+                : !BASIC_APPLICATION_FIELD_IDS.has(field.id))
               .map(field => <ApplicationField key={field.id} field={field} value={form[field.id]} disabled={["under_review", "approved", "suspended"].includes(selectedApplication?.status)} onChange={(id, value) => setForm(current => ({ ...current, [id]: value }))} />)}</div>
-            : <div className="professional-review-preview"><h3>Revise antes de enviar</h3><dl>{fields.map(field => <div key={field.id}><dt>{field.label}</dt><dd>{form[field.id] || "Não informado"}</dd></div>)}</dl><p>Os dados identificáveis e credenciais ficam privados para análise. Apenas nome, apresentação, cidade e site poderão ser publicados depois da aprovação.</p></div>}
-          {step === 1 && <section className="professional-document-upload">
-            <div><strong>Documentos para análise</strong><p>Arquivos privados, acessíveis apenas ao titular e à equipe autorizada. PDF, JPG ou PNG, até 10 MB.</p></div>
+            : step === 3 && <div className="professional-review-preview"><h3>Revise antes de enviar</h3><dl>{fields.map(field => <div key={field.id}><dt>{field.label}</dt><dd>{form[field.id] || "Não informado"}</dd></div>)}</dl><p>Os dados identificáveis e credenciais ficam privados para análise. Apenas nome, apresentação, cidade e site poderão ser publicados depois da aprovação.</p></div>}
+          {step === 2 && <section className="professional-document-upload">
+            <div><strong>Verificação Fortalfy · documentos</strong><p>Arquivos privados, acessíveis apenas ao titular e à equipe autorizada. PDF, JPG ou PNG, até 10 MB.</p></div>
             <label>Tipo de documento<select value={documentKind} onChange={event => setDocumentKind(event.target.value)}><option value="professional_credential">Credencial profissional</option><option value="business_identity">Identificação empresarial</option><option value="other">Outro documento</option></select></label>
             <label className="button subtle small-button professional-document-picker">{uploadingDocument ? "Enviando…" : documentsLoading ? "Carregando documentos…" : "Anexar documento"}<input type="file" accept="application/pdf,image/jpeg,image/png" onChange={uploadDocument} disabled={uploadingDocument || documentsLoading || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)} /></label>
             {documentsError && <p className="professional-error" role="alert">{documentsError}</p>}
-            {documents.map(document => <div className="professional-document-item" key={document.id}><span>{document.file_name}<small>{document.document_kind} · {Math.ceil(document.size_bytes / 1024)} KB</small></span>{!["under_review", "approved", "suspended", "rejected"].includes(selectedApplication?.status) && <button type="button" disabled={uploadingDocument} onClick={() => removeDocument(document)}>Remover</button>}</div>)}
+            {documents.map(document => <div className="professional-document-item" key={document.id}><span>{document.file_name}<small>{document.document_kind} · {Math.ceil(document.size_bytes / 1024)} KB</small></span>{!["under_review", "approved", "suspended"].includes(selectedApplication?.status) && <button type="button" disabled={uploadingDocument} onClick={() => removeDocument(document)}>Remover</button>}</div>)}
             {documents.length === 0 && <small className="professional-required-document">O envio exige ao menos um documento de identidade, registro ou comprovação da atividade.</small>}
           </section>}
-          {step === 2 && <label className="social-auth-consent">
+          {step === 3 && <label className="social-auth-consent">
             <input type="checkbox" checked={acceptedFreeBusinessTerms} onChange={event => setAcceptedFreeBusinessTerms(event.target.checked)} required />
             <span>Declaro que os dados são verdadeiros, atuais e meus ou da empresa que represento. Li as políticas aplicáveis e entendo que o envio inicia uma análise, sem garantir aprovação. CPF, documentos e endereço residencial ficam privados; o selo só aparece após aprovação.</span>
           </label>}
           {formError && <p className="professional-error" role="alert">{formError}</p>}
           <footer className="professional-form-actions">
             <button type="button" className="button subtle" disabled={saving || step === 0 || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)} onClick={() => moveStep(-1)}>Voltar</button>
-            {step < 2
+            {step < 3
               ? <button type="button" className="button primary" disabled={saving || uploadingDocument || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)} onClick={() => moveStep(1)}>{saving ? "Salvando…" : "Salvar e continuar"} <ArrowRight size={16} /></button>
               : <button type="submit" className="button primary" disabled={saving || documentsLoading || uploadingDocument || ["under_review", "approved", "suspended"].includes(selectedApplication?.status)}>{saving ? "Enviando…" : ["correction_required", "rejected"].includes(selectedApplication?.status) ? "Reenviar para análise" : "Enviar para análise"} <ArrowRight size={16} /></button>}
           </footer>
         </form>
       </section>}
+      {selectedCategory && <PartnershipRequestForm key={`${userId}:${selectedCategory}`} client={client} application={selectedApplication} userId={userId} notify={notify} />}
       {applications.length > 0 && <PartnerDiscountProgramPanel key={userId} client={client} userId={userId} category={selectedCategory || applications[0]?.kind} notify={notify} />}
       <p className="professional-portal-safety">Não solicitamos senhas de redes sociais nem dados bancários. CRN/CREF e documentos são revisados pela equipe; nenhum selo é concedido automaticamente.</p>
     </>}

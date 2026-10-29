@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, BadgeCheck, CalendarDays, CheckCircle2, CircleAlert, Clock3,
@@ -58,12 +59,14 @@ function ApprovedPersonalCard({ partner }) {
 function DemoPersonalDialog({ person, onClose }) {
   useEffect(() => {
     if (!person) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const closeOnEscape = event => { if (event.key === "Escape") onClose(); };
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", closeOnEscape); };
   }, [person, onClose]);
   if (!person) return null;
-  return <div className="nutritionist-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+  return createPortal(<div className="nutritionist-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section className="nutritionist-dialog" role="dialog" aria-modal="true" aria-labelledby="personal-dialog-title">
       <button type="button" className="nutritionist-dialog-close" onClick={onClose} aria-label="Fechar perfil"><X size={19} /></button>
       <div className="nutritionist-dialog-hero"><img src={`./assets/personal-trainers/${person.image}`} alt={`Foto ilustrativa de ${person.name}`} /><div><span className="nutritionist-demo-pill">PERFIL DE DEMONSTRAÇÃO</span><h2 id="personal-dialog-title">{person.name}</h2><p><Dumbbell size={15} /> {person.focus}</p></div></div>
@@ -77,7 +80,7 @@ function DemoPersonalDialog({ person, onClose }) {
       </div>
       <footer><button type="button" className="button subtle" onClick={onClose}>Voltar à lista</button><button type="button" className="button primary" disabled>Agendamento indisponível</button></footer>
     </section>
-  </div>;
+  </div>, document.body);
 }
 
 export default function PersonalDirectory({ client }) {

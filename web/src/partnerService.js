@@ -59,11 +59,23 @@ export async function loadApprovedPartners(client, { kind = "" } = {}) {
   if (error) throw error;
   const listings = (data || [])
     .map(mapListing)
-    .filter(listing => listing?.verified && PARTNER_KINDS.has(listing.kind));
+    .filter(listing => listing?.verified && !listing.isPrivate && PARTNER_KINDS.has(listing.kind));
   return Promise.all(listings.map(async listing => ({
     ...listing,
     avatar: await signMedia(client, listing.avatar),
   })));
+}
+
+export async function loadApprovedPartnerProfile(client, profileId) {
+  if (!client || !profileId) return null;
+  const { data, error } = await client.from("partner_listings").select(`
+    id,profile_id,address,latitude,longitude,modalities,opening_hours,website_url,contact_phone,
+    profile:profiles!partner_listings_profile_id_fkey(id,display_name,username,kind,city,bio,avatar_path,is_private,partner_approved_at)
+  `).eq("profile_id", profileId).maybeSingle();
+  if (error) throw error;
+  const listing = mapListing(data);
+  if (!listing?.verified || listing.isPrivate || !PARTNER_KINDS.has(listing.kind)) return null;
+  return { ...listing, avatar: await signMedia(client, listing.avatar) };
 }
 
 export async function loadOwnPartnerListing(client, userId) {

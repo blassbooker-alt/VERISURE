@@ -33,6 +33,7 @@ const SocialMessages = lazy(() => import("./SocialScreens.jsx").then(module => (
 const ProfessionalsDirectory = lazy(() => import("./ProfessionalsDirectory.jsx"));
 const NutritionistDirectory = lazy(() => import("./NutritionistDirectory.jsx"));
 const PersonalDirectory = lazy(() => import("./PersonalDirectory.jsx"));
+const ProfessionalPublicProfile = lazy(() => import("./ProfessionalPublicProfile.jsx"));
 const GymPartnershipsPage = lazy(() => import("./GymPartnerships.jsx"));
 const GymPartnershipDetailPage = lazy(() => import("./GymPartnerships.jsx").then(module => ({ default: module.GymPartnershipDetailPage })));
 const GymPartnershipAdminPage = lazy(() => import("./GymPartnerships.jsx").then(module => ({ default: module.GymPartnershipAdminPage })));
@@ -269,8 +270,8 @@ function PublicLanding() {
         <a href="#experiencias" onClick={event => scrollToSection(event, "experiencias")}>Experiências</a>
       </nav>
       <div className="public-header-actions">
-        <Link to="/feed" className="public-login-link">Entrar</Link>
-        <Link to="/feed" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link>
+        <Link to="/profile" className="public-login-link">Entrar</Link>
+        <Link to="/profile" className="button primary public-header-start">Começar agora <ArrowRight size={16} /></Link>
       </div>
     </header>
     <section className="public-hero" aria-labelledby="public-hero-title">
@@ -280,7 +281,7 @@ function PublicLanding() {
         <h1 id="public-hero-title">Seu bem-estar começa <span>no próximo passo.</span></h1>
         <p>Treine, encontre profissionais, cuide da alimentação e acompanhe sua evolução em uma experiência feita para o seu ritmo.</p>
         <div className="public-hero-actions">
-          <Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link>
+          <Link to="/profile" className="button primary">Começar agora <ArrowRight size={17} /></Link>
           <Link to="/pass" className="button subtle">Encontrar um profissional</Link>
         </div>
         <div className="public-value-points"><ShieldCheck size={17} /><span>Treino, alimentação e comunidade em um só lugar.</span></div>
@@ -331,7 +332,7 @@ function PublicLanding() {
         <h2 id="public-final-title">Seu próximo passo começa agora.</h2>
         <p>Pequenos passos também fazem parte de uma jornada.</p>
         <div className="public-hero-actions">
-          <Link to="/feed" className="button primary">Começar agora <ArrowRight size={17} /></Link>
+          <Link to="/profile" className="button primary">Começar agora <ArrowRight size={17} /></Link>
           <Link to="/pass" className="public-final-link">Encontrar um profissional</Link>
         </div>
       </div>
@@ -2478,6 +2479,7 @@ function AppContent() {
       <Route path="/campaigns" element={<CampaignsScreen />} />
       <Route path="/benefits-terms" element={<BenefitsTerms client={supabase} session={authSession} notify={notify} />} />
       <Route path="/feed" element={<Screen compactHeader className="feed-screen community-feed-screen">{authSession?.user?.id && socialProfile && <StoryExperience client={supabase} configured={isSupabaseConfigured} session={authSession} user={socialProfile} notify={notify} />}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} authReady={authReady} profile={socialProfile} profileError={socialProfileError} feedArts={feedArts} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} /></Screen>} />
+      <Route path="/pass" element={<LivePassScreen client={supabase} session={authSession} notify={notify} />} />
       <Route path="/reels" element={<Screen title="FortalReels" subtitle="VÍDEOS VERTICAIS" immersive={immersiveReels} className="reels-screen">{!authSession?.user?.id && <section className="reel-preview-feature"><img src={visualPackAsset("fortalfy-pack-reels-training.jpg")} alt="Pessoa praticando mobilidade em um espaço iluminado" loading="lazy" /><div><span className="eyebrow">FORTALREELS · INSPIRAÇÃO EM MOVIMENTO</span><h2>Ideias rápidas para manter seu ritmo.</h2><p>Vídeos de treino, mobilidade e bem-estar publicados pela comunidade.</p><Link to="/feed" className="button primary">Entrar para explorar <ArrowRight size={16} /></Link></div></section>}<SocialFeed client={supabase} configured={isSupabaseConfigured} session={authSession} profile={socialProfile} profileError={socialProfileError} notify={notify} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} mediaType="video" /></Screen>} />
       <Route path="/people" element={<Screen title="Pessoas" subtitle="COMUNIDADE FORTALFY" className="feed-screen people-screen"><ProfessionalsDirectory client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} /></Screen>} />
       <Route path="/messages" element={<Screen title="Mensagens" subtitle="CONVERSAS PRIVADAS" className="feed-screen messages-screen"><SocialMessages client={supabase} configured={isSupabaseConfigured} session={authSession} notify={notify} onNotification={pushNotification} messagePreferences={notificationPreferences} /></Screen>} />
@@ -2491,7 +2493,7 @@ function AppContent() {
       <Route path="/partner/checkins" element={<Screen title="Acessos FortalPass" subtitle="PAINEL DA ACADEMIA" className="gym-admin-screen"><GymPartnerCheckinsPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/admin/gym-plates" element={<Screen title="Placas oficiais" subtitle="ADMINISTRAÇÃO FORTALFY" className="gym-admin-screen"><GymPlateAdminPage client={supabase} session={authSession} /></Screen>} />
       <Route path="/profile" element={<Screen title="Meu perfil" subtitle="SUA JORNADA NA COMUNIDADE" className="social-profile-screen"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
-      <Route path="/profile/:profileId" element={<Screen title="Perfil" subtitle="COMUNIDADE FORTALFY" className="social-profile-screen"><SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} /></Screen>} />
+      <Route path="/profile/:profileId" element={<Screen className="social-profile-screen"><ProfessionalPublicProfile client={supabase} fallback={<SocialProfile client={supabase} session={authSession} profile={socialProfile} profileError={socialProfileError} configured={isSupabaseConfigured} notify={notify} onProfileUpdated={refreshSocialProfile} recovery={passwordRecovery} onRecovered={() => setPasswordRecovery(false)} onRetryProfile={retrySocialProfile} onSignOut={handleSignOut} />} /></Screen>} />
       <Route path="/profile/local" element={<Navigate to="/profile" replace />} />
       <Route path="/workout" element={<WorkoutScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />
       <Route path="/nutrition" element={<NutritionScreen notify={notify} onActivity={updateActivity} activity={activity} client={supabase} session={authSession} activityStatus={activityStatus} activityError={activityError} />} />

@@ -22,17 +22,20 @@ function assertPublicAsset(url) {
   assert.equal(existsSync(path), true, `Missing public asset: ${url}`);
 }
 
-test("the supplied 82-image product pack is present, optimized, and organized by category", () => {
+test("the supplied 82-image core pack is optimized and demo-gallery assets stay separate", () => {
   const files = listFiles(assetRoot);
-  const productFiles = files.filter(path => !path.toLowerCase().replaceAll("\\", "/").includes("/campaign/"));
+  const productFiles = files.filter(path => {
+    const normalized = path.toLowerCase().replaceAll("\\", "/");
+    return !normalized.includes("/campaign/") && !normalized.includes("/shop-demo/");
+  });
   assert.equal(productFiles.length, 82);
-  assert.equal(files.length, 90);
+  assert.equal(files.length, 140);
   assert.ok(productFiles.every(path => path.endsWith(".jpg")));
   assert.ok(productFiles.every(path => statSync(path).size < 1024 * 1024));
   assert.ok(productFiles.reduce((total, path) => total + statSync(path).size, 0) < 15 * 1024 * 1024);
   assert.deepEqual(
     readdirSync(assetRoot).sort(),
-    ["campaign", "food", "ofertas", "produtos", "publicidade", "treino"],
+    ["campaign", "food", "ofertas", "produtos", "publicidade", "shop-demo", "treino"],
   );
 });
 

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  distanceKm, loadApprovedPartners, openStreetMapUrl, orderPartnersByDistance,
+  distanceKm, loadApprovedPartnerProfile, loadApprovedPartners, openStreetMapUrl, orderPartnersByDistance,
   savePartnerListing,
 } from "../src/partnerService.js";
 
@@ -36,6 +36,10 @@ test("approved discovery filters unapproved and non-partner profiles from backen
       id: "listing-3", profile_id: "user-3", address: "Rua C", latitude: -3.74, longitude: -38.53,
       modalities: [], profile: { display_name: "Pessoa", kind: "cliente", partner_approved_at: "2026-10-01" },
     },
+    {
+      id: "listing-4", profile_id: "user-4", address: "Rua D", latitude: -3.74, longitude: -38.53,
+      modalities: [], profile: { display_name: "Perfil privado", kind: "personal", is_private: true, partner_approved_at: "2026-10-01" },
+    },
   ];
   const client = {
     from(table) {
@@ -54,6 +58,7 @@ test("approved discovery filters unapproved and non-partner profiles from backen
   assert.equal(result.length, 1);
   assert.equal(result[0].name, "Academia Real");
   assert.equal(result[0].verified, true);
+  assert.equal(result.some(item => item.name === "Perfil privado"), false);
 });
 
 test("partners without coordinates do not resolve to the Null Island map location", async () => {
@@ -84,6 +89,40 @@ test("partners without coordinates do not resolve to the Null Island map locatio
   assert.equal(partner.latitude, null);
   assert.equal(partner.longitude, null);
   assert.equal(openStreetMapUrl(partner), "");
+});
+
+test("public professional profile resolves only an approved partner listing", async () => {
+  let requestedId = "";
+  const client = {
+    from(table) {
+      assert.equal(table, "partner_listings");
+      const builder = {
+        select() { return this; },
+        eq(column, value) { assert.equal(column, "profile_id"); requestedId = value; return this; },
+        maybeSingle() { return Promise.resolve({ data: {
+          id: "listing-real", profile_id: "personal-real", address: "Private full address",
+          modalities: ["Treino funcional"], opening_hours: {}, profile: {
+            display_name: "Profissional aprovado", kind: "personal", city: "Fortaleza", bio: "Apresentação real",
+            partner_approved_at: "2026-10-01T12:00:00Z",
+          },
+        }, error: null }); },
+      };
+      return builder;
+    },
+  };
+  const partner = await loadApprovedPartnerProfile(client, "personal-real");
+  assert.equal(requestedId, "personal-real");
+  assert.equal(partner.name, "Profissional aprovado");
+  assert.equal(partner.kind, "personal");
+  assert.equal(partner.verified, true);
+  assert.equal(partner.address, "Private full address"); // available to the component for filtering, not rendered on its public page
+
+  const unapprovedClient = {
+    from() { return { select() { return this; }, eq() { return this; }, maybeSingle() { return Promise.resolve({ data: {
+      profile_id: "pending", profile: { display_name: "Pendente", kind: "nutricionista", partner_approved_at: null },
+    }, error: null }); } }; },
+  };
+  assert.equal(await loadApprovedPartnerProfile(unapprovedClient, "pending"), null);
 });
 
 test("partner listing validation rejects invented or malformed location input before write", async () => {
