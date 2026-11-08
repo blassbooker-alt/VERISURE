@@ -14882,3 +14882,392 @@ html[data-theme="dark"]:not([data-high-contrast="true"]) {
 @media (prefers-reduced-motion: reduce) {
   .app-screen :is(.button, button.button, .auth-submit-btn) { transition: none; }
 }
+/* Keep the professional entry masthead readable on narrow screens. */
+.professional-entry-header > .text-link { display: flex; width: fit-content; margin: 0 auto 18px; }
+.professional-entry-header > .eyebrow { display: inline-block; }
+@media (max-width: 600px) {
+  .professional-directory-tabs { scrollbar-width: none; }
+  .professional-directory-tabs::-webkit-scrollbar { display: none; }
+}
+/* Studio's light-theme ink needs a light equivalent on the dark canvas. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .studio-page-title h1 { color: var(--color-text-primary); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .studio-intro { color: var(--color-text-secondary); }
+
+/* Mobile legibility: restore comfortable text and touch sizes in the densest screens. */
+@media (max-width: 699px) {
+  .nutrition-screen {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    padding: 18px 16px calc(98px + env(safe-area-inset-bottom)) !important;
+  }
+  .nutrition-screen > .screen-heading,
+  .nutrition-screen > .nutrition-toolbar,
+  .nutrition-screen > .nutrition-dashboard-grid,
+  .nutrition-screen > .nutrition-history-card,
+  .nutrition-screen > .nutrition-related-features,
+  .nutrition-screen > .activity-sync-notice { grid-column: 1 !important; grid-row: auto !important; }
+  .nutrition-screen > .screen-heading { display: block; margin: 0 !important; transform: none !important; }
+  .nutrition-screen > .screen-heading > div { display: block; }
+  .nutrition-screen > .screen-heading > div::before { content: none; }
+  .nutrition-screen > .screen-heading h1 { font-size: 1.6rem; }
+  .nutrition-screen > .screen-heading .eyebrow { display: block; margin: 0 0 4px; font-size: .72rem; }
+  .nutrition-screen > .nutrition-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 0; }
+  .nutrition-screen > .nutrition-toolbar .nutrition-date-picker { height: 42px; min-height: 42px; }
+  .nutrition-screen > .nutrition-toolbar .nutrition-add-main { min-height: 42px !important; font-size: .78rem; }
+  .nutrition-dashboard-grid { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+  .nutrition-primary-column,
+  .nutrition-side-column { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .nutrition-overview-card { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; min-height: 0; padding: 12px; }
+  .nutrition-overview-copy .eyebrow,
+  .nutrition-side-card > .eyebrow,
+  .nutrition-side-card header .eyebrow { font-size: .68rem; }
+  .nutrition-overview-copy > strong { font-size: .88rem; }
+  .nutrition-overview-copy p,
+  .nutrition-side-card > p { display: block; font-size: .75rem; line-height: 1.45; }
+  .nutrition-macro-card > span:nth-child(2) { font-size: .75rem; }
+  .nutrition-macro-card > strong { font-size: .82rem; }
+  .nutrition-macro-card > small { font-size: .68rem; }
+  .nutrition-meals-heading { gap: 8px; }
+  .nutrition-meals-heading h2 { font-size: 1rem; }
+  .nutrition-meals-heading .eyebrow { display: block; font-size: .68rem; }
+  .nutrition-meals-heading > span { font-size: .7rem; }
+  .nutrition-meal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+  .nutrition-meal-card { min-height: 0; padding: 10px; border-radius: 12px; }
+  .nutrition-meal-card > header { grid-template-columns: 28px minmax(0, 1fr); gap: 6px; padding-bottom: 8px; }
+  .nutrition-meal-icon { width: 28px; height: 28px; }
+  .nutrition-meal-card > header h3 { font-size: .78rem; }
+  .nutrition-meal-card > header small { font-size: .68rem; }
+  .nutrition-meal-card > header > strong { grid-column: 2; justify-self: start; font-size: .72rem; }
+  .nutrition-meal-photo { aspect-ratio: 1.45 / 1; margin: 8px 0 6px; }
+  .nutrition-meal-photo figcaption { font-size: .62rem; }
+  .nutrition-meal-empty { min-height: 52px; gap: 6px; font-size: .75rem; text-align: center; }
+  .nutrition-add-food { min-height: 42px; gap: 6px; padding: 7px 8px; border-radius: 8px; font-size: .75rem; }
+  .nutrition-add-food svg { width: 15px; }
+  .nutrition-food-row { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 4px; }
+  .nutrition-food-copy strong { font-size: .75rem; }
+  .nutrition-food-copy small,
+  .nutrition-food-copy > span { font-size: .68rem; }
+  .nutrition-edit-action,
+  .nutrition-delete-action { width: 32px; height: 32px; }
+  .nutrition-side-card { padding: 12px; border-radius: 12px; }
+  .nutrition-side-card h3 { margin: 0 0 7px; font-size: .9rem; }
+  .nutrition-distribution { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+  .nutrition-distribution-ring { width: 68px; }
+  .nutrition-distribution-ring > span { width: 56px; font-size: .72rem; }
+  .nutrition-distribution-ring small { font-size: .62rem; }
+  .nutrition-legend > span,
+  .nutrition-legend b,
+  .nutrition-goal-row > span,
+  .nutrition-goal-row > strong { font-size: .7rem; }
+  .nutrition-week-chart { height: 90px; }
+  .nutrition-week-day > strong,
+  .nutrition-week-day > small { font-size: .65rem; }
+  .nutrition-history-card { padding: 12px; }
+  .nutrition-history-card .eyebrow,
+  .nutrition-history-card > header > span { font-size: .68rem; }
+  .nutrition-history-card h2 { font-size: 1rem; }
+  .nutrition-history-list > article { grid-template-columns: 42px minmax(0, 1fr) auto 28px; gap: 7px; }
+  .nutrition-history-date,
+  .nutrition-history-list > article > b,
+  .nutrition-history-list > article > div small,
+  .nutrition-history-empty { font-size: .68rem; }
+  .nutrition-history-list > article > div strong { font-size: .78rem; }
+  .nutrition-history-list > article > button { width: 28px; height: 28px; }
+  .nutrition-screen > .activity-sync-notice { display: block; font-size: .75rem; }
+
+  .nutritionist-discovery-screen :is(.nutritionist-hero-copy > p, .nutritionist-trust-points span,
+    .nutritionist-search > button, .nutritionist-quick-filters button, .nutritionist-filter-panel > header button,
+    .nutritionist-filter-panel > label, .nutritionist-filter-panel select, .nutritionist-filter-panel input,
+    .nutritionist-filter-note p, .nutritionist-results-heading p, .nutritionist-list-heading > span,
+    .nutritionist-demo-heading p, .nutritionist-card-demo .nutritionist-demo-detail,
+    .nutritionist-card .nutritionist-credential-note, .nutritionist-card-actions .button,
+    .nutritionist-demo-pill, .nutritionist-verified-label, .nutritionist-tags span,
+    .nutritionist-disclaimer, .nutritionist-empty-approved small, .nutritionist-load-error,
+    .nutritionist-no-results, .nutritionist-no-results button, .nutritionist-join-card > p,
+    .nutritionist-join-card > a, .nutritionist-privacy-card p) { font-size: .75rem !important; line-height: 1.45; }
+  .nutritionist-hero-copy > .eyebrow,
+  .nutritionist-results-heading .eyebrow,
+  .nutritionist-info-rail .eyebrow { font-size: .68rem !important; }
+  .nutritionist-specialty,
+  .nutritionist-bio { font-size: .75rem !important; line-height: 1.45; }
+  .nutritionist-demo-detail { font-size: .75rem !important; -webkit-line-clamp: 2; }
+  .nutritionist-hero-copy > p { max-width: 280px; }
+  .nutritionist-card { grid-template-columns: 82px minmax(0, 1fr); gap: 10px; padding: 10px; border-radius: 12px; }
+  .nutritionist-card-photo { width: 82px; height: 96px; }
+  .nutritionist-card-photo > span { font-size: .62rem; }
+  .nutritionist-card-name h3 { font-size: .92rem; }
+  .nutritionist-card-main { gap: 6px; }
+  .nutritionist-card-actions { grid-column: 2; gap: 7px; }
+  .nutritionist-card-actions .button { min-height: 40px; padding: 6px 8px; }
+  .nutritionist-card-demo .nutritionist-credential-note { align-items: flex-start; }
+
+  .professional-directory-heading p,
+  .professional-directory-disclosure,
+  .professional-directory-results > header p,
+  .professional-directory-results > header label,
+  .professional-directory-filters > header button,
+  .professional-directory-filters legend,
+  .professional-directory-filters fieldset label,
+  .professional-directory-city,
+  .professional-directory-sort,
+  .professional-directory-city input,
+  .professional-directory-sort select,
+  .professional-result-avatar small,
+  .professional-result-kind,
+  .professional-result-city,
+  .professional-result-info > p,
+  .professional-result-actions button,
+  .professional-result-actions a,
+  .professional-mini-card strong,
+  .professional-mini-card small,
+  .professional-join-rail p,
+  .professional-rail-empty,
+  .professional-category-rail button > span,
+  .professional-category-rail button small,
+  .professional-directory-empty p { font-size: .75rem; line-height: 1.45; }
+  .professional-directory-tabs button { min-height: 38px; padding-inline: 13px; font-size: .78rem; }
+  .professional-directory-results > header h3,
+  .professional-directory-filters h3,
+  .professional-directory-rail h3,
+  .professional-result-title h4 { font-size: .92rem; }
+  .professional-result-actions button,
+  .professional-result-actions a { min-height: 40px; }
+  .professional-directory-empty { padding: 26px 16px; }
+
+  .shop-screen .shop-department-card strong { font-size: .78rem; }
+  .shop-screen .shop-department-card small { font-size: .68rem; }
+  .shop-screen .shop-category-chip { min-height: 38px; padding-inline: 11px; font-size: .75rem; }
+  .shop-screen .shop-sort select { max-width: 90px; font-size: .72rem; }
+  .shop-screen .shop-product-name { font-size: .84rem; line-height: 1.4; }
+  .shop-screen .shop-product-category { font-size: .72rem; }
+  .shop-screen .shop-add-button { min-height: 40px; font-size: .75rem; }
+
+  .workout-history-list strong { font-size: .8rem; }
+  .workout-history-list small,
+  .workout-history-empty,
+  .workout-screen .activity-sync-notice,
+  .workout-plan-column .weekly-empty p { font-size: .75rem; line-height: 1.45; }
+}
+
+/* Keep compact labels readable at tablet and desktop sizes too. */
+.nutrition-add-food { min-height: 40px; font-size: .75rem; }
+.nutrition-meal-card > header h3,
+.nutrition-meal-card > header small,
+.nutrition-meal-card > header > strong,
+.nutrition-meal-empty,
+.nutrition-overview-copy p,
+.nutrition-side-card > p,
+.nutrition-legend > span,
+.nutrition-legend b,
+.nutrition-goal-row > span,
+.nutrition-goal-row > strong,
+.nutrition-history-date,
+.nutrition-history-list > article > b,
+.nutrition-history-list > article > div small,
+.nutrition-history-empty,
+.nutrition-screen .activity-sync-notice { font-size: .75rem; line-height: 1.45; }
+.nutrition-meal-photo figcaption { font-size: .68rem; }
+.nutrition-food-copy strong { font-size: .78rem; }
+.nutrition-food-copy small,
+.nutrition-food-copy > span { font-size: .68rem; }
+
+.nutritionist-discovery-screen :is(.nutritionist-hero-copy > p, .nutritionist-trust-points span,
+  .nutritionist-search > button, .nutritionist-quick-filters button, .nutritionist-filter-panel > header button,
+  .nutritionist-filter-panel > label, .nutritionist-filter-panel select, .nutritionist-filter-panel input,
+  .nutritionist-filter-note p, .nutritionist-results-heading p, .nutritionist-list-heading > span,
+  .nutritionist-demo-heading p, .nutritionist-demo-detail, .nutritionist-credential-note,
+  .nutritionist-demo-pill, .nutritionist-verified-label, .nutritionist-specialty,
+  .nutritionist-bio, .nutritionist-tags span, .nutritionist-disclaimer,
+  .nutritionist-empty-approved small, .nutritionist-load-error, .nutritionist-no-results,
+  .nutritionist-no-results button, .nutritionist-join-card > p, .nutritionist-join-card > a,
+  .nutritionist-privacy-card p, .nutritionist-next-card li strong, .nutritionist-next-card li small) {
+  font-size: .75rem !important;
+  line-height: 1.45;
+}
+.nutritionist-card-name h3 { font-size: .92rem; }
+.nutritionist-card-actions .button { min-height: 40px; font-size: .75rem; }
+.nutritionist-card-photo > span { font-size: .62rem; }
+.nutritionist-info-rail .eyebrow,
+.nutritionist-results-heading .eyebrow { font-size: .68rem; }
+
+.professional-directory-heading p,
+.professional-directory-disclosure,
+.professional-directory-results > header p,
+.professional-directory-results > header label,
+.professional-directory-filters > header button,
+.professional-directory-filters legend,
+.professional-directory-filters fieldset label,
+.professional-directory-city,
+.professional-directory-sort,
+.professional-directory-city input,
+.professional-directory-sort select,
+.professional-result-avatar small,
+.professional-result-kind,
+.professional-result-city,
+.professional-result-info > p,
+.professional-result-actions button,
+.professional-result-actions a,
+.professional-mini-card strong,
+.professional-mini-card small,
+.professional-join-rail p,
+.professional-rail-empty,
+.professional-category-rail button > span,
+.professional-category-rail button small,
+.professional-directory-empty p { font-size: .75rem; line-height: 1.45; }
+.professional-directory-tabs button { min-height: 38px; font-size: .78rem; }
+.professional-directory-results > header h3,
+.professional-directory-filters h3,
+.professional-directory-rail h3,
+.professional-result-title h4 { font-size: .92rem; }
+.professional-result-actions button,
+.professional-result-actions a { min-height: 40px; }
+
+.shop-screen .shop-category-chip { min-height: 38px; font-size: .75rem; }
+.shop-screen .shop-sort select { font-size: .72rem; }
+.shop-screen .shop-product-name { font-size: .84rem; line-height: 1.4; }
+.shop-screen .shop-product-category { font-size: .72rem; }
+.shop-screen .shop-add-button { min-height: 40px; font-size: .75rem; }
+.workout-history-list strong { font-size: .8rem; }
+.workout-history-list small,
+.workout-history-empty,
+.workout-screen .activity-sync-notice,
+.workout-plan-column .weekly-empty p { font-size: .75rem; line-height: 1.45; }
+
+@media (max-width: 699px) {
+  .nutrition-date-picker input { font-size: .75rem; }
+  .nutrition-date-heading > span,
+  .nutrition-meals-heading > span { font-size: .75rem; }
+  .nutrition-meal-card > header > strong { font-size: .75rem; }
+  .nutrition-meal-photo { aspect-ratio: 1.8 / 1; }
+  .nutrition-meal-photo figcaption { font-size: .68rem; }
+  .nutrition-food-copy small,
+  .nutrition-food-copy > span { font-size: .75rem; }
+  .nutrition-macro-card > small { font-size: .7rem; }
+  .nutrition-distribution-ring small { font-size: .68rem; }
+  .nutrition-side-empty { font-size: .75rem; }
+  .nutrition-week-chart { height: 82px; margin-block: 10px 8px; }
+  .nutrition-week-day > strong,
+  .nutrition-week-day > small { font-size: .7rem; }
+  .nutrition-week-card > header > small { font-size: .72rem; }
+}
+
+/* Bring dense supporting text up to the app's readable type scale. */
+main .eyebrow { font-size: .7rem !important; }
+.workout-live-badge { min-height: 30px; font-size: .7rem; }
+.workout-summary-foot,
+.workout-panel.workout-guidance > p { font-size: .75rem; line-height: 1.45; }
+.shop-screen .shop-product-tag { font-size: .7rem; }
+.showcase-pill { font-size: .7rem; }
+.professional-directory-rail .professional-join-rail a { min-height: 40px; padding-inline: 11px; font-size: .75rem; }
+.professional-directory-rail section > header button { min-height: 36px; font-size: .75rem; }
+.professional-directory-rail section > header h3 { font-size: .92rem; }
+.food-screen .food-sort-control,
+.food-screen .food-sort-control select { font-size: .75rem; }
+.food-screen .food-demo-ads-heading > span { font-size: .75rem; }
+.food-screen .food-demo-ad > div > span { font-size: .7rem; }
+.food-screen .food-demo-ad button,
+.food-screen .food-promo-cta { min-height: 40px; font-size: .75rem; }
+.academy-screen .academy-banner > p { font-size: .75rem; line-height: 1.45; }
+.pass-screen .pass-demo-network-card > div > span { font-size: .7rem; }
+.pass-screen .pass-filters-panel :is(label, input, select, button, legend) { font-size: .75rem; }
+.workout-progress-ring > span,
+.workout-panel.workout-progress-panel > p,
+.workout-panel.workout-progress-panel .workout-panel-link,
+.workout-panel.workout-safety > p { font-size: .75rem; line-height: 1.45; }
+.nutrition-record-count,
+.nutrition-meals-heading > span,
+.nutrition-calorie-ring span,
+.nutrition-no-goal,
+.nutrition-macro-card > span:nth-child(2),
+.nutrition-tip-card p { font-size: .75rem; line-height: 1.4; }
+.nutrition-macro-card > small { font-size: .7rem; }
+.shop-catalog-count,
+.shop-sort,
+.shop-sort select { font-size: .75rem; }
+.food-marketplace-count > span,
+.food-marketplace-intro > div > p,
+.food-screen .food-filter-chip,
+.food-screen .food-data-explainer p,
+.food-screen .food-demo-disclosure { font-size: .75rem; line-height: 1.45; }
+.pass-sidebar-map > p,
+.pass-checkbox-filters > p,
+.pass-account-panel-title button,
+.pass-see-history,
+.pass-account-panel button,
+.partner-cta > p { min-height: 36px; font-size: .75rem; line-height: 1.45; }
+.home-screen .home-performance-metrics span { font-size: .75rem; line-height: 1.35; }
+.home-screen .home-performance-metrics > div { gap: 8px; }
+.home-screen .home-shortcut :is(strong, span) { font-size: .75rem; line-height: 1.4; }
+.workout-panel.workout-safety p { font-size: .75rem; line-height: 1.45; }
+.nutrition-date-heading > span,
+.nutrition-meals-heading > span,
+.nutrition-history-card > header > span { font-size: .75rem; }
+.nutrition-calorie-ring span,
+.nutrition-no-goal,
+.nutrition-macro-card > span:nth-child(2),
+.nutrition-tip-card p { font-size: .75rem; }
+.shop-screen .shop-catalog-count { font-size: .75rem; }
+.shop-screen .shop-catalog-count small { font-size: .7rem; }
+.pass-tabs button,
+.pass-catalog-switch button { min-height: 40px; font-size: .75rem; }
+.pass-tabs button span { font-size: .7rem; }
+.pass-preview-notice,
+.pass-demo-network-card > div > span { font-size: .7rem; line-height: 1.4; }
+.pass-demo-network-card p,
+.pass-sidebar-map p,
+.pass-checkbox-filters > p,
+.partner-cta > p { font-size: .75rem; line-height: 1.45; }
+.pass-hero p,
+.pass-hero-stats > span,
+.pass-demo-disclosure,
+.pass-demo-network-card .pass-demo-detail-link,
+.pass-screen .partner-cta p { font-size: .75rem; line-height: 1.45; }
+.pass-demo-network-card .pass-demo-detail-link { min-height: 40px; }
+.pass-account-panel-title button,
+.pass-see-history,
+.pass-account-panel button { min-height: 40px; font-size: .75rem; }
+@media (max-width: 699px) {
+  .app-screen.shop-screen > .mobile-header > a {
+    position: static;
+    left: auto;
+    transform: none;
+    flex: 0 1 auto;
+    margin: 0 0 0 8px;
+  }
+  .app-screen.shop-screen > .mobile-header .logo-mark { gap: 5px; font-size: 1rem; letter-spacing: -.5px; }
+  .app-screen.shop-screen > .mobile-header .logo-symbol { width: 28px; height: 17px; }
+  .app-screen.shop-screen > .mobile-header .shop-header-actions { flex: 0 0 auto; margin-left: auto; gap: 6px; }
+}
+
+/* Keep workout guidance readable in the app's narrow mobile content area. */
+@media (max-width: 420px) {
+  .screen-content.workout-screen .workout-summary-rail,
+  .screen-content.workout-screen .workout-side-rail { grid-template-columns: minmax(0, 1fr); }
+  .screen-content.workout-screen .workout-summary-panel,
+  .screen-content.workout-screen .workout-guidance { min-height: 0; }
+  .screen-content.workout-screen .workout-history-panel,
+  .screen-content.workout-screen .workout-safety { grid-column: auto; }
+}
+
+@media (max-width: 600px) {
+  .notification-settings-card { width: 100%; min-width: 0; box-sizing: border-box; padding: 16px; border-radius: 17px; }
+  .notification-settings-heading > div,
+  .notification-preview-setting > span,
+  .notification-preference-row > span,
+  .notification-sound-row > span,
+  .notification-sound-row > span > span { min-width: 0; }
+  .notification-preview-setting { align-items: stretch; flex-direction: column; gap: 10px; }
+  .notification-preview-setting select { width: 100%; min-width: 0; box-sizing: border-box; font-size: .8rem; }
+  .notification-preview-setting small,
+  .notification-preference-row small,
+  .notification-sound-row small,
+  .notification-quiet-hours small { font-size: .75rem; line-height: 1.45; }
+  .notification-sound-row { flex-wrap: wrap; gap: 10px; }
+  .notification-sound-row > span { flex: 1 1 100%; }
+  .notification-sound-row > input { margin-left: auto; }
+}
+
+.social-auth-showcase .auth-welcome-picture { position: absolute; z-index: -2; inset: 0; display: block; overflow: hidden; }
+.social-auth-showcase .auth-welcome-picture .auth-welcome-art { z-index: 0; }

@@ -525,15 +525,23 @@ function SocialAuth({ client, configured, notify, recovery = false, onRecovered,
       <div className="social-auth-split">
         {/* Left Column: Brand Showcase */}
         <aside className={`social-auth-showcase has-auth-art${mode === "signup" && fields.kind !== "cliente" ? " professional-auth-art" : ""}`}>
-          <img
-            className="auth-welcome-art"
-            src={mode === "signup" && fields.kind !== "cliente"
-              ? "/assets/53-welcome-professional-corporate.png"
-              : "/assets/52-welcome-community-corporate.png"}
-            alt={mode === "signup" && fields.kind !== "cliente"
-              ? "Profissionais Fortalfy reunidos em uma academia"
-              : "Comunidade Fortalfy reunida após o treino"}
-          />
+          <picture className="auth-welcome-picture">
+            <source
+              media="(max-width: 767px)"
+              srcSet={mode === "signup" && fields.kind !== "cliente"
+                ? "/assets/visual-pack/fortalfy-pack-professional-team.jpg"
+                : "/assets/visual-pack/fortalfy-pack-community-card.jpg"}
+            />
+            <img
+              className="auth-welcome-art"
+              src={mode === "signup" && fields.kind !== "cliente"
+                ? "/assets/53-welcome-professional-corporate.png"
+                : "/assets/52-welcome-community-corporate.png"}
+              alt={mode === "signup" && fields.kind !== "cliente"
+                ? "Profissionais Fortalfy reunidos em uma academia"
+                : "Comunidade Fortalfy reunida após o treino"}
+            />
+          </picture>
           <div className="showcase-brand-header">
             <Brand light />
             <span className="showcase-pill">COMUNIDADE &amp; BEM-ESTAR</span>
