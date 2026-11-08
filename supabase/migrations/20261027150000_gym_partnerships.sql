@@ -232,7 +232,7 @@ create policy "Fortalfy admins manage partnership campaigns" on public.gym_partn
 for all to authenticated using (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin')
 with check (coalesce(auth.jwt() -> 'app_metadata' ->> 'role','') = 'admin');
 
-create or replace view public.gym_partnerships_public with (security_invoker = true) as
+create or replace view public.gym_partnerships_public with (security_invoker = false, security_barrier = true) as
 select g.id, g.profile_id, g.commercial_name, g.partnership_type, g.city, g.neighborhood,
   g.public_description, g.authorized_actions, g.image_url, g.gallery_urls, g.link_url,
   g.starts_on, g.ends_on, p.username
@@ -244,27 +244,31 @@ where g.status = 'active' and g.publication_status = 'published' and g.public_au
   and (g.ends_on is null or g.ends_on >= current_date)
   and p.kind = 'academia' and p.partner_approved_at is not null and not p.is_private;
 
-create or replace view public.gym_partnership_events_public with (security_invoker = true) as
+create or replace view public.gym_partnership_events_public with (security_invoker = false, security_barrier = true) as
 select e.id, e.partnership_id, g.commercial_name as academy_name, g.city, g.neighborhood,
   e.title, e.image_url, e.starts_at, e.venue, e.description, e.status,
   e.participation_info, e.registration_url
 from public.gym_partnership_events e
 join public.gym_partnerships g on g.id = e.partnership_id
+join public.profiles p on p.id = g.profile_id
 where e.publication_status = 'published' and e.status in ('scheduled','realized')
   and g.status = 'active' and g.publication_status = 'published' and g.public_authorized
   and g.brand_use_authorized and g.image_use_authorized
-  and (g.starts_on is null or g.starts_on <= current_date) and (g.ends_on is null or g.ends_on >= current_date);
+  and (g.starts_on is null or g.starts_on <= current_date) and (g.ends_on is null or g.ends_on >= current_date)
+  and p.kind = 'academia' and p.partner_approved_at is not null and not p.is_private;
 
-create or replace view public.gym_partnership_campaigns_public with (security_invoker = true) as
+create or replace view public.gym_partnership_campaigns_public with (security_invoker = false, security_barrier = true) as
 select c.id, c.partnership_id, g.commercial_name as academy_name, g.city,
   c.title, c.image_url, c.brand_name, c.description, c.starts_on, c.ends_on, c.conditions
 from public.gym_partnership_campaigns c
 join public.gym_partnerships g on g.id = c.partnership_id
+join public.profiles p on p.id = g.profile_id
 where c.status = 'published' and (c.starts_on is null or c.starts_on <= current_date)
   and (c.ends_on is null or c.ends_on >= current_date)
   and g.status = 'active' and g.publication_status = 'published' and g.public_authorized
   and g.brand_use_authorized and g.image_use_authorized
-  and (g.starts_on is null or g.starts_on <= current_date) and (g.ends_on is null or g.ends_on >= current_date);
+  and (g.starts_on is null or g.starts_on <= current_date) and (g.ends_on is null or g.ends_on >= current_date)
+  and p.kind = 'academia' and p.partner_approved_at is not null and not p.is_private;
 
 grant select on public.gym_partnerships_public, public.gym_partnership_events_public,
   public.gym_partnership_campaigns_public to anon, authenticated;

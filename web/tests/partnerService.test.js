@@ -116,8 +116,9 @@ test("public professional profile resolves only an approved partner listing", as
       return builder;
     },
   };
-  const partner = await loadApprovedPartnerProfile(client, "personal-real", { kind: "personal" });
-  assert.equal(requestedId, "personal-real");
+  const validProfileId = "a1111111-1111-4111-8111-111111111111";
+  const partner = await loadApprovedPartnerProfile(client, validProfileId, { kind: "personal" });
+  assert.equal(requestedId, validProfileId);
   assert.equal(partner.name, "Profissional aprovado");
   assert.equal(partner.kind, "personal");
   assert.equal(partner.verified, true);
@@ -126,11 +127,19 @@ test("public professional profile resolves only an approved partner listing", as
 
   const unapprovedClient = {
     from() { return { select() { return this; }, eq() { return this; }, maybeSingle() { return Promise.resolve({ data: {
-      profile_id: "pending", profile: { display_name: "Pendente", kind: "nutricionista", partner_approved_at: null },
+      profile_id: "b2222222-2222-4222-8222-222222222222", profile: { display_name: "Pendente", kind: "nutricionista", partner_approved_at: null },
     }, error: null }); } }; },
   };
-  assert.equal(await loadApprovedPartnerProfile(unapprovedClient, "pending", { kind: "nutricionista" }), null);
-  assert.equal(await loadApprovedPartnerProfile(client, "personal-real", { kind: "nutricionista" }), null);
+  assert.equal(await loadApprovedPartnerProfile(unapprovedClient, "b2222222-2222-4222-8222-222222222222", { kind: "nutricionista" }), null);
+  assert.equal(await loadApprovedPartnerProfile(client, validProfileId, { kind: "nutricionista" }), null);
+});
+
+test("malformed partner profile IDs are rejected before querying Supabase", async () => {
+  let queried = false;
+  const client = { from() { queried = true; throw new Error("Invalid IDs must not reach Supabase"); } };
+  assert.equal(await loadApprovedPartnerProfile(client, "demo", { kind: "personal" }), null);
+  assert.equal(await loadApprovedPartnerProfile(client, "", { kind: "personal" }), null);
+  assert.equal(queried, false);
 });
 
 test("partner listing validation rejects invented or malformed location input before write", async () => {

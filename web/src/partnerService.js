@@ -1,6 +1,7 @@
 import { signMedia } from "./socialService.js";
 
 const PARTNER_KINDS = new Set(["personal", "nutricionista", "academia"]);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function mapListing(row) {
   if (!row?.profile) return null;
@@ -68,7 +69,7 @@ export async function loadApprovedPartners(client, { kind = "" } = {}) {
 }
 
 export async function loadApprovedPartnerProfile(client, profileId, { kind = "" } = {}) {
-  if (!client || !profileId) return null;
+  if (!client || typeof profileId !== "string" || !UUID_PATTERN.test(profileId)) return null;
   if (!["personal", "nutricionista"].includes(kind)) return null;
   const { data, error } = await client.from("partner_listings").select(`
     id,profile_id,address,latitude,longitude,modalities,opening_hours,website_url,contact_phone,

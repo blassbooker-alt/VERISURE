@@ -14724,3 +14724,161 @@ html[data-theme="light"] .shop-screen .shop-catalog-disclaimer { color: #455548;
   .nutritionist-dialog > footer { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
   .nutritionist-dialog > footer .button { width: 100%; min-height: 44px; font-size: .83rem; }
 }
+
+/* Final corporate tokens win over legacy component-specific color declarations. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) {
+  --color-background: #111815;
+  --color-background-secondary: #151e19;
+  --color-surface: #19231d;
+  --color-surface-secondary: #1d2922;
+  --color-surface-elevated: #222f27;
+  --color-text-primary: #edf3ee;
+  --color-text-secondary: #adbbb1;
+  --color-border: #304037;
+  --color-primary: #91b79b;
+  --color-primary-foreground: #102017;
+  --color-success: #82b695;
+  --color-danger: #e2948a;
+  --color-input-background: #141d18;
+  --color-navigation-background: #151e19;
+  --color-focus: #9ec8a8;
+  --canvas: var(--color-background);
+  --card: var(--color-surface);
+  --line: var(--color-border);
+  --ink-950: var(--color-text-primary);
+  --ink-700: var(--color-text-secondary);
+  --quiet: #a2b0a6;
+  --muted-500: #9eada2;
+  --forest: #285b40;
+  --deep: #101712;
+  --lime: #a9c39d;
+  --ui-radius-control: 10px;
+  --ui-radius-card: 16px;
+  --ui-radius-panel: 20px;
+  --brand-card-radius: 16px;
+  --brand-feature-radius: 20px;
+  --brand-shadow-sm: 0 5px 18px #0002;
+  --brand-shadow-md: 0 12px 28px #0003;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) :is(body, #root, .mobile-app, .professional-root) {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  background-image: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(.mobile-header, .bottom-nav, .navigation-drawer,
+  .quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
+  .delivery-card, .food-card, .empty-state, .gym-card, .profile-identity-card,
+  .profile-content-section, .gym-access-card, .gym-admin-panel, .gym-access-history,
+  .gym-partner-unit, .profile-post-card, .weekly-plan-card, .weekly-manager, .weekly-exercise,
+  .weekly-meal-card, .weekly-empty, .partner-product-form, .partner-store-product,
+  .social-discovery-card, .social-person-card, .social-messages-panel, .social-profile-card,
+  .dash-panel, .measurement-card, .adherence-card, .food-menu-card, .performance-chart-card,
+  .performance-metric, .theme-settings-card, .creator-card, .creator-pillar-card,
+  .creator-step-card, .home-performance, .home-shortcut, .social-create-post, .social-post-card,
+  .shop-product-card) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--brand-shadow-sm);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(.button.primary, .button.lime-button,
+  .social-feed-primary, .auth-submit-btn, .creator-final-button) {
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(.button.primary, .button.lime-button,
+  .social-feed-primary, .auth-submit-btn, .creator-final-button):hover:not(:disabled) {
+  color: #0d1b12;
+  background: #a4c7aa;
+  border-color: #a4c7aa;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .button { min-height: 42px; border-radius: 10px; font-size: .75rem; font-weight: 650; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app small { font-size: max(.6875rem, .8em); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav-item.active { color: #a9c9af; font-weight: 650; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav-indicator > span { background: #a9c9af; box-shadow: none; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(.screen-heading h1, .section-title-row h2,
+  .module-catalog-heading h2, .stories-section-heading h2, .home-section-heading h2,
+  .social-feed-header h1, .creator-page h2, .creator-page h3, .dash-panel h2,
+  .performance-chart-heading h3, .weekly-plan-title h2) {
+  color: var(--color-text-primary);
+  letter-spacing: -.025em;
+  font-weight: 700;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .professional-root :is(.dash-sidebar, .dash-panel, .dash-metric,
+  .professional-applications-list, .professional-application-card, .professional-category-card) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--brand-shadow-sm);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .home-screen .home-next-step {
+  border-color: var(--color-border);
+  border-radius: var(--ui-radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--brand-shadow-sm);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .home-screen .home-next-step::after { border-color: #91b79b24; }
+html[data-theme="dark"] .public-landing .button.primary {
+  color: #fff;
+  background: #285b40;
+  border-color: #285b40;
+  border-radius: 10px;
+  font-weight: 650;
+  box-shadow: none;
+}
+html[data-theme="dark"] .public-landing .button.primary:hover { background: #34704f; }
+
+/* Shared product finish: consistent hierarchy and controls across app areas. */
+:root {
+  --ui-radius-control: 11px;
+  --ui-radius-card: 17px;
+  --ui-radius-panel: 22px;
+  --brand-shadow-sm: 0 5px 18px #1538230b;
+  --brand-shadow-md: 0 14px 34px #15382316;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) {
+  --ui-radius-control: 10px;
+  --ui-radius-card: 16px;
+  --ui-radius-panel: 20px;
+  --brand-shadow-sm: 0 5px 18px #0002;
+  --brand-shadow-md: 0 12px 28px #0003;
+}
+.app-screen :is(.screen-heading h1, .section-title-row h2, .home-section-heading h2,
+  .social-feed-header h1, .profile-section-heading h2, .nutrition-section-heading h2) {
+  font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+.app-screen :is(.button, button.button, .auth-submit-btn) {
+  border-radius: var(--ui-radius-control, 11px);
+  font-weight: 680;
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease,
+    color .18s ease, transform .18s ease;
+}
+.app-screen :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  border-radius: var(--ui-radius-control, 11px);
+  color: var(--color-text-primary, #17251d);
+}
+.app-screen :is(input, textarea, select)::placeholder {
+  color: var(--color-text-secondary, #65736a);
+  opacity: .78;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .app-screen :is(.button, button.button):hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--brand-shadow-sm, 0 5px 18px #1538230b);
+  }
+}
+@media (max-width: 699px) {
+  .app-screen :is(.screen-heading h1, .social-feed-header h1) { letter-spacing: -.04em; }
+  .mobile-app .home-screen .home-performance,
+  .mobile-app .home-screen .home-next-step { border-radius: var(--ui-radius-card, 17px); }
+  .mobile-app .home-screen .home-shortcut { border-radius: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-screen :is(.button, button.button, .auth-submit-btn) { transition: none; }
+}
