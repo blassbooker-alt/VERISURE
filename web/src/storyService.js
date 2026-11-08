@@ -4,7 +4,7 @@ import { createSecureId } from "./secureId.js";
 
 const MEDIA_BUCKET = "social-media";
 const IMAGE_LIMIT = 15 * 1024 * 1024;
-const VIDEO_LIMIT = 40 * 1024 * 1024;
+const VIDEO_LIMIT = 12 * 1024 * 1024;
 const MIME_EXTENSIONS = new Map([
   ["image/jpeg", "jpg"],
   ["image/png", "png"],
@@ -26,7 +26,7 @@ export function validateStoryMedia(file, caption = "") {
   }
   const limit = file.type.startsWith("image/") ? IMAGE_LIMIT : VIDEO_LIMIT;
   if (file.size > limit) {
-    throw new Error(file.type.startsWith("image/") ? "A imagem deve ter até 15 MB." : "O vídeo deve ter até 40 MB.");
+    throw new Error(file.type.startsWith("image/") ? "A imagem deve ter até 15 MB." : "O vídeo deve ter até 12 MB.");
   }
   if (typeof caption !== "string" || caption.length > 180) {
     throw new Error("A legenda do Story pode ter no máximo 180 caracteres.");

@@ -163,7 +163,7 @@ export function ReelCameraRecorder({ onCancel, onCaptured }) {
       const context = canvas.getContext("2d", { alpha: false });
       const canvasStream = canvas.captureStream(30);
       cameraStream.getAudioTracks().forEach(track => canvasStream.addTrack(track.clone()));
-      const nextRecorder = new MediaRecorder(canvasStream, { mimeType: supported, videoBitsPerSecond: 2_400_000, audioBitsPerSecond: 128_000 });
+      const nextRecorder = new MediaRecorder(canvasStream, { mimeType: supported, videoBitsPerSecond: 1_200_000, audioBitsPerSecond: 96_000 });
       const chunks = [];
       nextRecorder.ondataavailable = event => event.data.size && chunks.push(event.data);
       nextRecorder.onerror = () => { setCameraError("O navegador encontrou um erro durante a gravação."); setRecording(false); };
@@ -173,8 +173,8 @@ export function ReelCameraRecorder({ onCancel, onCaptured }) {
         canvasStream.getTracks().forEach(track => track.stop());
         if (cancelledRef.current) return;
         const blob = new Blob(chunks, { type: supported.split(";")[0] });
-        if (blob.size > 40 * 1024 * 1024) {
-          setCameraError("A gravação ultrapassou 40 MB. Tente um vídeo mais curto.");
+        if (blob.size > FORTALREEL_MAX_FILE_BYTES) {
+          setCameraError("A gravação ultrapassou 12 MB. Tente um vídeo mais curto.");
           return;
         }
         const extension = blob.type === "video/mp4" ? "mp4" : "webm";

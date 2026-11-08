@@ -1,5 +1,5 @@
-export const FORTALREEL_MAX_DURATION_SECONDS = 180;
-export const FORTALREEL_MAX_FILE_BYTES = 40 * 1024 * 1024;
+export const FORTALREEL_MAX_DURATION_SECONDS = 60;
+export const FORTALREEL_MAX_FILE_BYTES = 12 * 1024 * 1024;
 export const FORTALREEL_WIDTH = 1080;
 export const FORTALREEL_HEIGHT = 1920;
 export const FORTALREEL_RATIO = FORTALREEL_WIDTH / FORTALREEL_HEIGHT;
@@ -132,7 +132,7 @@ export async function inspectReelVideo(file, { allowOversize = false } = {}) {
     throw new Error("Selecione um vídeo MP4, WebM ou MOV válido.");
   }
   if (!allowOversize && file.size > FORTALREEL_MAX_FILE_BYTES) {
-    throw new Error("O vídeo selecionado ultrapassa o limite de 40 MB.");
+    throw new Error("O vídeo selecionado ultrapassa o limite de 12 MB.");
   }
   const url = URL.createObjectURL(file);
   try {
@@ -179,7 +179,7 @@ export async function cropReelVideo(file, {
 } = {}) {
   const duration = Number.isFinite(end) ? end - start : NaN;
   if (start < 0 || !isFortalReelDurationAllowed(duration)) {
-    throw new Error("Escolha um trecho com até 180 segundos.");
+    throw new Error("Escolha um trecho com até 60 segundos.");
   }
   if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
     throw new Error("Não foi possível definir o enquadramento do vídeo.");
@@ -254,7 +254,7 @@ export async function cropReelVideo(file, {
         }
         const blob = new Blob(chunks, { type: mimeType.split(";")[0] });
         if (blob.size > FORTALREEL_MAX_FILE_BYTES) {
-          reject(new Error("O vídeo recortado ultrapassa o limite de 40 MB."));
+          reject(new Error("O vídeo recortado ultrapassa o limite de 12 MB."));
           return;
         }
         const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]/gi, "-") || "fortalreel";

@@ -671,6 +671,7 @@ img { display: block; max-width: 100%; }
 .story-viewer-media, .story-viewer-shade { position: absolute; inset: 0; }
 .story-viewer-media { z-index: -2; display: grid; place-items: center; background: #101b13; }
 .story-viewer-media img, .story-viewer-media video { width: 100%; height: 100%; object-fit: contain; }
+.story-video-play { position: absolute; z-index: 3; top: 50%; left: 50%; display: inline-flex; align-items: center; gap: 9px; padding: 13px 18px; color: #fff; background: #0b1b14d9; border: 1px solid #ffffff70; border-radius: 28px; font: inherit; font-size: 0.75rem; font-weight: 750; transform: translate(-50%, -50%); }
 .story-viewer-shade { z-index: -1; pointer-events: none; background: linear-gradient(180deg, #07170dc9 0, #0a1b1724 24%, #0a1b1700 49%, #08160aa6 100%); }
 .story-viewer-top { position: absolute; z-index: 5; top: 0; right: 0; left: 0; padding: max(12px, env(safe-area-inset-top)) 12px 10px; }
 .story-progress-list { display: flex; gap: 4px; margin-bottom: 12px; }

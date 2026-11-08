@@ -8,7 +8,7 @@ import { isValidVideoDuration } from "./appLogic.js";
 import { deleteStory, loadStories, loadStoryViewers, publishStory as createStory, recordStoryView, setStoryLike } from "./storyService.js";
 
 const IMAGE_LIMIT = 15 * 1024 * 1024;
-const VIDEO_LIMIT = 40 * 1024 * 1024;
+const VIDEO_LIMIT = 12 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_TYPES = ["video/mp4", "video/webm"];
 const VIDEO_DURATION_LIMIT = 30;
@@ -100,7 +100,7 @@ function StoryComposer({ onClose, onPublish, notify }) {
       return;
     }
     if (nextFile.size > (isImage ? IMAGE_LIMIT : VIDEO_LIMIT)) {
-      setError(isImage ? "A imagem deve ter até 15 MB." : "O vídeo deve ter até 40 MB.");
+      setError(isImage ? "A imagem deve ter até 15 MB." : "O vídeo deve ter até 12 MB.");
       setFile(null);
       return;
     }
@@ -173,6 +173,7 @@ function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose
   const [mediaReady, setMediaReady] = useState(false);
   const [mediaFailed, setMediaFailed] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
+  const [videoStarted, setVideoStarted] = useState(false);
   const [showViews, setShowViews] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [viewersLoading, setViewersLoading] = useState(false);
@@ -224,6 +225,7 @@ function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose
     advancingRef.current = false;
     setMediaReady(false);
     setMediaFailed(false);
+    setVideoStarted(false);
     setShowViews(false);
     setViewers([]);
     setViewersError("");
@@ -267,8 +269,8 @@ function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose
     const video = videoRef.current;
     if (!video || !isVideo) return;
     if (paused) video.pause();
-    else if (mediaReady) video.play().catch(() => setPaused(true));
-  }, [isVideo, paused, mediaReady, story?.id]);
+    else if (mediaReady && videoStarted) video.play().catch(() => setPaused(true));
+  }, [isVideo, paused, mediaReady, videoStarted, story?.id]);
 
   if (!story || !profile) return null;
 
@@ -331,7 +333,7 @@ function StoryViewer({ groups, userId, initialProfileId, initialStoryId, onClose
     <section className="story-viewer" ref={stageRef} tabIndex={0} aria-label={`Story de ${profile.name}`} onKeyDown={event => event.key === " " && event.preventDefault()} onPointerDown={handlePress} onPointerUp={handleRelease} onPointerCancel={handleRelease} onClick={navigateTap}>
       <div className="story-viewer-media">
         {isVideo
-          ? <video key={story.id} ref={videoRef} src={story.mediaUrl || story.media} playsInline muted={!soundOn} preload="metadata" onLoadedMetadata={() => setMediaReady(true)} onCanPlay={() => setMediaReady(true)} onWaiting={() => setMediaReady(false)} onPlaying={() => { setMediaReady(true); registerDisplayedView(); }} onError={() => { setMediaFailed(true); setMediaReady(true); }} onEnded={() => next.current?.()} aria-label={`Vídeo do Story de ${profile.name}`} />
+          ? <><video key={story.id} ref={videoRef} src={story.mediaUrl || story.media} playsInline muted={!soundOn} preload="none" onLoadedMetadata={() => setMediaReady(true)} onCanPlay={() => setMediaReady(true)} onWaiting={() => setMediaReady(false)} onPlaying={() => { setVideoStarted(true); setMediaReady(true); registerDisplayedView(); }} onError={() => { setMediaFailed(true); setMediaReady(true); }} onEnded={() => next.current?.()} aria-label={`Vídeo do Story de ${profile.name}`} />{!videoStarted && !mediaFailed && <button type="button" className="story-video-play" onClick={event => { event.stopPropagation(); setMediaReady(true); setVideoStarted(true); }}><Play size={24} fill="currentColor" /> Reproduzir vídeo</button>}</>
           : <img key={story.id} src={story.media} alt={story.caption || `Story de ${profile.name}`} onLoad={() => { setMediaReady(true); registerDisplayedView(); }} onError={() => { setMediaFailed(true); setMediaReady(true); }} />}
       </div>
       <div className="story-viewer-shade" />
