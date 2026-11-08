@@ -14,17 +14,17 @@ test("FortalReels accepts only vertical 9:16 dimensions within the metadata tole
   assert.equal(isFortalReelRatio(0, 1920), false);
 });
 
-test("FortalReels permits videos up to three minutes and rejects longer durations", () => {
-  assert.equal(FORTALREEL_MAX_DURATION_SECONDS, 180);
+test("FortalReels permits videos up to one minute and rejects longer durations", () => {
+  assert.equal(FORTALREEL_MAX_DURATION_SECONDS, 60);
   assert.equal(isFortalReelDurationAllowed(0), false);
-  assert.equal(isFortalReelDurationAllowed(179.999), true);
-  assert.equal(isFortalReelDurationAllowed(180), true);
-  assert.equal(isFortalReelDurationAllowed(180.001), false);
+  assert.equal(isFortalReelDurationAllowed(59.999), true);
+  assert.equal(isFortalReelDurationAllowed(60), true);
+  assert.equal(isFortalReelDurationAllowed(60.001), false);
   assert.equal(isFortalReelDurationAllowed(Number.NaN), false);
 });
 
-test("FortalReels keeps a 40 MB upload ceiling for processed files", () => {
-  assert.equal(FORTALREEL_MAX_FILE_BYTES, 40 * 1024 * 1024);
+test("FortalReels keeps a 12 MB upload ceiling for processed files", () => {
+  assert.equal(FORTALREEL_MAX_FILE_BYTES, 12 * 1024 * 1024);
 });
 
 function mp4Box(type, payload) {

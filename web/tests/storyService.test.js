@@ -16,9 +16,9 @@ function query(result) {
 
 test("story media validation accepts supported image and video types and enforces size and caption limits", () => {
   assert.doesNotThrow(() => validateStoryMedia({ type: "image/webp", size: 15 * 1024 * 1024 }, "Treino de hoje"));
-  assert.doesNotThrow(() => validateStoryMedia({ type: "video/mp4", size: 40 * 1024 * 1024 }));
+  assert.doesNotThrow(() => validateStoryMedia({ type: "video/mp4", size: 12 * 1024 * 1024 }));
   assert.throws(() => validateStoryMedia({ type: "image/svg+xml", size: 100 }), /JPG, PNG ou WebP/);
-  assert.throws(() => validateStoryMedia({ type: "video/mp4", size: 40 * 1024 * 1024 + 1 }), /40 MB/);
+  assert.throws(() => validateStoryMedia({ type: "video/mp4", size: 12 * 1024 * 1024 + 1 }), /12 MB/);
   assert.throws(() => validateStoryMedia({ type: "image/jpeg", size: 100 }, "x".repeat(181)), /180 caracteres/);
 });
 
