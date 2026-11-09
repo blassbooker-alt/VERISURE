@@ -18,10 +18,10 @@ class StartupErrorBoundary extends React.Component {
 
   render() {
     if (!this.state.failed) return this.props.children;
-    return <main role="alert" style={{ minHeight: "100dvh", display: "grid", placeContent: "center", justifyItems: "center", gap: 12, padding: 24, color: "#183b2a", background: "#f6f8f5", textAlign: "center", fontFamily: "system-ui, sans-serif" }}>
+    return <main role="alert" style={{ minHeight: "100dvh", display: "grid", placeContent: "center", justifyItems: "center", gap: 12, padding: 24, color: "#f3f7f4", background: "#07110c", textAlign: "center", fontFamily: "system-ui, sans-serif" }}>
       <strong style={{ fontSize: 22 }}>O Fortalfy demorou para abrir</strong>
       <span style={{ maxWidth: 320, lineHeight: 1.5 }}>Confira sua conexão e tente carregar a página novamente.</span>
-      <button type="button" onClick={() => window.location.reload()} style={{ minHeight: 44, marginTop: 8, padding: "0 20px", border: 0, borderRadius: 12, color: "white", background: "#24784b", font: "inherit", fontWeight: 700 }}>Tentar novamente</button>
+      <button type="button" onClick={() => window.location.reload()} style={{ minHeight: 44, marginTop: 8, padding: "0 20px", border: 0, borderRadius: 12, color: "#10170b", background: "#9bff00", font: "inherit", fontWeight: 700 }}>Tentar novamente</button>
     </main>;
   }
 }

@@ -15566,3 +15566,853 @@ html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen 
 html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card a {
   color: #83e0aa;
 }
+
+
+/* Studio's light-theme ink needs a light equivalent on the dark canvas. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .studio-page-title h1 { color: var(--color-text-primary); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .studio-intro { color: var(--color-text-secondary); }
+
+/* Mobile legibility: restore comfortable text and touch sizes in the densest screens. */
+@media (max-width: 699px) {
+  .nutrition-screen {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    padding: 18px 16px calc(98px + env(safe-area-inset-bottom)) !important;
+  }
+  .nutrition-screen > .screen-heading,
+  .nutrition-screen > .nutrition-toolbar,
+  .nutrition-screen > .nutrition-dashboard-grid,
+  .nutrition-screen > .nutrition-history-card,
+  .nutrition-screen > .nutrition-related-features,
+  .nutrition-screen > .activity-sync-notice { grid-column: 1 !important; grid-row: auto !important; }
+  .nutrition-screen > .screen-heading { display: block; margin: 0 !important; transform: none !important; }
+  .nutrition-screen > .screen-heading > div { display: block; }
+  .nutrition-screen > .screen-heading > div::before { content: none; }
+  .nutrition-screen > .screen-heading h1 { font-size: 1.6rem; }
+  .nutrition-screen > .screen-heading .eyebrow { display: block; margin: 0 0 4px; font-size: .72rem; }
+  .nutrition-screen > .nutrition-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 0; }
+  .nutrition-screen > .nutrition-toolbar .nutrition-date-picker { height: 42px; min-height: 42px; }
+  .nutrition-screen > .nutrition-toolbar .nutrition-add-main { min-height: 42px !important; font-size: .78rem; }
+  .nutrition-dashboard-grid { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+  .nutrition-primary-column,
+  .nutrition-side-column { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .nutrition-overview-card { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; min-height: 0; padding: 12px; }
+  .nutrition-overview-copy .eyebrow,
+  .nutrition-side-card > .eyebrow,
+  .nutrition-side-card header .eyebrow { font-size: .68rem; }
+  .nutrition-overview-copy > strong { font-size: .88rem; }
+  .nutrition-overview-copy p,
+  .nutrition-side-card > p { display: block; font-size: .75rem; line-height: 1.45; }
+  .nutrition-macro-card > span:nth-child(2) { font-size: .75rem; }
+  .nutrition-macro-card > strong { font-size: .82rem; }
+  .nutrition-macro-card > small { font-size: .68rem; }
+  .nutrition-meals-heading { gap: 8px; }
+  .nutrition-meals-heading h2 { font-size: 1rem; }
+  .nutrition-meals-heading .eyebrow { display: block; font-size: .68rem; }
+  .nutrition-meals-heading > span { font-size: .7rem; }
+  .nutrition-meal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+  .nutrition-meal-card { min-height: 0; padding: 10px; border-radius: 12px; }
+  .nutrition-meal-card > header { grid-template-columns: 28px minmax(0, 1fr); gap: 6px; padding-bottom: 8px; }
+  .nutrition-meal-icon { width: 28px; height: 28px; }
+  .nutrition-meal-card > header h3 { font-size: .78rem; }
+  .nutrition-meal-card > header small { font-size: .68rem; }
+  .nutrition-meal-card > header > strong { grid-column: 2; justify-self: start; font-size: .72rem; }
+  .nutrition-meal-photo { aspect-ratio: 1.45 / 1; margin: 8px 0 6px; }
+  .nutrition-meal-photo figcaption { font-size: .62rem; }
+  .nutrition-meal-empty { min-height: 52px; gap: 6px; font-size: .75rem; text-align: center; }
+  .nutrition-add-food { min-height: 42px; gap: 6px; padding: 7px 8px; border-radius: 8px; font-size: .75rem; }
+  .nutrition-add-food svg { width: 15px; }
+  .nutrition-food-row { grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 4px; }
+  .nutrition-food-copy strong { font-size: .75rem; }
+  .nutrition-food-copy small,
+  .nutrition-food-copy > span { font-size: .68rem; }
+  .nutrition-edit-action,
+  .nutrition-delete-action { width: 32px; height: 32px; }
+  .nutrition-side-card { padding: 12px; border-radius: 12px; }
+  .nutrition-side-card h3 { margin: 0 0 7px; font-size: .9rem; }
+  .nutrition-distribution { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
+  .nutrition-distribution-ring { width: 68px; }
+  .nutrition-distribution-ring > span { width: 56px; font-size: .72rem; }
+  .nutrition-distribution-ring small { font-size: .62rem; }
+  .nutrition-legend > span,
+  .nutrition-legend b,
+  .nutrition-goal-row > span,
+  .nutrition-goal-row > strong { font-size: .7rem; }
+  .nutrition-week-chart { height: 90px; }
+  .nutrition-week-day > strong,
+  .nutrition-week-day > small { font-size: .65rem; }
+  .nutrition-history-card { padding: 12px; }
+  .nutrition-history-card .eyebrow,
+  .nutrition-history-card > header > span { font-size: .68rem; }
+  .nutrition-history-card h2 { font-size: 1rem; }
+  .nutrition-history-list > article { grid-template-columns: 42px minmax(0, 1fr) auto 28px; gap: 7px; }
+  .nutrition-history-date,
+  .nutrition-history-list > article > b,
+  .nutrition-history-list > article > div small,
+  .nutrition-history-empty { font-size: .68rem; }
+  .nutrition-history-list > article > div strong { font-size: .78rem; }
+  .nutrition-history-list > article > button { width: 28px; height: 28px; }
+  .nutrition-screen > .activity-sync-notice { display: block; font-size: .75rem; }
+
+  .nutritionist-discovery-screen :is(.nutritionist-hero-copy > p, .nutritionist-trust-points span,
+    .nutritionist-search > button, .nutritionist-quick-filters button, .nutritionist-filter-panel > header button,
+    .nutritionist-filter-panel > label, .nutritionist-filter-panel select, .nutritionist-filter-panel input,
+    .nutritionist-filter-note p, .nutritionist-results-heading p, .nutritionist-list-heading > span,
+    .nutritionist-demo-heading p, .nutritionist-card-demo .nutritionist-demo-detail,
+    .nutritionist-card .nutritionist-credential-note, .nutritionist-card-actions .button,
+    .nutritionist-demo-pill, .nutritionist-verified-label, .nutritionist-tags span,
+    .nutritionist-disclaimer, .nutritionist-empty-approved small, .nutritionist-load-error,
+    .nutritionist-no-results, .nutritionist-no-results button, .nutritionist-join-card > p,
+    .nutritionist-join-card > a, .nutritionist-privacy-card p) { font-size: .75rem !important; line-height: 1.45; }
+  .nutritionist-hero-copy > .eyebrow,
+  .nutritionist-results-heading .eyebrow,
+  .nutritionist-info-rail .eyebrow { font-size: .68rem !important; }
+  .nutritionist-specialty,
+  .nutritionist-bio { font-size: .75rem !important; line-height: 1.45; }
+  .nutritionist-demo-detail { font-size: .75rem !important; -webkit-line-clamp: 2; }
+  .nutritionist-hero-copy > p { max-width: 280px; }
+  .nutritionist-card { grid-template-columns: 82px minmax(0, 1fr); gap: 10px; padding: 10px; border-radius: 12px; }
+  .nutritionist-card-photo { width: 82px; height: 96px; }
+  .nutritionist-card-photo > span { font-size: .62rem; }
+  .nutritionist-card-name h3 { font-size: .92rem; }
+  .nutritionist-card-main { gap: 6px; }
+  .nutritionist-card-actions { grid-column: 2; gap: 7px; }
+  .nutritionist-card-actions .button { min-height: 40px; padding: 6px 8px; }
+  .nutritionist-card-demo .nutritionist-credential-note { align-items: flex-start; }
+
+  .professional-directory-heading p,
+  .professional-directory-disclosure,
+  .professional-directory-results > header p,
+  .professional-directory-results > header label,
+  .professional-directory-filters > header button,
+  .professional-directory-filters legend,
+  .professional-directory-filters fieldset label,
+  .professional-directory-city,
+  .professional-directory-sort,
+  .professional-directory-city input,
+  .professional-directory-sort select,
+  .professional-result-avatar small,
+  .professional-result-kind,
+  .professional-result-city,
+  .professional-result-info > p,
+  .professional-result-actions button,
+  .professional-result-actions a,
+  .professional-mini-card strong,
+  .professional-mini-card small,
+  .professional-join-rail p,
+  .professional-rail-empty,
+  .professional-category-rail button > span,
+  .professional-category-rail button small,
+  .professional-directory-empty p { font-size: .75rem; line-height: 1.45; }
+  .professional-directory-tabs button { min-height: 38px; padding-inline: 13px; font-size: .78rem; }
+  .professional-directory-results > header h3,
+  .professional-directory-filters h3,
+  .professional-directory-rail h3,
+  .professional-result-title h4 { font-size: .92rem; }
+  .professional-result-actions button,
+  .professional-result-actions a { min-height: 40px; }
+  .professional-directory-empty { padding: 26px 16px; }
+
+  .shop-screen .shop-department-card strong { font-size: .78rem; }
+  .shop-screen .shop-department-card small { font-size: .68rem; }
+  .shop-screen .shop-category-chip { min-height: 38px; padding-inline: 11px; font-size: .75rem; }
+  .shop-screen .shop-sort select { max-width: 90px; font-size: .72rem; }
+  .shop-screen .shop-product-name { font-size: .84rem; line-height: 1.4; }
+  .shop-screen .shop-product-category { font-size: .72rem; }
+  .shop-screen .shop-add-button { min-height: 40px; font-size: .75rem; }
+
+  .workout-history-list strong { font-size: .8rem; }
+  .workout-history-list small,
+  .workout-history-empty,
+  .workout-screen .activity-sync-notice,
+  .workout-plan-column .weekly-empty p { font-size: .75rem; line-height: 1.45; }
+}
+
+/* Keep compact labels readable at tablet and desktop sizes too. */
+.nutrition-add-food { min-height: 40px; font-size: .75rem; }
+.nutrition-meal-card > header h3,
+.nutrition-meal-card > header small,
+.nutrition-meal-card > header > strong,
+.nutrition-meal-empty,
+.nutrition-overview-copy p,
+.nutrition-side-card > p,
+.nutrition-legend > span,
+.nutrition-legend b,
+.nutrition-goal-row > span,
+.nutrition-goal-row > strong,
+.nutrition-history-date,
+.nutrition-history-list > article > b,
+.nutrition-history-list > article > div small,
+.nutrition-history-empty,
+.nutrition-screen .activity-sync-notice { font-size: .75rem; line-height: 1.45; }
+.nutrition-meal-photo figcaption { font-size: .68rem; }
+.nutrition-food-copy strong { font-size: .78rem; }
+.nutrition-food-copy small,
+.nutrition-food-copy > span { font-size: .68rem; }
+
+.nutritionist-discovery-screen :is(.nutritionist-hero-copy > p, .nutritionist-trust-points span,
+  .nutritionist-search > button, .nutritionist-quick-filters button, .nutritionist-filter-panel > header button,
+  .nutritionist-filter-panel > label, .nutritionist-filter-panel select, .nutritionist-filter-panel input,
+  .nutritionist-filter-note p, .nutritionist-results-heading p, .nutritionist-list-heading > span,
+  .nutritionist-demo-heading p, .nutritionist-demo-detail, .nutritionist-credential-note,
+  .nutritionist-demo-pill, .nutritionist-verified-label, .nutritionist-specialty,
+  .nutritionist-bio, .nutritionist-tags span, .nutritionist-disclaimer,
+  .nutritionist-empty-approved small, .nutritionist-load-error, .nutritionist-no-results,
+  .nutritionist-no-results button, .nutritionist-join-card > p, .nutritionist-join-card > a,
+  .nutritionist-privacy-card p, .nutritionist-next-card li strong, .nutritionist-next-card li small) {
+  font-size: .75rem !important;
+  line-height: 1.45;
+}
+.nutritionist-card-name h3 { font-size: .92rem; }
+.nutritionist-card-actions .button { min-height: 40px; font-size: .75rem; }
+.nutritionist-card-photo > span { font-size: .62rem; }
+.nutritionist-info-rail .eyebrow,
+.nutritionist-results-heading .eyebrow { font-size: .68rem; }
+
+.professional-directory-heading p,
+.professional-directory-disclosure,
+.professional-directory-results > header p,
+.professional-directory-results > header label,
+.professional-directory-filters > header button,
+.professional-directory-filters legend,
+.professional-directory-filters fieldset label,
+.professional-directory-city,
+.professional-directory-sort,
+.professional-directory-city input,
+.professional-directory-sort select,
+.professional-result-avatar small,
+.professional-result-kind,
+.professional-result-city,
+.professional-result-info > p,
+.professional-result-actions button,
+.professional-result-actions a,
+.professional-mini-card strong,
+.professional-mini-card small,
+.professional-join-rail p,
+.professional-rail-empty,
+.professional-category-rail button > span,
+.professional-category-rail button small,
+.professional-directory-empty p { font-size: .75rem; line-height: 1.45; }
+.professional-directory-tabs button { min-height: 38px; font-size: .78rem; }
+.professional-directory-results > header h3,
+.professional-directory-filters h3,
+.professional-directory-rail h3,
+.professional-result-title h4 { font-size: .92rem; }
+.professional-result-actions button,
+.professional-result-actions a { min-height: 40px; }
+
+.shop-screen .shop-category-chip { min-height: 38px; font-size: .75rem; }
+.shop-screen .shop-sort select { font-size: .72rem; }
+.shop-screen .shop-product-name { font-size: .84rem; line-height: 1.4; }
+.shop-screen .shop-product-category { font-size: .72rem; }
+.shop-screen .shop-add-button { min-height: 40px; font-size: .75rem; }
+.workout-history-list strong { font-size: .8rem; }
+.workout-history-list small,
+.workout-history-empty,
+.workout-screen .activity-sync-notice,
+.workout-plan-column .weekly-empty p { font-size: .75rem; line-height: 1.45; }
+
+@media (max-width: 699px) {
+  .nutrition-date-picker input { font-size: .75rem; }
+  .nutrition-date-heading > span,
+  .nutrition-meals-heading > span { font-size: .75rem; }
+  .nutrition-meal-card > header > strong { font-size: .75rem; }
+  .nutrition-meal-photo { aspect-ratio: 1.8 / 1; }
+  .nutrition-meal-photo figcaption { font-size: .68rem; }
+  .nutrition-food-copy small,
+  .nutrition-food-copy > span { font-size: .75rem; }
+  .nutrition-macro-card > small { font-size: .7rem; }
+  .nutrition-distribution-ring small { font-size: .68rem; }
+  .nutrition-side-empty { font-size: .75rem; }
+  .nutrition-week-chart { height: 82px; margin-block: 10px 8px; }
+  .nutrition-week-day > strong,
+  .nutrition-week-day > small { font-size: .7rem; }
+  .nutrition-week-card > header > small { font-size: .72rem; }
+}
+
+/* Bring dense supporting text up to the app's readable type scale. */
+main .eyebrow { font-size: .7rem !important; }
+.workout-live-badge { min-height: 30px; font-size: .7rem; }
+.workout-summary-foot,
+.workout-panel.workout-guidance > p { font-size: .75rem; line-height: 1.45; }
+.shop-screen .shop-product-tag { font-size: .7rem; }
+.showcase-pill { font-size: .7rem; }
+.professional-directory-rail .professional-join-rail a { min-height: 40px; padding-inline: 11px; font-size: .75rem; }
+.professional-directory-rail section > header button { min-height: 36px; font-size: .75rem; }
+.professional-directory-rail section > header h3 { font-size: .92rem; }
+.food-screen .food-sort-control,
+.food-screen .food-sort-control select { font-size: .75rem; }
+.food-screen .food-demo-ads-heading > span { font-size: .75rem; }
+.food-screen .food-demo-ad > div > span { font-size: .7rem; }
+.food-screen .food-demo-ad button,
+.food-screen .food-promo-cta { min-height: 40px; font-size: .75rem; }
+.academy-screen .academy-banner > p { font-size: .75rem; line-height: 1.45; }
+.pass-screen .pass-demo-network-card > div > span { font-size: .7rem; }
+.pass-screen .pass-filters-panel :is(label, input, select, button, legend) { font-size: .75rem; }
+.workout-progress-ring > span,
+.workout-panel.workout-progress-panel > p,
+.workout-panel.workout-progress-panel .workout-panel-link,
+.workout-panel.workout-safety > p { font-size: .75rem; line-height: 1.45; }
+.nutrition-record-count,
+.nutrition-meals-heading > span,
+.nutrition-calorie-ring span,
+.nutrition-no-goal,
+.nutrition-macro-card > span:nth-child(2),
+.nutrition-tip-card p { font-size: .75rem; line-height: 1.4; }
+.nutrition-macro-card > small { font-size: .7rem; }
+.shop-catalog-count,
+.shop-sort,
+.shop-sort select { font-size: .75rem; }
+.food-marketplace-count > span,
+.food-marketplace-intro > div > p,
+.food-screen .food-filter-chip,
+.food-screen .food-data-explainer p,
+.food-screen .food-demo-disclosure { font-size: .75rem; line-height: 1.45; }
+.pass-sidebar-map > p,
+.pass-checkbox-filters > p,
+.pass-account-panel-title button,
+.pass-see-history,
+.pass-account-panel button,
+.partner-cta > p { min-height: 36px; font-size: .75rem; line-height: 1.45; }
+.home-screen .home-performance-metrics span { font-size: .75rem; line-height: 1.35; }
+.home-screen .home-performance-metrics > div { gap: 8px; }
+.home-screen .home-shortcut :is(strong, span) { font-size: .75rem; line-height: 1.4; }
+.workout-panel.workout-safety p { font-size: .75rem; line-height: 1.45; }
+.nutrition-date-heading > span,
+.nutrition-meals-heading > span,
+.nutrition-history-card > header > span { font-size: .75rem; }
+.nutrition-calorie-ring span,
+.nutrition-no-goal,
+.nutrition-macro-card > span:nth-child(2),
+.nutrition-tip-card p { font-size: .75rem; }
+.shop-screen .shop-catalog-count { font-size: .75rem; }
+.shop-screen .shop-catalog-count small { font-size: .7rem; }
+.pass-tabs button,
+.pass-catalog-switch button { min-height: 40px; font-size: .75rem; }
+.pass-tabs button span { font-size: .7rem; }
+.pass-preview-notice,
+.pass-demo-network-card > div > span { font-size: .7rem; line-height: 1.4; }
+.pass-demo-network-card p,
+.pass-sidebar-map p,
+.pass-checkbox-filters > p,
+.partner-cta > p { font-size: .75rem; line-height: 1.45; }
+.pass-hero p,
+.pass-hero-stats > span,
+.pass-demo-disclosure,
+.pass-demo-network-card .pass-demo-detail-link,
+.pass-screen .partner-cta p { font-size: .75rem; line-height: 1.45; }
+.pass-demo-network-card .pass-demo-detail-link { min-height: 40px; }
+.pass-account-panel-title button,
+.pass-see-history,
+.pass-account-panel button { min-height: 40px; font-size: .75rem; }
+@media (max-width: 699px) {
+  .app-screen.shop-screen > .mobile-header > a {
+    position: static;
+    left: auto;
+    transform: none;
+    flex: 0 1 auto;
+    margin: 0 0 0 8px;
+  }
+  .app-screen.shop-screen > .mobile-header .logo-mark { gap: 5px; font-size: 1rem; letter-spacing: -.5px; }
+  .app-screen.shop-screen > .mobile-header .logo-symbol { width: 28px; height: 17px; }
+  .app-screen.shop-screen > .mobile-header .shop-header-actions { flex: 0 0 auto; margin-left: auto; gap: 6px; }
+}
+
+/* Keep workout guidance readable in the app's narrow mobile content area. */
+@media (max-width: 420px) {
+  .screen-content.workout-screen .workout-summary-rail,
+  .screen-content.workout-screen .workout-side-rail { grid-template-columns: minmax(0, 1fr); }
+  .screen-content.workout-screen .workout-summary-panel,
+  .screen-content.workout-screen .workout-guidance { min-height: 0; }
+  .screen-content.workout-screen .workout-history-panel,
+  .screen-content.workout-screen .workout-safety { grid-column: auto; }
+}
+
+@media (max-width: 600px) {
+  .notification-settings-card { width: 100%; min-width: 0; box-sizing: border-box; padding: 16px; border-radius: 17px; }
+  .notification-settings-heading > div,
+  .notification-preview-setting > span,
+  .notification-preference-row > span,
+  .notification-sound-row > span,
+  .notification-sound-row > span > span { min-width: 0; }
+  .notification-preview-setting { align-items: stretch; flex-direction: column; gap: 10px; }
+  .notification-preview-setting select { width: 100%; min-width: 0; box-sizing: border-box; font-size: .8rem; }
+  .notification-preview-setting small,
+  .notification-preference-row small,
+  .notification-sound-row small,
+  .notification-quiet-hours small { font-size: .75rem; line-height: 1.45; }
+  .notification-sound-row { flex-wrap: wrap; gap: 10px; }
+  .notification-sound-row > span { flex: 1 1 100%; }
+  .notification-sound-row > input { margin-left: auto; }
+}
+
+.social-auth-showcase .auth-welcome-picture { position: absolute; z-index: -2; inset: 0; display: block; overflow: hidden; }
+.social-auth-showcase .auth-welcome-picture .auth-welcome-art { z-index: 0; }
+
+/* FortalShop brand system: evergreen surfaces with restrained logo-lime accents. */
+.shop-screen {
+  --shop-bg: #0d1711;
+  --shop-surface: #142019;
+  --shop-raised: #1b2a20;
+  --shop-border: #2b4032;
+  --shop-text: #eef4ef;
+  --shop-muted: #a1aea4;
+  --shop-emerald: #16834e;
+  --shop-lime: #c5ee1f;
+  color: var(--shop-text);
+  background: var(--shop-bg);
+}
+.shop-screen .shop-content { padding-bottom: 112px; }
+.shop-screen .shop-search-label,
+.shop-screen .shop-section-heading h2,
+.shop-screen .shop-catalog-heading h2 { color: var(--shop-text); }
+.shop-screen .shop-section-heading .eyebrow { color: var(--shop-lime); }
+.shop-screen .shop-section-heading > span,
+.shop-screen .shop-catalog-heading p { color: var(--shop-muted); }
+.shop-screen .shop-search,
+.shop-screen .shop-sort {
+  color: var(--shop-muted);
+  background: var(--shop-surface);
+  border-color: var(--shop-border);
+  border-radius: 12px;
+}
+.shop-screen .shop-search:focus-within { border-color: var(--shop-emerald); box-shadow: 0 0 0 3px #16834e30; }
+.shop-screen .shop-search > svg { color: #7dc59a; }
+.shop-screen .shop-department-card {
+  min-height: 104px !important;
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  box-shadow: 0 7px 20px #0003;
+}
+.shop-screen .shop-department-card::after { background: linear-gradient(90deg, #07110de8 0%, #07110d91 58%, #07110d20 100%); }
+.shop-screen .shop-department-card > svg { color: var(--shop-lime); }
+.shop-screen .shop-catalog-count {
+  color: #c9d8cc;
+  background: #1b2a20;
+  border: 1px solid var(--shop-border);
+}
+.shop-screen .shop-catalog-toolbar { border-color: var(--shop-border); }
+.shop-screen .shop-category-chip {
+  color: #c3cec5;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+.shop-screen .shop-category-chip:hover { color: #fff; background: #1b2a20; }
+.shop-screen .shop-category-chip.is-active {
+  color: #f6fff8;
+  background: #174b32;
+  border-color: #28754b;
+}
+.shop-screen .shop-product-card {
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 15px;
+  box-shadow: 0 7px 22px #0003;
+}
+.shop-screen .shop-product-card:hover { border-color: #39764e; box-shadow: 0 12px 28px #0004; }
+.shop-screen .shop-product-visual { aspect-ratio: 1 / 1; background: #111c15; }
+.shop-screen .shop-product-info { gap: 9px; padding: 11px; }
+.shop-screen .shop-product-name { color: var(--shop-text); font-size: .8rem; line-height: 1.4; }
+.shop-screen .shop-price-line strong { color: #f4f7f4; font-size: .98rem; }
+.shop-screen .shop-product-tag {
+  color: #e6f4e9;
+  background: #124a30eF;
+  border: 1px solid #58a66c88;
+  border-radius: 7px;
+  font-size: .65rem;
+  font-weight: 700;
+}
+.shop-screen .shop-add-button {
+  min-height: 38px;
+  color: #fff !important;
+  background: var(--shop-emerald) !important;
+  border: 1px solid #24945d !important;
+  border-radius: 9px;
+  font-size: .74rem;
+  font-weight: 700;
+}
+.shop-screen .shop-add-button:hover {
+  color: #fff !important;
+  background: #1a995b !important;
+  border-color: #3ab978 !important;
+}
+@media (max-width: 699px) {
+  .shop-screen .shop-content { padding-bottom: 112px; }
+  .shop-screen .shop-department-card { min-height: 88px !important; border-radius: 12px; }
+  .shop-screen .shop-department-card strong { font-size: .7rem; }
+  .shop-screen .shop-department-card small { font-size: .6rem; }
+  .shop-screen .shop-product-info { min-height: 112px; padding: 10px; }
+  .shop-screen .shop-product-name { min-height: 2.6em; font-size: .76rem; }
+  .shop-screen .shop-add-button { min-height: 36px; }
+  .shop-screen > .bottom-nav {
+    right: auto;
+    left: 50%;
+    width: min(calc(100% - 24px), 460px);
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border: 1px solid #2d4234;
+    border-radius: 24px;
+    background: #111c15f2;
+    box-shadow: 0 12px 32px #0006;
+  }
+  .shop-screen > .bottom-nav .bottom-nav-item { min-width: 0; color: #a9b7ac; }
+  .shop-screen > .bottom-nav .bottom-nav-item.active { color: #fff; }
+  .shop-screen > .bottom-nav .bottom-nav-item.active .bottom-nav-icon svg { color: #fff; }
+  .shop-screen > .bottom-nav .bottom-nav-indicator > span { background: #0d7548; box-shadow: 0 4px 12px #0005; }
+}
+
+/* Keep the selected destination inside its icon; the floating marker was clipped by the nav edge. */
+@media (max-width: 1023px) {
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav-indicator,
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .shop-screen .bottom-nav-indicator { display: none !important; }
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav-item.active .bottom-nav-icon,
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .shop-screen .bottom-nav-item.active .bottom-nav-icon {
+    color: #fff;
+    background: #0c6942;
+    border-radius: 50%;
+    box-shadow: none;
+  }
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav-item.active .bottom-nav-icon svg,
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .shop-screen .bottom-nav-item.active .bottom-nav-icon svg { color: #fff; }
+}
+
+/* Readable dark theme: keep emerald accents for surfaces, and use a lighter
+   brand green when emerald is used as small text on the dark canvas. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) {
+  --color-text-link: #83e0aa;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .text-link, .text-button, .back-link, .inline-link, .follow-link,
+  .social-feed-text-action, .social-feed-side-panel a, .feed-screen .bottom-nav-create,
+  .home-inline-link, .home-performance-metrics a, .home-discovery-empty a,
+  .social-feed-header .eyebrow, .social-guest-feed-header .eyebrow,
+  .social-guest-empty .eyebrow, .social-feed-side-panel .eyebrow,
+  .social-profile-metrics button, .social-community-tabs a:hover:not(.active),
+  .creator-screen .creator-hero-kicker, .creator-screen .creator-level-number,
+  .creator-screen .creator-section-heading .eyebrow,
+  .home-section-heading .eyebrow, .home-ecosystem .module-catalog-heading .eyebrow,
+  .home-brand-gallery-heading .eyebrow, .shop-screen .shop-editorial-label,
+  .shop-screen .shop-catalog-heading .eyebrow
+) {
+  color: var(--color-text-link) !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .social-feed-text-action, .social-feed-side-panel a, .feed-screen .bottom-nav-create,
+  .home-inline-link, .home-performance-metrics a, .home-discovery-empty a,
+  .creator-inline-link
+) { text-decoration-color: currentColor; }
+
+/* Keep the activity sync status on a dark surface in the dark theme. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .workout-screen .activity-sync-notice, .nutrition-screen .activity-sync-notice
+) {
+  color: #c3d0c6 !important;
+  background: #17241b !important;
+  border-color: #344b39 !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .workout-screen .activity-sync-notice.has-error, .nutrition-screen .activity-sync-notice.has-error
+) {
+  color: #ffd0c9 !important;
+  background: #321d1a !important;
+  border-color: #75423a !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .social-inline-status {
+  color: #c3d0c6 !important;
+}
+
+/* Bring Studio's controls and library into the same evergreen visual system.
+   The generated artwork canvas stays light because it is an export preview. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-screen {
+  --studio-surface: #142019;
+  --studio-control: #19271e;
+  --studio-control-hover: #203429;
+  --studio-border: #344b39;
+  --studio-ink: #eff4ef;
+  --studio-muted: #b5c2b7;
+  --studio-accent: #83e0aa;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-controls, .studio-preview-column, .studio-library, .studio-shop-link
+) {
+  color: var(--studio-ink);
+  background: var(--studio-surface);
+  border-color: var(--studio-border);
+  box-shadow: 0 8px 24px #0003;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-intro, .studio-section-label small, .studio-photo-credit,
+  .studio-input-label, .studio-optional, .studio-palette button,
+  .studio-brand-toggle small, .studio-live-dot, .studio-download-actions button,
+  .studio-note p, .studio-uses > span, .studio-uses > div > span,
+  .studio-library-heading p, .studio-library-card > div > span,
+  .studio-library-card small, .studio-library-empty p, .studio-shop-link small,
+  .studio-disclaimer
+) { color: var(--studio-muted) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-section-label strong, .studio-input-label, .studio-brand-toggle strong,
+  .studio-preview-heading h2, .studio-library-heading h2, .studio-library-card h3,
+  .studio-library-empty h3, .studio-shop-link strong, .studio-note strong
+) { color: var(--studio-ink) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-section-label > span,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-template-grid button > span,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-library-empty > span,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-shop-link-icon {
+  color: var(--studio-accent);
+  background: #203b2b;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-tabs, .studio-template-grid button, .studio-format,
+  .studio-type-grid button, .studio-style-grid button, .studio-photo-upload,
+  .studio-input-label input, .studio-input-label textarea, .studio-library-card,
+  .studio-shop-link
+) {
+  color: var(--studio-ink);
+  background: var(--studio-control);
+  border-color: var(--studio-border);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-template-grid button > strong, .studio-format > span:nth-of-type(1) strong,
+  .studio-photo-upload > span, .studio-library-card h3, .studio-library-empty h3,
+  .studio-shop-link strong
+) { color: var(--studio-ink) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-template-grid button > small, .studio-format > span:nth-of-type(1) small,
+  .studio-photo-upload > small, .studio-library-card small, .studio-library-card > div > span,
+  .studio-shop-link small
+) { color: var(--studio-muted) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-template-grid button:hover, .studio-format.active,
+  .studio-photo-upload.active, .studio-type-grid button.active,
+  .studio-style-grid button.active
+) {
+  color: #f5fff8;
+  background: #205c3b;
+  border-color: #4a9867;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-type-grid button, .studio-style-grid button
+) { color: #d0dbd2; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-format.active .studio-radio, .studio-brand-toggle > input:checked + .studio-toggle-check
+) { border-color: #83e0aa; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-note {
+  color: var(--studio-accent);
+  background: #1b3022;
+  border: 1px solid #344b39;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-uses { border-color: var(--studio-border); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-uses > div > span {
+  color: #d6e5d8 !important;
+  background: #22352a;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-tabs button { color: var(--studio-muted); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-tabs button.active {
+  color: #effff4;
+  background: #205c3b;
+  box-shadow: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-tabs button > span {
+  color: #effff4;
+  background: #2c7049;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-format.active :is(strong, small) {
+  color: #f2fff5 !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-screen .studio-controls .studio-format.active > span:nth-of-type(1) small {
+  color: #f2fff5 !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-photo-option {
+  background-color: #142019;
+  border-color: #344b39;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-input-label input,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-input-label textarea { color: #eff4ef; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-input-label :is(input, textarea)::placeholder { color: #a9b7ac; opacity: 1; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-library-count {
+  color: #effff4;
+  background: #205c3b;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-use-link { color: var(--studio-accent); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-canvas-frame { background: #edf2e9; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-first-preview :is(.eyebrow, h3) { color: #173c2a; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-first-preview p { color: #405b46; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-canvas-placeholder {
+  color: #304536;
+  background: #fffffff0;
+}
+
+/* The benefits declaration is a public legal-information page; give its card
+   its own dark surface so inherited light-theme text never disappears. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card {
+  color: #eff4ef;
+  background: #16221b;
+  border-color: #2b4033;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card :is(p, h2, strong, th, td) {
+  color: #dce6de;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card h2 {
+  color: #eff4ef;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card table,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card th,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card td {
+  background: #19271e;
+  border-color: #344b39;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card a {
+  color: #83e0aa;
+}
+
+/* Fortalfy visual system refresh: forest canvas, restrained lime actions. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) {
+  --color-background: #07110c;
+  --color-background-secondary: #0b1710;
+  --color-surface: #0e1b14;
+  --color-surface-secondary: #14251a;
+  --color-surface-elevated: #183824;
+  --color-text-primary: #f3f7f4;
+  --color-text-secondary: #b3c0b6;
+  --color-border: #304638;
+  --color-primary: #9bff00;
+  --color-primary-foreground: #10170b;
+  --color-success: #69c58b;
+  --color-danger: #f08c83;
+  --color-input-background: #0b1710;
+  --color-navigation-background: #0e1b14;
+  --color-focus: #b5ff47;
+  --canvas: var(--color-background);
+  --card: var(--color-surface);
+  --line: var(--color-border);
+  --ink-950: var(--color-text-primary);
+  --ink-700: var(--color-text-secondary);
+  --quiet: #a9b7ac;
+  --muted-500: #a9b7ac;
+  --forest: #183824;
+  --deep: #07110c;
+  --lime: #9bff00;
+  --ui-radius-control: 10px;
+  --ui-radius-card: 16px;
+  --ui-radius-panel: 20px;
+  --brand-card-radius: 16px;
+  --brand-feature-radius: 20px;
+  --brand-shadow-sm: 0 4px 16px #0003;
+  --brand-shadow-md: 0 12px 28px #0004;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) :is(html, body, #root, .mobile-app, .app-screen, .professional-root) {
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  background-image: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-header {
+  color: var(--color-text-primary);
+  background: #0e1b14f2;
+  border-color: #263a2d;
+  backdrop-filter: blur(16px);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .screen-content {
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  padding-inline: clamp(16px, 3vw, 32px);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .quick-tile, .action-row a, .action-row button, .stories-experience, .composer-card, .feed-post,
+  .delivery-card, .food-card, .empty-state, .gym-card, .profile-identity-card, .profile-content-section,
+  .gym-access-card, .gym-admin-panel, .gym-access-history, .gym-partner-unit, .profile-post-card,
+  .weekly-plan-card, .weekly-manager, .weekly-exercise, .weekly-meal-card, .weekly-empty,
+  .partner-product-form, .partner-store-product, .social-discovery-card, .social-person-card,
+  .social-messages-panel, .social-profile-card, .dash-panel, .measurement-card, .adherence-card,
+  .food-menu-card, .performance-chart-card, .performance-metric, .theme-settings-card, .creator-card,
+  .creator-pillar-card, .creator-step-card, .home-performance, .home-shortcut, .social-create-post,
+  .social-post-card, .shop-product-card
+) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  border-radius: var(--ui-radius-card);
+  box-shadow: var(--brand-shadow-sm);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .button.primary, .button.lime-button, .social-feed-primary, .auth-submit-btn, .creator-final-button
+) {
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: none;
+  font-weight: 720;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .button.primary, .button.lime-button, .social-feed-primary, .auth-submit-btn, .creator-final-button
+):hover:not(:disabled) {
+  color: #10170b;
+  background: #b2ff3d;
+  border-color: #b2ff3d;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(.button.subtle, .button.secondary) {
+  color: var(--color-text-primary);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  color: var(--color-text-primary);
+  background-color: var(--color-input-background);
+  border-color: var(--color-border);
+  color-scheme: dark;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(input, textarea, select)::placeholder { color: #a9b7ac; opacity: 1; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav {
+  color: var(--color-text-primary);
+  background: #0e1b14f5;
+  border-color: #304638;
+  box-shadow: 0 8px 26px #0005;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav-indicator > span {
+  width: 3px;
+  height: 22px;
+  top: 13px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  box-shadow: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav.desktop-nav-expanded .bottom-nav-indicator { display: none; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav-item { color: #b3c0b6; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav-item.active { color: var(--color-text-primary); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav-item.active .bottom-nav-icon svg { color: var(--color-primary); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .drawer-backdrop { background: #020804b8; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .navigation-drawer {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .navigation-drawer :is(.drawer-group h3, a small) { color: var(--color-text-secondary); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .navigation-drawer a.active {
+  color: var(--color-text-primary);
+  background: var(--color-surface-elevated);
+  box-shadow: inset 3px 0 var(--color-primary);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) :is(.screen-heading h1, .section-title-row h2, .home-section-heading h2, .social-feed-header h1) {
+  color: var(--color-text-primary);
+  letter-spacing: -.035em;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .app-screen .eyebrow { color: #b3c0b6; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) :is(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid #b5ff47;
+  outline-offset: 3px;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .app-screen :is(button, a):disabled,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .app-screen :is(button, a)[aria-disabled="true"] { opacity: .68; }
+@media (max-width: 699px) {
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .screen-content { padding-inline: 16px; }
+  html[data-theme="dark"]:not([data-high-contrast="true"]) .bottom-nav { width: min(calc(100% - 20px), 460px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="dark"]:not([data-high-contrast="true"]) *,
+  html[data-theme="dark"]:not([data-high-contrast="true"]) *::before,
+  html[data-theme="dark"]:not([data-high-contrast="true"]) *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
