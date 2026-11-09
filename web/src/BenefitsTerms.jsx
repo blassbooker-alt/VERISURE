@@ -60,7 +60,7 @@ export default function BenefitsTerms({ client, session, notify }) {
     }
   };
 
-  return <main className="app-screen">
+  return <main className="app-screen benefits-terms-screen">
     <header className="mobile-header"><Link to="/home" aria-label="Voltar à Fortalfy">FORTALFY</Link></header>
     <section className="screen-content">
       <div className="screen-heading"><div><span className="eyebrow">BENEFÍCIOS FORTALFY</span><h1>Declaração de ciência e adesão</h1></div></div>

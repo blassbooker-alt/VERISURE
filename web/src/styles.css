@@ -15377,3 +15377,192 @@ main .eyebrow { font-size: .7rem !important; }
   html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .bottom-nav-item.active .bottom-nav-icon svg,
   html[data-theme="dark"]:not([data-high-contrast="true"]) .shop-screen .bottom-nav-item.active .bottom-nav-icon svg { color: #fff; }
 }
+
+/* Readable dark theme: keep emerald accents for surfaces, and use a lighter
+   brand green when emerald is used as small text on the dark canvas. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) {
+  --color-text-link: #83e0aa;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .text-link, .text-button, .back-link, .inline-link, .follow-link,
+  .social-feed-text-action, .social-feed-side-panel a, .feed-screen .bottom-nav-create,
+  .home-inline-link, .home-performance-metrics a, .home-discovery-empty a,
+  .social-feed-header .eyebrow, .social-guest-feed-header .eyebrow,
+  .social-guest-empty .eyebrow, .social-feed-side-panel .eyebrow,
+  .social-profile-metrics button, .social-community-tabs a:hover:not(.active),
+  .creator-screen .creator-hero-kicker, .creator-screen .creator-level-number,
+  .creator-screen .creator-section-heading .eyebrow,
+  .home-section-heading .eyebrow, .home-ecosystem .module-catalog-heading .eyebrow,
+  .home-brand-gallery-heading .eyebrow, .shop-screen .shop-editorial-label,
+  .shop-screen .shop-catalog-heading .eyebrow
+) {
+  color: var(--color-text-link) !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .social-feed-text-action, .social-feed-side-panel a, .feed-screen .bottom-nav-create,
+  .home-inline-link, .home-performance-metrics a, .home-discovery-empty a,
+  .creator-inline-link
+) { text-decoration-color: currentColor; }
+
+/* Keep the activity sync status on a dark surface in the dark theme. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .workout-screen .activity-sync-notice, .nutrition-screen .activity-sync-notice
+) {
+  color: #c3d0c6 !important;
+  background: #17241b !important;
+  border-color: #344b39 !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .workout-screen .activity-sync-notice.has-error, .nutrition-screen .activity-sync-notice.has-error
+) {
+  color: #ffd0c9 !important;
+  background: #321d1a !important;
+  border-color: #75423a !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .social-inline-status {
+  color: #c3d0c6 !important;
+}
+
+/* Bring Studio's controls and library into the same evergreen visual system.
+   The generated artwork canvas stays light because it is an export preview. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-screen {
+  --studio-surface: #142019;
+  --studio-control: #19271e;
+  --studio-control-hover: #203429;
+  --studio-border: #344b39;
+  --studio-ink: #eff4ef;
+  --studio-muted: #b5c2b7;
+  --studio-accent: #83e0aa;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-controls, .studio-preview-column, .studio-library, .studio-shop-link
+) {
+  color: var(--studio-ink);
+  background: var(--studio-surface);
+  border-color: var(--studio-border);
+  box-shadow: 0 8px 24px #0003;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-intro, .studio-section-label small, .studio-photo-credit,
+  .studio-input-label, .studio-optional, .studio-palette button,
+  .studio-brand-toggle small, .studio-live-dot, .studio-download-actions button,
+  .studio-note p, .studio-uses > span, .studio-uses > div > span,
+  .studio-library-heading p, .studio-library-card > div > span,
+  .studio-library-card small, .studio-library-empty p, .studio-shop-link small,
+  .studio-disclaimer
+) { color: var(--studio-muted) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-section-label strong, .studio-input-label, .studio-brand-toggle strong,
+  .studio-preview-heading h2, .studio-library-heading h2, .studio-library-card h3,
+  .studio-library-empty h3, .studio-shop-link strong, .studio-note strong
+) { color: var(--studio-ink) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-section-label > span,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-template-grid button > span,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-library-empty > span,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-shop-link-icon {
+  color: var(--studio-accent);
+  background: #203b2b;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-tabs, .studio-template-grid button, .studio-format,
+  .studio-type-grid button, .studio-style-grid button, .studio-photo-upload,
+  .studio-input-label input, .studio-input-label textarea, .studio-library-card,
+  .studio-shop-link
+) {
+  color: var(--studio-ink);
+  background: var(--studio-control);
+  border-color: var(--studio-border);
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-template-grid button > strong, .studio-format > span:nth-of-type(1) strong,
+  .studio-photo-upload > span, .studio-library-card h3, .studio-library-empty h3,
+  .studio-shop-link strong
+) { color: var(--studio-ink) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-template-grid button > small, .studio-format > span:nth-of-type(1) small,
+  .studio-photo-upload > small, .studio-library-card small, .studio-library-card > div > span,
+  .studio-shop-link small
+) { color: var(--studio-muted) !important; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-template-grid button:hover, .studio-format.active,
+  .studio-photo-upload.active, .studio-type-grid button.active,
+  .studio-style-grid button.active
+) {
+  color: #f5fff8;
+  background: #205c3b;
+  border-color: #4a9867;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-type-grid button, .studio-style-grid button
+) { color: #d0dbd2; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app :is(
+  .studio-format.active .studio-radio, .studio-brand-toggle > input:checked + .studio-toggle-check
+) { border-color: #83e0aa; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-note {
+  color: var(--studio-accent);
+  background: #1b3022;
+  border: 1px solid #344b39;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-uses { border-color: var(--studio-border); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-uses > div > span {
+  color: #d6e5d8 !important;
+  background: #22352a;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-tabs button { color: var(--studio-muted); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-tabs button.active {
+  color: #effff4;
+  background: #205c3b;
+  box-shadow: none;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-tabs button > span {
+  color: #effff4;
+  background: #2c7049;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-format.active :is(strong, small) {
+  color: #f2fff5 !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-screen .studio-controls .studio-format.active > span:nth-of-type(1) small {
+  color: #f2fff5 !important;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-photo-option {
+  background-color: #142019;
+  border-color: #344b39;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-input-label input,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-input-label textarea { color: #eff4ef; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-input-label :is(input, textarea)::placeholder { color: #a9b7ac; opacity: 1; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-library-count {
+  color: #effff4;
+  background: #205c3b;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-use-link { color: var(--studio-accent); }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-canvas-frame { background: #edf2e9; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-first-preview :is(.eyebrow, h3) { color: #173c2a; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-first-preview p { color: #405b46; }
+html[data-theme="dark"]:not([data-high-contrast="true"]) .mobile-app .studio-canvas-placeholder {
+  color: #304536;
+  background: #fffffff0;
+}
+
+/* The benefits declaration is a public legal-information page; give its card
+   its own dark surface so inherited light-theme text never disappears. */
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card {
+  color: #eff4ef;
+  background: #16221b;
+  border-color: #2b4033;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card :is(p, h2, strong, th, td) {
+  color: #dce6de;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card h2 {
+  color: #eff4ef;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card table,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card th,
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card td {
+  background: #19271e;
+  border-color: #344b39;
+}
+html[data-theme="dark"]:not([data-high-contrast="true"]) .benefits-terms-screen .professional-review-card a {
+  color: #83e0aa;
+}
