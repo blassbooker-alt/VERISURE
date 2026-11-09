@@ -151,7 +151,7 @@ export default function BottomNav({ desktopExpanded = false, onNotificationsOpen
     {activeIndex >= 0 && <span
       className="bottom-nav-indicator"
       aria-hidden="true"
-      style={{ "--nav-active-offset": `calc(${10 + activeIndex * 20}% - 22px)` }}
+      style={{ "--nav-active-offset": `calc(10% + ${activeIndex * 20}% - 22px)` }}
     ><span /></span>}
     {expanded ? renderDesktopGroups() : primaryTabs.map(item => {
       const { to, label, icon: Icon } = item;
